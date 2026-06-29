@@ -4,7 +4,6 @@ do $$ begin create type "UserStatus" as enum ('ACTIVE', 'INACTIVE'); exception w
 do $$ begin create type "FamilyStatus" as enum ('ACTIVE', 'INACTIVE'); exception when duplicate_object then null; end $$;
 do $$ begin create type "StudentStatus" as enum ('ACTIVE', 'INACTIVE'); exception when duplicate_object then null; end $$;
 do $$ begin create type "EnrollmentStatus" as enum ('ACTIVE', 'PAUSED', 'ENDED'); exception when duplicate_object then null; end $$;
-do $$ begin create type "InvoiceStatus" as enum ('DRAFT', 'SENT', 'PARTIALLY_PAID', 'PAID', 'VOID'); exception when duplicate_object then null; end $$;
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
@@ -68,30 +67,22 @@ create table if not exists enrollments (
 );
 create index if not exists enrollments_student_id_idx on enrollments(student_id);
 
-create table if not exists invoices (
+create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null references families(id) on delete restrict,
-  invoice_number text not null unique,
-  status "InvoiceStatus" not null default 'DRAFT',
-  total_cents integer not null default 0,
-  balance_cents integer not null default 0,
-  issued_at date not null default current_date,
-  due_at date,
+  payment_date date not null default current_date,
+  payment_method text not null,
+  total_amount_cents integer not null,
+  notes text,
+  created_by_id uuid references users(id) on delete set null,
+  receipt_number text unique,
+  voided_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-create index if not exists invoices_family_id_idx on invoices(family_id);
-create index if not exists invoices_status_idx on invoices(status);
-
-create table if not exists payments (
-  id uuid primary key default gen_random_uuid(),
-  invoice_id uuid not null references invoices(id) on delete cascade,
-  amount_cents integer not null,
-  method text not null,
-  received_at date not null default current_date,
-  created_at timestamptz not null default now()
-);
-create index if not exists payments_invoice_id_idx on payments(invoice_id);
+create index if not exists payments_family_id_idx on payments(family_id);
+create index if not exists payments_created_by_id_idx on payments(created_by_id);
+create index if not exists payments_payment_date_idx on payments(payment_date);
 
 create table if not exists expenses (
   id uuid primary key default gen_random_uuid(),
@@ -99,15 +90,17 @@ create table if not exists expenses (
   description text not null,
   amount_cents integer not null,
   incurred_at date not null default current_date,
-  created_at timestamptz not null default now()
+  expense_date date not null default current_date,
+  payment_method text not null default 'cash',
+  created_at timestamptz not null default now(),
+  archived_at timestamptz
 );
-create index if not exists expenses_incurred_at_idx on expenses(incurred_at);
+create index if not exists expenses_expense_date_idx on expenses(expense_date);
 
 alter table users enable row level security;
 alter table audit_logs enable row level security;
 alter table families enable row level security;
 alter table students enable row level security;
 alter table enrollments enable row level security;
-alter table invoices enable row level security;
 alter table payments enable row level security;
 alter table expenses enable row level security;

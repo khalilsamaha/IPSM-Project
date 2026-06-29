@@ -1,14 +1,9 @@
--- Phase 3 database review: reporting-oriented indexes for the existing Phase 2 schema.
--- These indexes do not add new product features; they improve common finance and roster queries.
+-- Reporting indexes that are safe for the MVP payment-first schema.
+create index if not exists enrollments_status_archived_at_idx
+  on enrollments(status, archived_at);
 
-create index if not exists enrollments_status_started_at_ended_at_idx
-  on enrollments(status, started_at, ended_at);
+create index if not exists payments_payment_date_voided_at_idx
+  on payments(payment_date, voided_at);
 
-create index if not exists invoices_issued_at_idx
-  on invoices(issued_at);
-
-create index if not exists invoices_due_at_idx
-  on invoices(due_at);
-
-create index if not exists payments_received_at_idx
-  on payments(received_at);
+create index if not exists expenses_expense_date_archived_at_idx
+  on expenses(expense_date, archived_at);

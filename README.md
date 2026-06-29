@@ -8,7 +8,7 @@ Production-ready MVP for internal administration of a private music school. Deve
 - Middleware-protected application routes.
 - Admin and Reception role definitions with permission checks.
 - Initial Prisma schema for user profiles and audit logs.
-- Phase 2 operational data model for families, students, enrollments, invoices, payments, and expenses.
+- Phase 2 operational data model for families, students, enrollments, payments, receipts, and expenses.
 - Dashboard metrics backed by Prisma aggregate-ready records.
 - Supabase SQL migration for applying Phase 1/2 tables directly to a Supabase project.
 

@@ -16,7 +16,7 @@ Before implementing new Phase 3 endpoints or actions, document the contract for:
 1. Families and students CRUD.
 2. Season enrollment creation and updates.
 3. Teacher assignment and reassignment.
-4. Invoice creation, line items, and payment allocation.
+4. Payment creation, enrollment allocation, and receipt generation.
 5. Reporting endpoints for revenue, balances, expenses, and enrollment rosters.
 6. Audit log writes for financial and enrollment changes.
 

@@ -48,14 +48,6 @@ enum EnrollmentStatus {
   CANCELLED
 }
 
-enum InvoiceStatus {
-  DRAFT
-  SENT
-  PARTIALLY_PAID
-  PAID
-  VOID
-}
-
 model UserProfile {
   id               String     @id @default(uuid()) @db.Uuid
   authId           String     @unique @map("auth_id") @db.Uuid
@@ -97,7 +89,7 @@ model Family {
   status     FamilyStatus @default(ACTIVE)
   notes      String?
   students   Student[]
-  invoices   Invoice[]
+  payments   Payment[]
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
   archivedAt DateTime?    @map("archived_at")
@@ -186,45 +178,26 @@ model Enrollment {
   @@map("enrollments")
 }
 
-model Invoice {
-  id            String        @id @default(uuid()) @db.Uuid
-  familyId      String        @map("family_id") @db.Uuid
-  family        Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
-  invoiceNumber String        @unique @map("invoice_number")
-  status        InvoiceStatus @default(DRAFT)
-  totalCents    Int           @default(0) @map("total_cents")
-  balanceCents  Int           @default(0) @map("balance_cents")
-  issuedAt      DateTime      @default(now()) @map("issued_at") @db.Date
-  dueAt         DateTime?     @map("due_at") @db.Date
-  payments      Payment[]
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  deletedAt     DateTime?     @map("deleted_at")
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  familyId         String        @map("family_id") @db.Uuid
+  family           Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  paymentDate      DateTime      @default(now()) @map("payment_date") @db.Date
+  paymentMethod    String        @map("payment_method")
+  totalAmountCents Int           @map("total_amount_cents")
+  notes            String?
+  createdById      String?       @map("created_by_id") @db.Uuid
+  createdBy        UserProfile?  @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  receiptNumber    String?       @unique @map("receipt_number")
+  voidedAt         DateTime?     @map("voided_at")
+  items            PaymentItem[]
+  receipt          Receipt?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
 
   @@index([familyId])
-  @@index([status])
-  @@index([issuedAt])
-  @@index([dueAt])
-  @@map("invoices")
-}
-
-model Payment {
-  id          String        @id @default(uuid()) @db.Uuid
-  invoiceId   String?       @map("invoice_id") @db.Uuid
-  invoice     Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  createdById String?       @map("created_by_id") @db.Uuid
-  createdBy   UserProfile?  @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  amountCents Int           @map("amount_cents")
-  method      String
-  receivedAt  DateTime      @default(now()) @map("received_at") @db.Date
-  items       PaymentItem[]
-  receipt     Receipt?
-  createdAt   DateTime      @default(now()) @map("created_at")
-  deletedAt   DateTime?     @map("deleted_at")
-
-  @@index([invoiceId])
   @@index([createdById])
-  @@index([receivedAt])
+  @@index([paymentDate])
   @@map("payments")
 }
 
@@ -248,7 +221,7 @@ model Receipt {
   paymentId          String    @unique @map("payment_id") @db.Uuid
   payment            Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   receiptNumber      String    @unique @map("receipt_number")
-  pdfUrl             String?   @map("pdf_url")
+  pdfPath            String?   @map("pdf_path")
   generatedAt        DateTime  @default(now()) @map("generated_at")
   sentByEmailAt      DateTime? @map("sent_by_email_at")
   sharedByWhatsappAt DateTime? @map("shared_by_whatsapp_at")
@@ -260,17 +233,19 @@ model Receipt {
 }
 
 model Expense {
-  id          String       @id @default(uuid()) @db.Uuid
-  createdById String?      @map("created_by_id") @db.Uuid
-  createdBy   UserProfile? @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  category    String
-  description String
-  amountCents Int          @map("amount_cents")
-  incurredAt  DateTime     @default(now()) @map("incurred_at") @db.Date
-  createdAt   DateTime     @default(now()) @map("created_at")
-  deletedAt   DateTime?    @map("deleted_at")
+  id            String       @id @default(uuid()) @db.Uuid
+  createdById   String?      @map("created_by_id") @db.Uuid
+  createdBy     UserProfile? @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  category      String
+  description   String
+  amountCents   Int          @map("amount_cents")
+  incurredAt    DateTime     @default(now()) @map("incurred_at") @db.Date
+  expenseDate   DateTime     @default(now()) @map("expense_date") @db.Date
+  paymentMethod String       @default("cash") @map("payment_method")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  archivedAt    DateTime?    @map("archived_at")
 
   @@index([createdById])
-  @@index([incurredAt])
+  @@index([expenseDate])
   @@map("expenses")
 }

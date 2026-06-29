@@ -7,15 +7,20 @@ describe("calculateDashboardMetrics", () => {
       {
         students: [{ status: "ACTIVE" }, { status: "INACTIVE" }, { status: "ACTIVE" }],
         families: [{ status: "ACTIVE" }, { status: "INACTIVE" }],
-        invoices: [
-          { status: "SENT", totalCents: 10000, balanceCents: 2500, issuedAt: new Date("2026-06-10T00:00:00Z") },
-          { status: "PAID", totalCents: 8000, balanceCents: 0, issuedAt: new Date("2026-06-12T00:00:00Z") },
-          { status: "VOID", totalCents: 3000, balanceCents: 3000, issuedAt: new Date("2026-06-13T00:00:00Z") },
-          { status: "SENT", totalCents: 12000, balanceCents: 12000, issuedAt: new Date("2026-05-20T00:00:00Z") },
+        enrollments: [
+          { status: "ACTIVE", remainingCents: 2500 },
+          { status: "PAUSED", remainingCents: 12000 },
+          { status: "ENDED", remainingCents: 3000 },
+        ],
+        payments: [
+          { totalAmountCents: 7500, paymentDate: new Date("2026-06-10T00:00:00Z"), voidedAt: null },
+          { totalAmountCents: 8000, paymentDate: new Date("2026-06-12T00:00:00Z"), voidedAt: null },
+          { totalAmountCents: 3000, paymentDate: new Date("2026-06-13T00:00:00Z"), voidedAt: new Date("2026-06-14T00:00:00Z") },
+          { totalAmountCents: 12000, paymentDate: new Date("2026-05-20T00:00:00Z"), voidedAt: null },
         ],
         expenses: [
-          { amountCents: 4000, incurredAt: new Date("2026-06-11T00:00:00Z") },
-          { amountCents: 1000, incurredAt: new Date("2026-05-11T00:00:00Z") },
+          { amountCents: 4000, expenseDate: new Date("2026-06-11T00:00:00Z") },
+          { amountCents: 1000, expenseDate: new Date("2026-05-11T00:00:00Z") },
         ],
       },
       new Date("2026-06-29T00:00:00Z"),

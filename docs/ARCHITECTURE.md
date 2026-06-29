@@ -21,4 +21,4 @@
 
 ## Phase 3 Architecture Gate
 
-Phase 3 should not add feature code until the database review is approved. The main architectural decision is whether Phase 3 billing and enrollment features will use the existing simple invoice/enrollment model or introduce normalized seasons, teachers, invoice lines, and payment allocations.
+Phase 3 should not add feature code until the database review is approved. The main architectural decision is whether future billing features should stay with the MVP family-payment allocation model or introduce formal statements with line items and allocation rules.

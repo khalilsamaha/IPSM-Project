@@ -228,140 +228,32 @@ async function main() {
     });
   }
 
-  const invoices = [
-    [
-      "50000000-0000-0000-0000-000000000001",
-      families[0][0],
-      "INV-2026-0001",
-      "PARTIALLY_PAID",
-      42000,
-      12000,
-    ],
-    [
-      "50000000-0000-0000-0000-000000000002",
-      families[1][0],
-      "INV-2026-0002",
-      "PAID",
-      36000,
-      0,
-    ],
-    [
-      "50000000-0000-0000-0000-000000000003",
-      families[2][0],
-      "INV-2026-0003",
-      "SENT",
-      42000,
-      42000,
-    ],
-    [
-      "50000000-0000-0000-0000-000000000004",
-      families[3][0],
-      "INV-2026-0004",
-      "PARTIALLY_PAID",
-      48000,
-      18000,
-    ],
-    [
-      "50000000-0000-0000-0000-000000000005",
-      families[4][0],
-      "INV-2026-0005",
-      "PAID",
-      36000,
-      0,
-    ],
-  ] as const;
-
-  for (const [
-    id,
-    familyId,
-    invoiceNumber,
-    status,
-    totalCents,
-    balanceCents,
-  ] of invoices) {
-    await prisma.invoice.upsert({
-      where: { invoiceNumber },
-      update: {
-        familyId,
-        status,
-        totalCents,
-        balanceCents,
-        issuedAt: new Date("2026-06-01"),
-        dueAt: new Date("2026-06-15"),
-      },
-      create: {
-        id,
-        familyId,
-        invoiceNumber,
-        status,
-        totalCents,
-        balanceCents,
-        issuedAt: new Date("2026-06-01"),
-        dueAt: new Date("2026-06-15"),
-      },
-    });
-  }
-
   const payments = [
-    [
-      "60000000-0000-0000-0000-000000000001",
-      invoices[0][0],
-      20000,
-      "card",
-      "2026-06-03",
-    ],
-    [
-      "60000000-0000-0000-0000-000000000002",
-      invoices[0][0],
-      10000,
-      "cash",
-      "2026-06-15",
-    ],
-    [
-      "60000000-0000-0000-0000-000000000003",
-      invoices[1][0],
-      36000,
-      "ach",
-      "2026-06-04",
-    ],
-    [
-      "60000000-0000-0000-0000-000000000004",
-      invoices[3][0],
-      15000,
-      "card",
-      "2026-06-05",
-    ],
-    [
-      "60000000-0000-0000-0000-000000000005",
-      invoices[3][0],
-      15000,
-      "card",
-      "2026-06-20",
-    ],
-    [
-      "60000000-0000-0000-0000-000000000006",
-      invoices[4][0],
-      36000,
-      "check",
-      "2026-06-02",
-    ],
+    ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03", "RCPT-2026-0001"],
+    ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15", "RCPT-2026-0002"],
+    ["60000000-0000-0000-0000-000000000003", families[1][0], 36000, "ach", "2026-06-04", "RCPT-2026-0003"],
+    ["60000000-0000-0000-0000-000000000004", families[3][0], 15000, "card", "2026-06-05", "RCPT-2026-0004"],
+    ["60000000-0000-0000-0000-000000000005", families[3][0], 15000, "card", "2026-06-20", "RCPT-2026-0005"],
+    ["60000000-0000-0000-0000-000000000006", families[4][0], 36000, "check", "2026-06-02", "RCPT-2026-0006"],
   ] as const;
 
-  for (const [id, invoiceId, amountCents, method, receivedAt] of payments) {
+  for (const [id, familyId, totalAmountCents, paymentMethod, paymentDate, receiptNumber] of payments) {
     await prisma.payment.upsert({
       where: { id },
       update: {
-        invoiceId,
-        amountCents,
-        method,
-        receivedAt: new Date(receivedAt),
+        familyId,
+        totalAmountCents,
+        paymentMethod,
+        paymentDate: new Date(paymentDate),
+        receiptNumber,
       },
       create: {
         id,
-        invoiceId,
-        amountCents,
-        method,
-        receivedAt: new Date(receivedAt),
+        familyId,
+        totalAmountCents,
+        paymentMethod,
+        paymentDate: new Date(paymentDate),
+        receiptNumber,
       },
     });
   }
@@ -397,21 +289,25 @@ async function main() {
     ],
   ] as const;
 
-  for (const [id, category, description, amountCents, incurredAt] of expenses) {
+  for (const [id, category, description, amountCents, expenseDate] of expenses) {
     await prisma.expense.upsert({
       where: { id },
       update: {
         category,
         description,
         amountCents,
-        incurredAt: new Date(incurredAt),
+        incurredAt: new Date(expenseDate),
+        expenseDate: new Date(expenseDate),
+        paymentMethod: "cash",
       },
       create: {
         id,
         category,
         description,
         amountCents,
-        incurredAt: new Date(incurredAt),
+        incurredAt: new Date(expenseDate),
+        expenseDate: new Date(expenseDate),
+        paymentMethod: "cash",
       },
     });
   }
