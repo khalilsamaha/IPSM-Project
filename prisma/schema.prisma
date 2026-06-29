@@ -18,33 +18,6 @@ enum UserStatus {
   INACTIVE
 }
 
-model UserProfile {
-  id        String     @id @default(uuid()) @db.Uuid
-  authId    String     @unique @map("auth_id") @db.Uuid
-  name      String
-  email     String     @unique
-  role      Role       @default(RECEPTION)
-  status    UserStatus @default(ACTIVE)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-
-  @@map("users")
-}
-
-model AuditLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  actorId   String?  @map("actor_id") @db.Uuid
-  action    String
-  entity    String
-  entityId  String?  @map("entity_id") @db.Uuid
-  metadata  Json?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([entity, entityId])
-  @@map("audit_logs")
-}
-
-
 enum FamilyStatus {
   ACTIVE
   INACTIVE
@@ -55,10 +28,24 @@ enum StudentStatus {
   INACTIVE
 }
 
+enum SeasonStatus {
+  PLANNED
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum TeacherStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
 enum EnrollmentStatus {
   ACTIVE
   PAUSED
   ENDED
+  CANCELLED
 }
 
 enum InvoiceStatus {
@@ -69,18 +56,53 @@ enum InvoiceStatus {
   VOID
 }
 
-model Family {
-  id        String       @id @default(uuid()) @db.Uuid
-  name      String
-  email     String?
-  phone     String?
-  status    FamilyStatus @default(ACTIVE)
-  notes     String?
-  students  Student[]
-  invoices  Invoice[]
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
+model UserProfile {
+  id               String     @id @default(uuid()) @db.Uuid
+  authId           String     @unique @map("auth_id") @db.Uuid
+  name             String
+  email            String     @unique
+  role             Role       @default(RECEPTION)
+  status           UserStatus @default(ACTIVE)
+  paymentsCreated  Payment[]  @relation("PaymentCreatedBy")
+  expensesCreated  Expense[]  @relation("ExpenseCreatedBy")
+  auditLogsCreated AuditLog[] @relation("AuditLogCreatedBy")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  archivedAt       DateTime?  @map("archived_at")
 
+  @@map("users")
+}
+
+model AuditLog {
+  id          String       @id @default(uuid()) @db.Uuid
+  actorId     String?      @map("actor_id") @db.Uuid
+  createdById String?      @map("created_by_id") @db.Uuid
+  createdBy   UserProfile? @relation("AuditLogCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  action      String
+  entity      String
+  entityId    String?      @map("entity_id") @db.Uuid
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@index([createdById])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model Family {
+  id         String       @id @default(uuid()) @db.Uuid
+  name       String
+  email      String?
+  phone      String?
+  status     FamilyStatus @default(ACTIVE)
+  notes      String?
+  students   Student[]
+  invoices   Invoice[]
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  archivedAt DateTime?    @map("archived_at")
+
+  @@index([status])
   @@map("families")
 }
 
@@ -97,69 +119,158 @@ model Student {
   enrollments Enrollment[]
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
+  archivedAt  DateTime?     @map("archived_at")
 
   @@index([familyId])
+  @@index([status])
   @@map("students")
 }
 
-model Enrollment {
-  id              String           @id @default(uuid()) @db.Uuid
-  studentId       String           @map("student_id") @db.Uuid
-  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  instrument      String
-  instructorName  String?          @map("instructor_name")
-  weeklyMinutes   Int              @default(30) @map("weekly_minutes")
-  monthlyRateCents Int             @default(0) @map("monthly_rate_cents")
-  status          EnrollmentStatus @default(ACTIVE)
-  startedAt       DateTime         @default(now()) @map("started_at") @db.Date
-  endedAt         DateTime?        @map("ended_at") @db.Date
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+model Season {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  startDate   DateTime     @map("start_date") @db.Date
+  endDate     DateTime     @map("end_date") @db.Date
+  status      SeasonStatus @default(PLANNED)
+  enrollments Enrollment[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  archivedAt  DateTime?    @map("archived_at")
 
+  @@index([status, startDate, endDate])
+  @@map("seasons")
+}
+
+model Teacher {
+  id              String        @id @default(uuid()) @db.Uuid
+  fullName        String        @map("full_name")
+  phone           String?
+  email           String?       @unique
+  hourlyRateCents Int           @default(0) @map("hourly_rate_cents")
+  status          TeacherStatus @default(ACTIVE)
+  notes           String?
+  enrollments     Enrollment[]
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  archivedAt      DateTime?     @map("archived_at")
+
+  @@index([status])
+  @@map("teachers")
+}
+
+model Enrollment {
+  id             String           @id @default(uuid()) @db.Uuid
+  studentId      String           @map("student_id") @db.Uuid
+  student        Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  seasonId       String           @map("season_id") @db.Uuid
+  season         Season           @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  teacherId      String?          @map("teacher_id") @db.Uuid
+  teacher        Teacher?         @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  courseName     String           @map("course_name")
+  feeCents       Int              @default(0) @map("fee_cents")
+  discountCents  Int              @default(0) @map("discount_cents")
+  finalFeeCents  Int              @default(0) @map("final_fee_cents")
+  paidCents      Int              @default(0) @map("paid_cents")
+  remainingCents Int              @default(0) @map("remaining_cents")
+  status         EnrollmentStatus @default(ACTIVE)
+  paymentItems   PaymentItem[]
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  archivedAt     DateTime?        @map("archived_at")
+
+  @@unique([studentId, seasonId, courseName])
   @@index([studentId])
+  @@index([seasonId])
+  @@index([teacherId])
+  @@index([status])
   @@map("enrollments")
 }
 
 model Invoice {
-  id           String        @id @default(uuid()) @db.Uuid
-  familyId     String        @map("family_id") @db.Uuid
-  family       Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
-  invoiceNumber String       @unique @map("invoice_number")
-  status       InvoiceStatus @default(DRAFT)
-  totalCents   Int           @default(0) @map("total_cents")
-  balanceCents Int           @default(0) @map("balance_cents")
-  issuedAt     DateTime      @default(now()) @map("issued_at") @db.Date
-  dueAt        DateTime?     @map("due_at") @db.Date
-  payments     Payment[]
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
+  id            String        @id @default(uuid()) @db.Uuid
+  familyId      String        @map("family_id") @db.Uuid
+  family        Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  invoiceNumber String        @unique @map("invoice_number")
+  status        InvoiceStatus @default(DRAFT)
+  totalCents    Int           @default(0) @map("total_cents")
+  balanceCents  Int           @default(0) @map("balance_cents")
+  issuedAt      DateTime      @default(now()) @map("issued_at") @db.Date
+  dueAt         DateTime?     @map("due_at") @db.Date
+  payments      Payment[]
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
 
   @@index([familyId])
   @@index([status])
+  @@index([issuedAt])
+  @@index([dueAt])
   @@map("invoices")
 }
 
 model Payment {
-  id          String   @id @default(uuid()) @db.Uuid
-  invoiceId   String   @map("invoice_id") @db.Uuid
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  amountCents Int      @map("amount_cents")
+  id          String        @id @default(uuid()) @db.Uuid
+  invoiceId   String?       @map("invoice_id") @db.Uuid
+  invoice     Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  createdById String?       @map("created_by_id") @db.Uuid
+  createdBy   UserProfile?  @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  amountCents Int           @map("amount_cents")
   method      String
-  receivedAt  DateTime @default(now()) @map("received_at") @db.Date
-  createdAt   DateTime @default(now()) @map("created_at")
+  receivedAt  DateTime      @default(now()) @map("received_at") @db.Date
+  items       PaymentItem[]
+  receipt     Receipt?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  deletedAt   DateTime?     @map("deleted_at")
 
   @@index([invoiceId])
+  @@index([createdById])
+  @@index([receivedAt])
   @@map("payments")
 }
 
+model PaymentItem {
+  id           String     @id @default(uuid()) @db.Uuid
+  paymentId    String     @map("payment_id") @db.Uuid
+  payment      Payment    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  enrollmentId String     @map("enrollment_id") @db.Uuid
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+  amountCents  Int        @map("amount_cents")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([paymentId, enrollmentId])
+  @@index([paymentId])
+  @@index([enrollmentId])
+  @@map("payment_items")
+}
+
+model Receipt {
+  id                 String    @id @default(uuid()) @db.Uuid
+  paymentId          String    @unique @map("payment_id") @db.Uuid
+  payment            Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  receiptNumber      String    @unique @map("receipt_number")
+  pdfUrl             String?   @map("pdf_url")
+  generatedAt        DateTime  @default(now()) @map("generated_at")
+  sentByEmailAt      DateTime? @map("sent_by_email_at")
+  sharedByWhatsappAt DateTime? @map("shared_by_whatsapp_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  @@index([generatedAt])
+  @@map("receipts")
+}
+
 model Expense {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String       @id @default(uuid()) @db.Uuid
+  createdById String?      @map("created_by_id") @db.Uuid
+  createdBy   UserProfile? @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   category    String
   description String
-  amountCents Int      @map("amount_cents")
-  incurredAt  DateTime @default(now()) @map("incurred_at") @db.Date
-  createdAt   DateTime @default(now()) @map("created_at")
+  amountCents Int          @map("amount_cents")
+  incurredAt  DateTime     @default(now()) @map("incurred_at") @db.Date
+  createdAt   DateTime     @default(now()) @map("created_at")
+  deletedAt   DateTime?    @map("deleted_at")
 
+  @@index([createdById])
   @@index([incurredAt])
   @@map("expenses")
 }
