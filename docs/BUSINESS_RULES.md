@@ -20,14 +20,14 @@
 
 ## Billing and Payments
 
-- Invoices are issued to families.
-- A family invoice may represent charges for multiple students.
-- Partial payments are allowed.
-- Multiple payments may be applied to the same invoice.
-- Phase 3 requires invoice lines and payment allocations if reports must answer which student or enrollment each payment covered.
+- Payments are recorded directly against families.
+- A family payment may represent charges for multiple students.
+- Partial payments are allowed through one or more `PaymentItem` allocations against an enrollment.
+- Multiple payments may be applied to the same enrollment.
+- Receipts are generated from payments.
 
 ## Financial History
 
 - Financial records should be voided or reversed rather than hard-deleted.
 - Soft-deleted or inactive operational records must remain available to financial reporting.
-- Payment and invoice totals should be validated so overpayment and stale balances are not silently introduced.
+- Payment totals and allocation totals should be validated so overpayment and stale balances are not silently introduced.

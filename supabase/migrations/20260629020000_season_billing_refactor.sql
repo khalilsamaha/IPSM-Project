@@ -33,18 +33,16 @@ create index if not exists teachers_status_idx on teachers(status);
 alter table users add column if not exists archived_at timestamptz;
 alter table families add column if not exists archived_at timestamptz;
 alter table students add column if not exists archived_at timestamptz;
-alter table invoices add column if not exists deleted_at timestamptz;
-alter table payments add column if not exists deleted_at timestamptz;
-alter table expenses add column if not exists deleted_at timestamptz;
 
 alter table audit_logs add column if not exists created_by_id uuid references users(id) on delete set null;
 create index if not exists audit_logs_created_by_id_idx on audit_logs(created_by_id);
 
-alter table payments add column if not exists created_by_id uuid references users(id) on delete set null;
-create index if not exists payments_created_by_id_idx on payments(created_by_id);
-
 alter table expenses add column if not exists created_by_id uuid references users(id) on delete set null;
+alter table expenses add column if not exists expense_date date not null default current_date;
+alter table expenses add column if not exists payment_method text not null default 'cash';
+alter table expenses add column if not exists archived_at timestamptz;
 create index if not exists expenses_created_by_id_idx on expenses(created_by_id);
+create index if not exists expenses_expense_date_idx on expenses(expense_date);
 
 insert into seasons (id, name, start_date, end_date, status)
 values ('70000000-0000-0000-0000-000000000001', 'Legacy Season', current_date, current_date, 'ACTIVE')
@@ -90,9 +88,27 @@ create index if not exists enrollments_teacher_id_idx on enrollments(teacher_id)
 create index if not exists enrollments_status_idx on enrollments(status);
 create unique index if not exists enrollments_student_id_season_id_course_name_key on enrollments(student_id, season_id, course_name);
 
-alter table payments alter column invoice_id drop not null;
+drop table if exists invoices cascade;
+drop type if exists "InvoiceStatus";
+
 alter table payments drop constraint if exists payments_invoice_id_fkey;
-alter table payments add constraint payments_invoice_id_fkey foreign key (invoice_id) references invoices(id) on delete set null;
+alter table payments drop column if exists invoice_id;
+alter table payments drop column if exists amount_cents;
+alter table payments drop column if exists method;
+alter table payments drop column if exists received_at;
+alter table payments drop column if exists deleted_at;
+alter table payments add column if not exists family_id uuid references families(id) on delete restrict;
+alter table payments add column if not exists payment_date date not null default current_date;
+alter table payments add column if not exists payment_method text not null default 'cash';
+alter table payments add column if not exists total_amount_cents integer not null default 0;
+alter table payments add column if not exists notes text;
+alter table payments add column if not exists created_by_id uuid references users(id) on delete set null;
+alter table payments add column if not exists receipt_number text unique;
+alter table payments add column if not exists voided_at timestamptz;
+alter table payments add column if not exists updated_at timestamptz not null default now();
+create index if not exists payments_family_id_idx on payments(family_id);
+create index if not exists payments_created_by_id_idx on payments(created_by_id);
+create index if not exists payments_payment_date_idx on payments(payment_date);
 
 create table if not exists payment_items (
   id uuid primary key default gen_random_uuid(),
@@ -109,7 +125,7 @@ create table if not exists receipts (
   id uuid primary key default gen_random_uuid(),
   payment_id uuid not null unique references payments(id) on delete cascade,
   receipt_number text not null unique,
-  pdf_url text,
+  pdf_path text,
   generated_at timestamptz not null default now(),
   sent_by_email_at timestamptz,
   shared_by_whatsapp_at timestamptz,
