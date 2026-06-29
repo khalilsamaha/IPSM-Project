@@ -43,3 +43,123 @@ model AuditLog {
   @@index([entity, entityId])
   @@map("audit_logs")
 }
+
+
+enum FamilyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  VOID
+}
+
+model Family {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  status    FamilyStatus @default(ACTIVE)
+  notes     String?
+  students  Student[]
+  invoices  Invoice[]
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@map("families")
+}
+
+model Student {
+  id          String        @id @default(uuid()) @db.Uuid
+  familyId    String        @map("family_id") @db.Uuid
+  family      Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  firstName   String        @map("first_name")
+  lastName    String        @map("last_name")
+  email       String?
+  phone       String?
+  dateOfBirth DateTime?     @map("date_of_birth") @db.Date
+  status      StudentStatus @default(ACTIVE)
+  enrollments Enrollment[]
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([familyId])
+  @@map("students")
+}
+
+model Enrollment {
+  id              String           @id @default(uuid()) @db.Uuid
+  studentId       String           @map("student_id") @db.Uuid
+  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  instrument      String
+  instructorName  String?          @map("instructor_name")
+  weeklyMinutes   Int              @default(30) @map("weekly_minutes")
+  monthlyRateCents Int             @default(0) @map("monthly_rate_cents")
+  status          EnrollmentStatus @default(ACTIVE)
+  startedAt       DateTime         @default(now()) @map("started_at") @db.Date
+  endedAt         DateTime?        @map("ended_at") @db.Date
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@map("enrollments")
+}
+
+model Invoice {
+  id           String        @id @default(uuid()) @db.Uuid
+  familyId     String        @map("family_id") @db.Uuid
+  family       Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  invoiceNumber String       @unique @map("invoice_number")
+  status       InvoiceStatus @default(DRAFT)
+  totalCents   Int           @default(0) @map("total_cents")
+  balanceCents Int           @default(0) @map("balance_cents")
+  issuedAt     DateTime      @default(now()) @map("issued_at") @db.Date
+  dueAt        DateTime?     @map("due_at") @db.Date
+  payments     Payment[]
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@index([familyId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model Payment {
+  id          String   @id @default(uuid()) @db.Uuid
+  invoiceId   String   @map("invoice_id") @db.Uuid
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amountCents Int      @map("amount_cents")
+  method      String
+  receivedAt  DateTime @default(now()) @map("received_at") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+model Expense {
+  id          String   @id @default(uuid()) @db.Uuid
+  category    String
+  description String
+  amountCents Int      @map("amount_cents")
+  incurredAt  DateTime @default(now()) @map("incurred_at") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([incurredAt])
+  @@map("expenses")
+}
