@@ -103,3 +103,33 @@ export async function archiveEnrollment(formData: FormData) {
   await audit("archive", "Enrollment", row.id);
   revalidatePath("/enrollments");
 }
+
+const paymentSchema = z.object({ familyId: id, paymentDate: z.string().min(1).transform((v) => new Date(v)), paymentMethod: z.string().trim().min(1), notes: optionalString });
+
+export async function createPayment(formData: FormData) {
+  const { createdById, session } = await requireRecordsWrite();
+  const parsed = paymentSchema.parse(Object.fromEntries(formData));
+  const rawEnrollmentIds = formData.getAll("enrollmentId").map(String);
+  const amounts = formData.getAll("amount").map((value) => dollarsToCents(String(value)));
+  const allocations = rawEnrollmentIds.map((enrollmentId, index) => ({ enrollmentId, amountCents: amounts[index] ?? 0 }));
+  const { createPaymentWithAllocations } = await import("@/lib/payments/payment-service");
+
+  const payment = await createPaymentWithAllocations(prisma, { ...parsed, createdById, actorId: session.userId, allocations });
+  revalidatePath("/payments");
+  revalidatePath("/payments/allocation");
+  revalidatePath("/enrollments");
+  revalidatePath(`/payments/${payment.id}`);
+}
+
+export async function voidPayment(formData: FormData) {
+  const session = await requireSession();
+  if (!hasPermission(session.role, "finance:delete")) throw new Error("Not authorized");
+  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
+  const paymentId = id.parse(formData.get("id"));
+  const { voidPaymentWithReversal } = await import("@/lib/payments/payment-service");
+
+  await voidPaymentWithReversal(prisma, { paymentId, createdById: user?.id, actorId: session.userId });
+  revalidatePath("/payments");
+  revalidatePath(`/payments/${paymentId}`);
+  revalidatePath("/enrollments");
+}
