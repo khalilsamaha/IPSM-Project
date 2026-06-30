@@ -228,6 +228,29 @@ async function main() {
     });
   }
 
+
+  const scheduleSessions = enrollmentSeeds.slice(0, 6).map((enrollment, index) => ({
+    id: `90000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`,
+    studentId: enrollment.studentId,
+    teacherId: enrollment.teacherId ?? teachers[0][0],
+    enrollmentId: enrollment.id,
+    seasonId: season.id,
+    title: `${enrollment.courseName} lesson`,
+    sessionDate: new Date(`2026-06-${String(15 + index).padStart(2, "0")}`),
+    startTime: `${String(10 + (index % 4)).padStart(2, "0")}:00`,
+    endTime: `${String(11 + (index % 4)).padStart(2, "0")}:00`,
+    status: "SCHEDULED" as const,
+    notes: "Seeded sample scheduled session",
+  }));
+
+  for (const scheduleSession of scheduleSessions) {
+    await prisma.scheduleSession.upsert({
+      where: { id: scheduleSession.id },
+      update: scheduleSession,
+      create: scheduleSession,
+    });
+  }
+
   const payments = [
     ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03", "RCPT-2026-000001"],
     ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15", "RCPT-2026-000002"],

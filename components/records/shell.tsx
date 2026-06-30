@@ -3,7 +3,7 @@ import { signOut } from "@/actions/auth";
 import type { AppSession } from "@/lib/auth/session";
 
 const nav = [
-  ["Dashboard", "/dashboard"], ["Families", "/families"], ["Students", "/students"], ["Teachers", "/teachers"], ["Seasons", "/seasons"], ["Enrollments", "/enrollments"], ["Payments", "/payments"], ["Expenses", "/expenses"], ["Reports", "/reports"], ["User Management", "/users"],
+  ["Dashboard", "/dashboard"], ["Families", "/families"], ["Students", "/students"], ["Teachers", "/teachers"], ["Seasons", "/seasons"], ["Enrollments", "/enrollments"], ["Schedule", "/schedule"], ["Payments", "/payments"], ["Expenses", "/expenses"], ["Reports", "/reports"], ["User Management", "/users"],
 ] as const;
 
 export function AppShell({ session, children }: { session: AppSession; children: React.ReactNode }) {
