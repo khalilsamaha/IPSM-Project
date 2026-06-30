@@ -1,3 +1,4 @@
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { voidPayment } from "@/actions/records";
@@ -72,7 +73,7 @@ export default async function PaymentDetailPage({
       {hasPermission(session.role, "finance:delete") && !payment.voidedAt ? (
         <form action={voidPayment} className="mt-4">
           <input type="hidden" name="id" value={payment.id} />
-          <button className="rounded border border-red-600 px-4 py-2 text-red-700">Void payment</button>
+          <ConfirmSubmitButton className="rounded border border-red-600 px-4 py-2 text-red-700" message="Void this payment? This reverses its allocations and cannot be undone from this screen.">Void payment</ConfirmSubmitButton>
         </form>
       ) : null}
     </AppShell>
