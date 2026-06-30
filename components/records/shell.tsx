@@ -9,13 +9,14 @@ const nav = [
   ["Teachers", "/teachers"],
   ["Seasons", "/seasons"],
   ["Enrollments", "/enrollments"],
+  ["Payments", "/payments"],
 ] as const;
 
 export function AppShell({ session, children }: { session: AppSession; children: React.ReactNode }) {
   return <main className="min-h-screen p-8">
     <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Phase 3</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Phase 4</p>
         <h1 className="text-3xl font-bold">IPSM Admin</h1>
         <p className="text-muted-foreground">Signed in as {session.email} ({session.role})</p>
       </div>
