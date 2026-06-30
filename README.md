@@ -1,26 +1,84 @@
 # IPSM Music School Management System
 
-Production-ready MVP for internal administration of a private music school. Development is incremental by phase.
+Production-ready MVP for internal administration of a private music school. The app is built with Next.js, Prisma, PostgreSQL/Supabase, and Supabase Auth.
 
-## Phase 2 implemented
+## MVP capabilities
 
 - Supabase email/password authentication routes: `/login` and `/forgot-password`.
-- Middleware-protected application routes.
+- Middleware-protected application routes with server-side session checks.
 - Admin and Reception role definitions with permission checks.
-- Initial Prisma schema for user profiles and audit logs.
-- Phase 2 operational data model for families, students, enrollments, payments, receipts, and expenses.
-- Dashboard metrics backed by Prisma aggregate-ready records.
-- Supabase SQL migration for applying Phase 1/2 tables directly to a Supabase project.
+- Family, student, teacher, season, enrollment, payment, receipt, expense, and report workflows.
+- Payment allocation validation, receipt PDF download, and admin-only payment voiding.
+- Audit logs for sensitive create/update/archive/export actions.
+- Deployment and QA documentation in `docs/DEPLOYMENT.md` and `docs/QA_CHECKLIST.md`.
 
 ## Local setup
 
-1. Copy `.env.example` to `.env.local` and fill Supabase/PostgreSQL values.
-2. Install dependencies with `npm install`.
-3. Generate Prisma client with `npm run prisma:generate`.
-4. Run checks with `npm run typecheck` and `npm test`.
-5. Start the app with `npm run dev`.
+1. Install dependencies:
 
+   ```bash
+   npm install
+   ```
 
-## Supabase deployment notes
+2. Create `.env.local` and fill in the required values:
 
-Apply `supabase/migrations/20260629000000_phase_2_operations.sql` with the Supabase CLI or SQL editor after configuring the project connection. This repository does not contain Supabase access tokens or linked project metadata, so direct remote application requires environment-specific credentials.
+   ```bash
+   DATABASE_URL="postgresql://..."
+   DIRECT_URL="postgresql://..."
+   NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+   ```
+
+3. Apply database migrations to your Supabase/PostgreSQL database. For local-only development, use your team's preferred Supabase CLI or SQL editor flow with files in `supabase/migrations/`.
+
+4. Generate the Prisma client:
+
+   ```bash
+   npm run prisma:generate
+   ```
+
+5. Run verification checks:
+
+   ```bash
+   npm run typecheck
+   npm test
+   npm run build
+   ```
+
+6. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+7. Open `http://localhost:3000` and sign in with a Supabase Auth user whose role metadata is `ADMIN` or `RECEPTION`.
+
+## Environment and secrets
+
+- `.env`, `.env.local`, and `.env*.local` files are ignored by Git.
+- Do not commit Supabase service-role keys, database passwords, access tokens, or Vercel tokens.
+- Only variables prefixed with `NEXT_PUBLIC_` are intended for browser exposure.
+- See `docs/DEPLOYMENT.md` for the production environment variable checklist.
+
+## Deployment
+
+- Supabase deployment checklist: `docs/DEPLOYMENT.md`.
+- Vercel deployment checklist: `docs/DEPLOYMENT.md`.
+- Final MVP QA checklist: `docs/QA_CHECKLIST.md`.
+
+Before promoting to production, confirm:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Documentation
+
+- `docs/ARCHITECTURE.md` — application architecture notes.
+- `docs/API.md` — API/export route notes.
+- `docs/BUSINESS_RULES.md` — domain and workflow rules.
+- `docs/DATABASE.md` — database overview.
+- `docs/DEPLOYMENT.md` — deployment and security checklist.
+- `docs/QA_CHECKLIST.md` — final MVP QA checklist.
