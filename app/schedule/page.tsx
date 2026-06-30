@@ -33,23 +33,23 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   return <AppShell session={session}>
     <PageHeader title="Schedule" description="Manage student and teacher sessions, availability, and student schedules." />
     <form className="mb-6 grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-6">
-      <select name="teacherId" className="rounded border p-2"><option value="">All teachers</option>{teachers.map(t => <option selected={params.teacherId === t.id} value={t.id} key={t.id}>{t.fullName}</option>)}</select>
-      <select name="studentId" className="rounded border p-2"><option value="">All students</option>{students.map(s => <option selected={params.studentId === s.id} value={s.id} key={s.id}>{s.firstName} {s.lastName}</option>)}</select>
-      <select name="seasonId" className="rounded border p-2"><option value="">All seasons</option>{seasons.map(s => <option selected={params.seasonId === s.id} value={s.id} key={s.id}>{s.name}</option>)}</select>
+      <select name="teacherId" defaultValue={params.teacherId ?? ""} className="rounded border p-2"><option value="">All teachers</option>{teachers.map(t => <option value={t.id} key={t.id}>{t.fullName}</option>)}</select>
+      <select name="studentId" defaultValue={params.studentId ?? ""} className="rounded border p-2"><option value="">All students</option>{students.map(s => <option value={s.id} key={s.id}>{s.firstName} {s.lastName}</option>)}</select>
+      <select name="seasonId" defaultValue={params.seasonId ?? ""} className="rounded border p-2"><option value="">All seasons</option>{seasons.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select>
       <input name="date" type="date" defaultValue={params.date} className="rounded border p-2" />
       <input name="course" placeholder="Course" defaultValue={params.course} className="rounded border p-2" />
       <button className="rounded bg-primary px-4 py-2 text-white">Filter</button>
     </form>
     <form action={saveScheduleSession} className="mb-6 grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-4">
       {editSession ? <input type="hidden" name="id" value={editSession.id} /> : null}<input name="title" placeholder="Title" defaultValue={editSession?.title ?? ""} className="rounded border p-2" />
-      <select name="studentId" required className="rounded border p-2">{students.map(s => <option selected={editSession?.studentId === s.id} value={s.id} key={s.id}>{s.firstName} {s.lastName} ({s.family.name})</option>)}</select>
-      <select name="enrollmentId" className="rounded border p-2"><option value="">No enrollment</option>{enrollments.map(e => <option selected={editSession?.enrollmentId === e.id} value={e.id} key={e.id}>{e.student.firstName} {e.student.lastName} — {e.courseName}</option>)}</select>
-      <select name="teacherId" required className="rounded border p-2">{teachers.map(t => <option selected={editSession?.teacherId === t.id} value={t.id} key={t.id}>{t.fullName}</option>)}</select>
-      <select name="seasonId" className="rounded border p-2"><option value="">No season</option>{seasons.map(s => <option selected={editSession?.seasonId === s.id} value={s.id} key={s.id}>{s.name}</option>)}</select>
+      <select name="studentId" required defaultValue={editSession?.studentId} className="rounded border p-2">{students.map(s => <option value={s.id} key={s.id}>{s.firstName} {s.lastName} ({s.family.name})</option>)}</select>
+      <select name="enrollmentId" defaultValue={editSession?.enrollmentId ?? ""} className="rounded border p-2"><option value="">No enrollment</option>{enrollments.map(e => <option value={e.id} key={e.id}>{e.student.firstName} {e.student.lastName} — {e.courseName}</option>)}</select>
+      <select name="teacherId" required defaultValue={editSession?.teacherId} className="rounded border p-2">{teachers.map(t => <option value={t.id} key={t.id}>{t.fullName}</option>)}</select>
+      <select name="seasonId" defaultValue={editSession?.seasonId ?? ""} className="rounded border p-2"><option value="">No season</option>{seasons.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select>
       <input name="sessionDate" required type="date" defaultValue={editSession?.sessionDate.toISOString().slice(0, 10)} className="rounded border p-2" />
       <input name="startTime" required type="time" defaultValue={editSession?.startTime} className="rounded border p-2" />
       <input name="endTime" required type="time" defaultValue={editSession?.endTime} className="rounded border p-2" />
-      <select name="status" className="rounded border p-2">{["SCHEDULED", "COMPLETED", "CANCELLED", "MISSED"].map(status => <option selected={editSession?.status === status} key={status}>{status}</option>)}</select>
+      <select name="status" defaultValue={editSession?.status ?? "SCHEDULED"} className="rounded border p-2">{["SCHEDULED", "COMPLETED", "CANCELLED", "MISSED"].map(status => <option key={status}>{status}</option>)}</select>
       <textarea name="notes" placeholder="Notes" defaultValue={editSession?.notes ?? ""} className="rounded border p-2 md:col-span-2" />
       <button className="rounded bg-primary px-4 py-2 text-white">{editSession ? "Update session" : "Add session"}</button>
     </form>
