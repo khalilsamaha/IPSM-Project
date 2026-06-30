@@ -1,25 +1,24 @@
+import Link from "next/link";
 import { saveExpense } from "@/actions/expenses";
+import { FormSection } from "@/components/records/shell";
 import { expensePaymentMethods, formatExpenseAmountInput } from "@/lib/expenses";
 
-export type ExpenseFormValue = {
-  id?: string;
-  category?: string;
-  description?: string;
-  amountCents?: number;
-  expenseDate?: Date;
-  paymentMethod?: string;
-};
+export type ExpenseFormValue = { id?: string; category?: string; description?: string; amountCents?: number; expenseDate?: Date; paymentMethod?: string };
+const label = "grid gap-1 text-sm font-medium";
+const input = "rounded-md border border-border p-2 text-sm";
 
 export function ExpenseForm({ expense }: { expense?: ExpenseFormValue }) {
-  return (
-    <form action={saveExpense} className="grid gap-4 rounded-xl border bg-white p-4 md:grid-cols-2">
-      {expense?.id ? <input type="hidden" name="id" value={expense.id} /> : null}
-      <label className="grid gap-1 text-sm font-medium">Category<input className="rounded border p-2" name="category" required defaultValue={expense?.category ?? ""} /></label>
-      <label className="grid gap-1 text-sm font-medium">Payment method<select className="rounded border p-2" name="paymentMethod" defaultValue={expense?.paymentMethod ?? "cash"}>{expensePaymentMethods.map((method) => <option key={method} value={method}>{method}</option>)}</select></label>
-      <label className="grid gap-1 text-sm font-medium">Amount<input className="rounded border p-2" name="amount" type="number" step="0.01" min="0.01" required defaultValue={expense?.amountCents ? formatExpenseAmountInput(expense.amountCents) : ""} /></label>
-      <label className="grid gap-1 text-sm font-medium">Date<input className="rounded border p-2" name="expenseDate" type="date" required defaultValue={expense?.expenseDate ? expense.expenseDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)} /></label>
-      <label className="grid gap-1 text-sm font-medium md:col-span-2">Description<textarea className="rounded border p-2" name="description" required defaultValue={expense?.description ?? ""} /></label>
-      <button className="rounded bg-primary px-4 py-2 text-white md:col-span-2">Save expense</button>
-    </form>
-  );
+  return <form action={saveExpense} className="space-y-4">
+    {expense?.id ? <input type="hidden" name="id" value={expense.id} /> : null}
+    <FormSection title="Expense details" description="Fields marked with * are required for accurate financial reports.">
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className={label}>Category *<input className={input} name="category" required defaultValue={expense?.category ?? ""} placeholder="Rent, supplies, utilities" /><span className="text-xs font-normal text-muted-foreground">Use consistent category names for cleaner reports.</span></label>
+        <label className={label}>Payment method<select className={input} name="paymentMethod" defaultValue={expense?.paymentMethod ?? "cash"}>{expensePaymentMethods.map((method) => <option key={method} value={method}>{method}</option>)}</select></label>
+        <label className={label}>Amount *<input className={input} name="amount" type="number" step="0.01" min="0.01" required defaultValue={expense?.amountCents ? formatExpenseAmountInput(expense.amountCents) : ""} placeholder="0.00" /></label>
+        <label className={label}>Date *<input className={input} name="expenseDate" type="date" required defaultValue={expense?.expenseDate ? expense.expenseDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)} /></label>
+        <label className={`${label} md:col-span-2`}>Description *<textarea className={input} name="description" required defaultValue={expense?.description ?? ""} placeholder="Describe what this expense was for." /></label>
+      </div>
+    </FormSection>
+    <div className="flex gap-3"><button className="rounded-md bg-primary px-4 py-2 font-medium text-white">{expense?.id ? "Save Expense" : "Add Expense"}</button><Link className="rounded-md border border-border bg-white px-4 py-2 font-medium" href="/expenses">Cancel</Link></div>
+  </form>;
 }

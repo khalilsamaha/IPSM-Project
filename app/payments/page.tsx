@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppShell, Pager } from "@/components/records/shell";
+import { AppShell, Pager, StatusBadge, EmptyState, DataTable } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/dashboard/data";
 import { formatCurrency, formatDate } from "@/lib/records/format";
@@ -112,7 +112,7 @@ export default async function PaymentsPage({
                 <td>{Array.from(new Set(payment.items.map((item) => item.enrollment.season.name))).join(", ")}</td>
                 <td>{payment.items.length}</td>
                 <td>{formatCurrency(payment.totalAmountCents)}</td>
-                <td>{payment.voidedAt ? "VOID" : "Posted"}</td>
+                <td><StatusBadge status={payment.voidedAt ? "VOID" : "Posted"} /></td>
                 <td className="space-x-3"><Link className="text-primary" href={`/payments/${payment.id}`}>View</Link><a className="text-primary" href={`/api/receipts/${payment.id}`}>Receipt PDF</a></td>
               </tr>
             ))}

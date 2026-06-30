@@ -1,7 +1,7 @@
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import Link from "next/link";
 import { archiveExpense } from "@/actions/expenses";
-import { AppShell, Pager } from "@/components/records/shell";
+import { AppShell, Pager, StatusBadge, EmptyState, DataTable } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/dashboard/data";
 import { expensePaymentMethods, formatExpenseAmount } from "@/lib/expenses";
@@ -44,7 +44,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="archived" value="1" defaultChecked={params.archived === "1"} /> Show archived</label>
       <button className="rounded bg-primary px-4 py-2 text-white">Apply filters</button>
     </form>
-    <div className="overflow-x-auto rounded-xl border bg-white"><table className="w-full text-left text-sm"><thead className="bg-muted"><tr><th className="p-3">Date</th><th>Category</th><th>Description</th><th>Method</th><th>Amount</th><th>Created by</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((expense) => <tr className="border-t" key={expense.id}><td className="p-3">{formatDate(expense.expenseDate)}</td><td className="font-medium">{expense.category}</td><td>{expense.description}</td><td>{expense.paymentMethod}</td><td>{formatExpenseAmount(expense.amountCents)}</td><td>{expense.createdBy?.name ?? "—"}</td><td>{expense.archivedAt ? "Archived" : "Active"}</td><td className="flex gap-3 py-3"><Link className="text-primary" href={`/expenses/${expense.id}/edit`}>Edit</Link>{expense.archivedAt ? null : <form action={archiveExpense}><input type="hidden" name="id" value={expense.id} /><ConfirmSubmitButton className="text-primary" message="Archive this record? This will hide it from active workflows.">Archive</ConfirmSubmitButton></form>}</td></tr>)}</tbody></table></div>
+    <DataTable><thead className="bg-muted"><tr><th className="p-3">Date</th><th>Category</th><th>Description</th><th>Method</th><th>Amount</th><th>Created by</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((expense) => <tr className="border-t" key={expense.id}><td className="p-3">{formatDate(expense.expenseDate)}</td><td className="font-medium">{expense.category}</td><td>{expense.description}</td><td>{expense.paymentMethod}</td><td>{formatExpenseAmount(expense.amountCents)}</td><td>{expense.createdBy?.name ?? "—"}</td><td><StatusBadge status={expense.archivedAt ? "Archived" : "Active"} /></td><td className="flex gap-3 py-3"><Link className="text-primary" href={`/expenses/${expense.id}/edit`}>Edit</Link>{expense.archivedAt ? null : <form action={archiveExpense}><input type="hidden" name="id" value={expense.id} /><ConfirmSubmitButton className="text-primary" message="Archive this record? This will hide it from active workflows.">Archive</ConfirmSubmitButton></form>}</td></tr>)}</tbody></DataTable>
     <Pager page={page} total={total} hrefFor={hrefFor} />
   </AppShell>;
 }
