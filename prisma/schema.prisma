@@ -48,6 +48,13 @@ enum EnrollmentStatus {
   CANCELLED
 }
 
+enum ScheduleSessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  MISSED
+}
+
 model UserProfile {
   id               String     @id @default(uuid()) @db.Uuid
   authId           String     @unique @map("auth_id") @db.Uuid
@@ -109,6 +116,7 @@ model Student {
   dateOfBirth DateTime?     @map("date_of_birth") @db.Date
   status      StudentStatus @default(ACTIVE)
   enrollments Enrollment[]
+  scheduleSessions ScheduleSession[]
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   archivedAt  DateTime?     @map("archived_at")
@@ -125,6 +133,7 @@ model Season {
   endDate     DateTime     @map("end_date") @db.Date
   status      SeasonStatus @default(PLANNED)
   enrollments Enrollment[]
+  scheduleSessions ScheduleSession[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   archivedAt  DateTime?    @map("archived_at")
@@ -142,6 +151,7 @@ model Teacher {
   status          TeacherStatus @default(ACTIVE)
   notes           String?
   enrollments     Enrollment[]
+  scheduleSessions ScheduleSession[]
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   archivedAt      DateTime?     @map("archived_at")
@@ -166,6 +176,7 @@ model Enrollment {
   remainingCents Int              @default(0) @map("remaining_cents")
   status         EnrollmentStatus @default(ACTIVE)
   paymentItems   PaymentItem[]
+  scheduleSessions ScheduleSession[]
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
   archivedAt     DateTime?        @map("archived_at")
@@ -176,6 +187,34 @@ model Enrollment {
   @@index([teacherId])
   @@index([status])
   @@map("enrollments")
+}
+
+model ScheduleSession {
+  id           String                @id @default(uuid()) @db.Uuid
+  studentId    String                @map("student_id") @db.Uuid
+  student      Student               @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  teacherId    String                @map("teacher_id") @db.Uuid
+  teacher      Teacher               @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  enrollmentId String?               @map("enrollment_id") @db.Uuid
+  enrollment   Enrollment?           @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  seasonId     String?               @map("season_id") @db.Uuid
+  season       Season?               @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  title        String?
+  sessionDate  DateTime              @map("session_date") @db.Date
+  startTime    String                @map("start_time")
+  endTime      String                @map("end_time")
+  status       ScheduleSessionStatus @default(SCHEDULED)
+  notes        String?
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+  archivedAt   DateTime?             @map("archived_at")
+
+  @@index([studentId, sessionDate])
+  @@index([teacherId, sessionDate])
+  @@index([enrollmentId])
+  @@index([seasonId])
+  @@index([status])
+  @@map("schedule_sessions")
 }
 
 model Payment {

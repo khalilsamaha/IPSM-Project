@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ScheduleSessionStatus } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/dashboard/data";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
+import { scheduleSessionSchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -132,4 +134,44 @@ export async function voidPayment(formData: FormData) {
   revalidatePath("/payments");
   revalidatePath(`/payments/${paymentId}`);
   revalidatePath("/enrollments");
+}
+
+const blockingStatuses: ScheduleSessionStatus[] = ["SCHEDULED", "COMPLETED", "MISSED"];
+
+async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSessionSchema>) {
+  const seasonId = data.seasonId;
+  if (seasonId) {
+    const season = await prisma.season.findUnique({ where: { id: seasonId }, select: { startDate: true, endDate: true } });
+    if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session date must be inside the selected season date range.");
+  }
+  const where = { sessionDate: data.sessionDate, archivedAt: null, status: { in: blockingStatuses }, ...(data.id ? { NOT: { id: data.id } } : {}) };
+  const [teacherSessions, studentSessions] = await Promise.all([
+    prisma.scheduleSession.findMany({ where: { ...where, teacherId: data.teacherId }, select: { startTime: true, endTime: true } }),
+    prisma.scheduleSession.findMany({ where: { ...where, studentId: data.studentId }, select: { startTime: true, endTime: true } }),
+  ]);
+  if (teacherSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Teacher is already booked during this time.");
+  if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student is already booked during this time.");
+}
+
+export async function saveScheduleSession(formData: FormData) {
+  await requireRecordsWrite();
+  const data = scheduleSessionSchema.parse(Object.fromEntries(formData));
+  await assertScheduleSessionIsValid(data);
+  const row = data.id ? await prisma.scheduleSession.update({ where: { id: data.id }, data }) : await prisma.scheduleSession.create({ data });
+  await audit(data.id ? "update" : "create", "ScheduleSession", row.id, data);
+  revalidatePath("/schedule");
+}
+
+export async function archiveScheduleSession(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.scheduleSession.update({ where: { id: id.parse(formData.get("id")) }, data: { archivedAt: new Date() } });
+  await audit("archive", "ScheduleSession", row.id);
+  revalidatePath("/schedule");
+}
+
+export async function cancelScheduleSession(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.scheduleSession.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "CANCELLED" } });
+  await audit("cancel", "ScheduleSession", row.id);
+  revalidatePath("/schedule");
 }
