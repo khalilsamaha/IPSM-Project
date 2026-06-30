@@ -229,12 +229,12 @@ async function main() {
   }
 
   const payments = [
-    ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03", "RCPT-2026-0001"],
-    ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15", "RCPT-2026-0002"],
-    ["60000000-0000-0000-0000-000000000003", families[1][0], 36000, "ach", "2026-06-04", "RCPT-2026-0003"],
-    ["60000000-0000-0000-0000-000000000004", families[3][0], 15000, "card", "2026-06-05", "RCPT-2026-0004"],
-    ["60000000-0000-0000-0000-000000000005", families[3][0], 15000, "card", "2026-06-20", "RCPT-2026-0005"],
-    ["60000000-0000-0000-0000-000000000006", families[4][0], 36000, "check", "2026-06-02", "RCPT-2026-0006"],
+    ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03", "RCPT-2026-000001"],
+    ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15", "RCPT-2026-000002"],
+    ["60000000-0000-0000-0000-000000000003", families[1][0], 36000, "ach", "2026-06-04", "RCPT-2026-000003"],
+    ["60000000-0000-0000-0000-000000000004", families[3][0], 15000, "card", "2026-06-05", "RCPT-2026-000004"],
+    ["60000000-0000-0000-0000-000000000005", families[3][0], 15000, "card", "2026-06-20", "RCPT-2026-000005"],
+    ["60000000-0000-0000-0000-000000000006", families[4][0], 36000, "check", "2026-06-02", "RCPT-2026-000006"],
   ] as const;
 
   for (const [id, familyId, totalAmountCents, paymentMethod, paymentDate, receiptNumber] of payments) {
@@ -255,6 +255,40 @@ async function main() {
         paymentDate: new Date(paymentDate),
         receiptNumber,
       },
+    });
+  }
+
+  const paymentItems = [
+    ["50000000-0000-0000-0000-000000000001", payments[0][0], "30000000-0000-0000-0000-000000000001", 20000],
+    ["50000000-0000-0000-0000-000000000002", payments[1][0], "30000000-0000-0000-0000-000000000002", 10000],
+    ["50000000-0000-0000-0000-000000000003", payments[2][0], "30000000-0000-0000-0000-000000000003", 36000],
+    ["50000000-0000-0000-0000-000000000004", payments[3][0], "30000000-0000-0000-0000-000000000007", 15000],
+    ["50000000-0000-0000-0000-000000000005", payments[4][0], "30000000-0000-0000-0000-000000000008", 15000],
+    ["50000000-0000-0000-0000-000000000006", payments[5][0], "30000000-0000-0000-0000-000000000009", 36000],
+  ] as const;
+
+  for (const [id, paymentId, enrollmentId, amountCents] of paymentItems) {
+    await prisma.paymentItem.upsert({
+      where: { id },
+      update: { paymentId, enrollmentId, amountCents },
+      create: { id, paymentId, enrollmentId, amountCents },
+    });
+  }
+
+  for (const [id, , , , , receiptNumber] of payments) {
+    await prisma.receipt.upsert({
+      where: { paymentId: id },
+      update: { receiptNumber, pdfPath: `/api/receipts/${id}` },
+      create: { paymentId: id, receiptNumber, pdfPath: `/api/receipts/${id}` },
+    });
+  }
+
+  for (const enrollment of enrollmentSeeds) {
+    const items = paymentItems.filter(([, , enrollmentId]) => enrollmentId === enrollment.id);
+    const paidCents = items.reduce((sum, [, , , amountCents]) => sum + amountCents, 0);
+    await prisma.enrollment.update({
+      where: { id: enrollment.id },
+      data: { paidCents, remainingCents: enrollment.finalFeeCents - paidCents },
     });
   }
 
