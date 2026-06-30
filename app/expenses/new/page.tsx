@@ -1,8 +1,8 @@
-import { AppShell } from "@/components/records/shell";
+import { AppShell, PageHeader } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { ExpenseForm } from "../form";
 
 export default async function NewExpensePage() {
   const session = await requireSession();
-  return <AppShell session={session}><h2 className="mb-4 text-2xl font-bold">Create expense</h2><ExpenseForm /></AppShell>;
+  return <AppShell session={session}><PageHeader title="Add Expense" description="Record a school expense so profit and loss reports stay accurate." /><ExpenseForm /></AppShell>;
 }
