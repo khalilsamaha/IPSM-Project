@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { ensurePaymentReceiptWithRetry } from "@/lib/payments/receipt-repair";
 import { buildReceiptPdf } from "@/lib/payments/receipt-service";
 

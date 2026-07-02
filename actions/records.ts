@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ScheduleSessionStatus } from "@prisma/client";
 import { z } from "zod";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";

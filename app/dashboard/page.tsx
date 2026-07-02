@@ -1,6 +1,7 @@
 import { CalendarDays, CreditCard, WalletCards } from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
-import { getDashboardMetrics, prisma } from "@/lib/dashboard/data";
+import { getDashboardMetrics } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/dashboard/metrics";
 import { AppShell, DataTable, EmptyState, MetricCard, PageHeader, QuickActionCard, StatusBadge } from "@/components/records/shell";
 import { formatDate } from "@/lib/records/format";

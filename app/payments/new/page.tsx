@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createPayment } from "@/actions/payments";
 import { AppShell } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { getOutstandingEnrollmentWhere } from "@/lib/payments/queries";
 import { formatCurrency } from "@/lib/records/format";
 
@@ -51,7 +51,7 @@ export default async function NewPaymentPage({
         enrollments.length > 0 ? (
           <form action={createPayment} className="rounded-xl border bg-white p-4">
             <input type="hidden" name="familyId" value={familyId} />
-            <div className="mb-4 grid gap-3 md:grid-cols-3">
+            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <label className="text-sm font-medium">Payment method
                 <select className="mt-1 block h-10 w-full rounded-md border border-border bg-white px-3 text-sm" name="paymentMethod" defaultValue="cash">
                   <option value="cash">Cash</option>

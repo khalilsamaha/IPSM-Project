@@ -18,13 +18,26 @@ Create these variables in local `.env.local` and in Vercel Project Settings for 
 
 | Variable | Required | Scope | Notes |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | Yes | Server | Supabase PostgreSQL connection string used by Prisma at runtime. Use the Vercel/Supabase recommended pooled connection for serverless runtime. |
-| `DIRECT_URL` | Recommended | Server | Direct Supabase PostgreSQL connection string for migrations when `DATABASE_URL` is pooled. |
+| `DATABASE_URL` | Yes | Server | Supabase transaction pooler connection string for Prisma runtime on Vercel. Use port `6543` and append `?pgbouncer=true&connection_limit=1` to keep serverless connection usage low. |
+| `DIRECT_URL` | Recommended | Server | Supabase session/direct PostgreSQL connection for migrations and direct operations. Use port `5432`; do not add PgBouncer parameters. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Browser/server | Public Supabase project URL. Safe for browser exposure. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Browser/server | Public anon key. Safe for browser exposure but still project-specific. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server only | Required by Admin User Management server actions for Supabase Admin API operations. Never prefix with `NEXT_PUBLIC_`, expose to browser code, commit, or log it. |
 
 Local env files are intentionally ignored by Git. Confirm `.gitignore` contains `.env` and `.env*.local` before adding credentials.
+
+### Prisma connection handling on Vercel/Supabase
+
+Use Supabase's transaction pooler for serverless runtime traffic and keep Prisma's per-function connection usage intentionally small:
+
+```env
+DATABASE_URL="postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres"
+```
+
+- `DATABASE_URL` must use the Supabase transaction pooler on port `6543` with `?pgbouncer=true&connection_limit=1` for Vercel deployments.
+- `DIRECT_URL` should use the Supabase session/direct connection on port `5432` for migrations and Prisma direct connections.
+- Application code must import the shared Prisma singleton instead of constructing `PrismaClient` in pages, components, server actions, or route handlers.
 
 ## Supabase setup
 

@@ -5,7 +5,7 @@ import { voidPayment } from "@/actions/records";
 import { AppShell, StatusBadge } from "@/components/records/shell";
 import { hasPermission } from "@/lib/auth/roles";
 import { requireSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/records/format";
 
 const methodLabels: Record<string, string> = { cash: "Cash", card: "Card", check: "Check", ach: "Bank Transfer" };
@@ -38,19 +38,19 @@ export default async function PaymentDetailPage({
 
   return (
     <AppShell session={session}>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Payment {payment.receiptNumber ?? "Missing receipt number"}</h2>
           {success === "created" ? <p className="mt-1 text-sm text-green-700">Payment created successfully.</p> : null}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link className="rounded border px-4 py-2" href="/payments">Back to payments</Link>
           <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}`}>Download receipt PDF</a>{payment.family.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No family email on file</span>}
         </div>
       </div>
 
       <section className="mb-6 rounded-xl border bg-white p-4">
-        <dl className="grid gap-3 md:grid-cols-3">
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div><dt className="text-sm text-muted-foreground">Receipt number</dt><dd className="font-medium">{payment.receiptNumber ?? "Missing receipt number"}</dd></div>
           <div><dt className="text-sm text-muted-foreground">Family name</dt><dd className="font-medium">{payment.family.name}</dd></div>
           <div><dt className="text-sm text-muted-foreground">Family email</dt><dd>{payment.family.email ?? "—"}</dd></div>
