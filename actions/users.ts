@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/dashboard/data";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logServerError } from "@/lib/server-log";
 
 const roleSchema = z.enum(["ADMIN", "RECEPTION"]);
 const statusSchema = z.enum(["ACTIVE", "INACTIVE"]);
@@ -19,6 +21,10 @@ const createUserSchema = z.object({
 });
 
 const profileIdSchema = z.string().uuid();
+
+function userErrorRedirect(message: string): never {
+  redirect(`/users?error=${encodeURIComponent(message)}`);
+}
 
 async function requireUserManager() {
   const session = await requireSession();
@@ -48,16 +54,22 @@ async function audit(action: string, actorId: string | null, entityId: string | 
 export async function createUser(formData: FormData) {
   const { actorId } = await requireUserManager();
   const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid user details.");
+  if (!parsed.success) userErrorRedirect(parsed.error.issues[0]?.message ?? "Invalid user details.");
 
-  const supabase = createAdminClient();
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch (error) {
+    logServerError("users.create.config", error);
+    userErrorRedirect("User management is not configured. Ask an administrator to set SUPABASE_SERVICE_ROLE_KEY on the server.");
+  }
   const { data, error } = await supabase.auth.admin.createUser({
     email: parsed.data.email,
     password: parsed.data.password,
     email_confirm: true,
     user_metadata: { name: parsed.data.name, role: parsed.data.role },
   });
-  if (error || !data.user) throw new Error(error?.message ?? "Unable to create authentication user.");
+  if (error || !data.user) userErrorRedirect(error?.message ?? "Unable to create authentication user.");
 
   try {
     const profile = await prisma.userProfile.create({
@@ -79,14 +91,20 @@ export async function createUser(formData: FormData) {
 }
 
 export async function changeUserRole(formData: FormData) {
-  const { actorId } = await requireUserManager();
+  const { actorId, session } = await requireUserManager();
   const id = profileIdSchema.parse(formData.get("id"));
   const role = roleSchema.parse(formData.get("role"));
 
   const previous = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { role: true, authId: true } });
+  if (previous.authId === session.userId && previous.role === "ADMIN" && role !== "ADMIN" && formData.get("confirmSelfRoleChange") !== "yes") userErrorRedirect("Confirm before removing your own Admin access.");
   const user = await prisma.userProfile.update({ where: { id }, data: { role } });
-  const supabase = createAdminClient();
-  await supabase.auth.admin.updateUserById(user.authId, { user_metadata: { role } });
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.auth.admin.updateUserById(user.authId, { user_metadata: { role } });
+    if (error) logServerError("users.role.auth_metadata", error, { profileId: id });
+  } catch (error) {
+    logServerError("users.role.config", error, { profileId: id });
+  }
   await audit("user_role_changed", actorId, id, { from: previous.role, to: role, email: user.email });
   revalidatePath("/users");
 }
@@ -96,7 +114,7 @@ export async function setUserStatus(formData: FormData) {
   const id = profileIdSchema.parse(formData.get("id"));
   const status = statusSchema.parse(formData.get("status"));
   const user = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { authId: true, email: true, status: true } });
-  if (user.authId === session.userId && status === "INACTIVE") throw new Error("You cannot disable your own account.");
+  if (user.authId === session.userId && status === "INACTIVE") userErrorRedirect("You cannot disable your own account.");
 
   const updated = await prisma.userProfile.update({ where: { id }, data: { status, archivedAt: status === "INACTIVE" ? new Date() : null } });
   await audit(status === "ACTIVE" ? "user_reactivated" : "user_disabled", actorId, id, { email: updated.email, from: user.status, to: status });
@@ -109,8 +127,13 @@ export async function resetUserPassword(formData: FormData) {
   const password = z.string().min(8, "Temporary password must be at least 8 characters.").parse(formData.get("password"));
   const user = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { authId: true, email: true } });
 
-  const { error } = await createAdminClient().auth.admin.updateUserById(user.authId, { password });
-  if (error) throw new Error(error.message);
+  try {
+    const { error } = await createAdminClient().auth.admin.updateUserById(user.authId, { password });
+    if (error) userErrorRedirect(error.message);
+  } catch (error) {
+    logServerError("users.password_reset", error, { profileId: id });
+    userErrorRedirect("User management is not configured. Ask an administrator to set SUPABASE_SERVICE_ROLE_KEY on the server.");
+  }
 
   await audit("password_reset_requested", actorId, id, { email: user.email, method: "temporary_password_set" });
   revalidatePath("/users");

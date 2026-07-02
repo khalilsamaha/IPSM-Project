@@ -5,6 +5,8 @@ import { prisma } from "@/lib/dashboard/data";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { PaymentValidationError, validatePaymentAllocations } from "@/lib/payments/validation";
+import { createPaymentWithAllocations } from "@/lib/payments/payment-service";
+import { logServerError } from "@/lib/server-log";
 
 function paymentErrorRedirect(familyId: string | null, message: string): never {
   const params = new URLSearchParams();
@@ -38,52 +40,20 @@ export async function createPayment(formData: FormData) {
       select: { id: true, remainingCents: true, student: { select: { familyId: true } } },
     });
     const validated = validatePaymentAllocations({ familyId, allocations, enrollments });
-    const totalAmountCents = validated.reduce((sum, allocation) => sum + allocation.amountCents, 0);
-
-    const payment = await prisma.$transaction(async (tx) => {
-      const created = await tx.payment.create({
-        data: {
-          familyId,
-          paymentMethod,
-          totalAmountCents,
-          notes,
-          createdById,
-          items: {
-            create: validated.map((allocation) => ({
-              enrollmentId: allocation.enrollmentId,
-              amountCents: allocation.amountCents,
-            })),
-          },
-        },
-      });
-
-      for (const allocation of validated) {
-        await tx.enrollment.update({
-          where: { id: allocation.enrollmentId },
-          data: {
-            paidCents: { increment: allocation.amountCents },
-            remainingCents: { decrement: allocation.amountCents },
-          },
-        });
-      }
-
-      await tx.auditLog.create({
-        data: {
-          action: "create",
-          entity: "Payment",
-          entityId: created.id,
-          createdById,
-          actorId: session.userId,
-          metadata: { familyId, totalAmountCents, allocations: validated },
-        },
-      });
-
-      return created;
+    const payment = await createPaymentWithAllocations(prisma, {
+      familyId,
+      paymentDate: new Date(),
+      paymentMethod,
+      notes,
+      createdById,
+      actorId: session.userId,
+      allocations: validated,
     });
 
     redirect(`/payments/${payment.id}?success=created`);
   } catch (error) {
     if (error instanceof PaymentValidationError) paymentErrorRedirect(familyId, error.message);
-    throw error;
+    logServerError("payment.create", error, { familyId });
+    paymentErrorRedirect(familyId, error instanceof Error ? error.message : "Unable to create payment. Please try again.");
   }
 }

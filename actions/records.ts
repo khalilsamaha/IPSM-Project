@@ -9,6 +9,7 @@ import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
 import { scheduleSessionSchema, timeWindowsOverlap } from "@/lib/schedule/validation";
+import { logServerError } from "@/lib/server-log";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -147,7 +148,13 @@ export async function createPayment(formData: FormData) {
   const allocations = rawEnrollmentIds.map((enrollmentId, index) => ({ enrollmentId, amountCents: amounts[index] ?? 0 }));
   const { createPaymentWithAllocations } = await import("@/lib/payments/payment-service");
 
-  const payment = await createPaymentWithAllocations(prisma, { ...parsed, createdById, actorId: session.userId, allocations });
+  let payment;
+  try {
+    payment = await createPaymentWithAllocations(prisma, { ...parsed, createdById, actorId: session.userId, allocations });
+  } catch (error) {
+    logServerError("payment.create", error, { familyId: parsed.familyId });
+    redirect(`/payments/new?familyId=${parsed.familyId}&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to create payment. Please check allocations and try again.")}`);
+  }
   revalidatePath("/payments");
   revalidatePath("/payments/allocation");
   revalidatePath("/enrollments");
@@ -156,12 +163,17 @@ export async function createPayment(formData: FormData) {
 
 export async function voidPayment(formData: FormData) {
   const session = await requireSession();
-  if (!hasPermission(session.role, "finance:delete")) throw new Error("Not authorized");
+  if (!hasPermission(session.role, "finance:delete")) redirect("/payments?error=Not%20authorized");
   const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
   const paymentId = id.parse(formData.get("id"));
   const { voidPaymentWithReversal } = await import("@/lib/payments/payment-service");
 
-  await voidPaymentWithReversal(prisma, { paymentId, createdById: user?.id, actorId: session.userId });
+  try {
+    await voidPaymentWithReversal(prisma, { paymentId, createdById: user?.id, actorId: session.userId });
+  } catch (error) {
+    logServerError("payment.void", error, { paymentId });
+    redirect(`/payments/${paymentId}?error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to void payment.")}`);
+  }
   revalidatePath("/payments");
   revalidatePath(`/payments/${paymentId}`);
   revalidatePath("/enrollments");
@@ -173,17 +185,14 @@ export async function generateMissingReceiptNumber(formData: FormData) {
   if (!hasPermission(session.role, "finance:delete")) throw new Error("Not authorized");
   const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
   const paymentId = id.parse(formData.get("id"));
-  const { generateReceiptNumber, receiptPdfPath } = await import("@/lib/payments/receipt-service");
-  await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.findUnique({ where: { id: paymentId }, include: { receipt: true } });
-    if (!payment) throw new Error("Payment not found");
-    if (payment.receiptNumber) return;
-    const receiptNumber = await generateReceiptNumber(tx as any);
-    await tx.payment.update({ where: { id: paymentId }, data: { receiptNumber } });
-    if (payment.receipt) await tx.receipt.update({ where: { paymentId }, data: { receiptNumber, deletedAt: null, pdfPath: receiptPdfPath(paymentId) } });
-    else await tx.receipt.create({ data: { paymentId, receiptNumber, pdfPath: receiptPdfPath(paymentId) } });
-    await tx.auditLog.create({ data: { action: "generate_receipt_number", entity: "Payment", entityId: paymentId, createdById: user?.id, actorId: session.userId, metadata: { receiptNumber } } });
-  });
+  const { ensurePaymentReceiptWithRetry } = await import("@/lib/payments/receipt-repair");
+  try {
+    const receiptNumber = await ensurePaymentReceiptWithRetry(prisma, paymentId);
+    await prisma.auditLog.create({ data: { action: "generate_receipt_number", entity: "Payment", entityId: paymentId, createdById: user?.id, actorId: session.userId, metadata: { receiptNumber } } });
+  } catch (error) {
+    logServerError("receipt.repair", error, { paymentId });
+    redirect(`/payments?error=${encodeURIComponent("Unable to repair receipt metadata. Please try again.")}`);
+  }
   revalidatePath("/payments");
   revalidatePath(`/payments/${paymentId}`);
 }
