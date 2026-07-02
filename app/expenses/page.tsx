@@ -1,7 +1,7 @@
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import Link from "next/link";
 import { archiveExpense, restoreExpense } from "@/actions/expenses";
-import { AppShell, Pager, StatusBadge, EmptyState, DataTable } from "@/components/records/shell";
+import { AppShell, Pager, StatusBadge, DataTable, StatusTabs, getStatusFilter, type RecordStatusFilter } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/dashboard/data";
 import { expensePaymentMethods, formatExpenseAmount } from "@/lib/expenses";
@@ -14,8 +14,9 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const session = await requireSession();
   const { page, skip, take } = getPagination(params);
+  const status = getStatusFilter(params.status);
   const where = { AND: [
-    params.status === "archived" ? { archivedAt: { not: null } } : params.status === "all" ? {} : { archivedAt: null },
+    status === "archived" ? { archivedAt: { not: null } } : status === "all" ? {} : { archivedAt: null },
     params.category ? { category: { contains: params.category, mode: "insensitive" as const } } : {},
     params.paymentMethod ? { paymentMethod: params.paymentMethod } : {},
     params.dateFrom ? { expenseDate: { gte: new Date(params.dateFrom) } } : {},
@@ -35,6 +36,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   };
   return <AppShell session={session}>
     <div className="mb-4 flex items-center justify-between"><h2 className="text-2xl font-bold">Expenses</h2><Link className="rounded bg-primary px-4 py-2 text-white" href="/expenses/new">Create expense</Link></div>
+    <div className="mb-4"><StatusTabs value={status} hrefFor={(nextStatus: RecordStatusFilter) => { const next = new URLSearchParams(); for (const key of ["dateFrom", "dateTo", "category", "paymentMethod"] as const) if (params[key]) next.set(key, params[key]!); if (nextStatus !== "active") next.set("status", nextStatus); const query = next.toString(); return query ? `/expenses?${query}` : "/expenses"; }} /></div>
     <form className="mb-4 grid gap-2 rounded-xl border bg-white p-4 md:grid-cols-6">
       <input className="rounded border p-2" type="date" name="dateFrom" defaultValue={params.dateFrom} />
       <input className="rounded border p-2" type="date" name="dateTo" defaultValue={params.dateTo} />
