@@ -34,7 +34,7 @@ Local env files are intentionally ignored by Git. Confirm `.gitignore` contains 
    - Production Vercel domain, for example `https://your-app.vercel.app/**`.
    - Any custom production domain.
    - Local development, for example `http://localhost:3000/**`.
-4. Bootstrap the first administrator account in Supabase Auth and `public.users`, linking `auth.users.id` to `public.users.auth_id`.
+4. Bootstrap the first administrator account in Supabase Auth and `public.users`, linking `auth.users.id` to `public.users.auth_id`. The application user table is `public.users`; do not create or seed a separate `user_profiles` table for app RBAC.
 5. After the first Admin can log in, use `/users` to create additional Admin or Reception users.
 6. Confirm the anon key is used only through `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 7. Confirm the service-role key exists only in server-side environment variables and is never exposed to browser code.
@@ -63,9 +63,21 @@ If the production operation chooses to archive generated receipts or exports in 
 
 1. Create a private bucket, for example `receipts` or `exports`.
 2. Keep the bucket private; do not use a public bucket for financial documents.
-3. Add server-side upload/download logic only after defining storage RLS policies.
-4. Grant access through authenticated server routes, not direct public object URLs.
-5. Document retention policy, backup expectations, and deletion workflow before storing production financial documents.
+3. When managing buckets with SQL, reference the Supabase Storage buckets table as `storage.buckets` (schema-qualified identifier), not `'storage.buckets'` (a string literal).
+4. Add server-side upload/download logic only after defining storage RLS policies.
+5. Grant access through authenticated server routes, not direct public object URLs.
+6. Document retention policy, backup expectations, and deletion workflow before storing production financial documents.
+
+To create or repair the private receipts bucket in the Supabase SQL editor, run:
+
+```sql
+insert into storage.buckets (id, name, public)
+values ('receipts', 'receipts', false)
+on conflict (id) do update
+set
+  name = excluded.name,
+  public = false;
+```
 
 ## Vercel deployment steps
 
