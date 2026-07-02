@@ -10,7 +10,14 @@ const inputClass = "rounded-2xl border border-border bg-white px-3 py-2 text-sm 
 
 export default async function UsersPage() {
   const session = await requireSession();
-  if (!hasPermission(session.role, "users:manage")) throw new Error("Not authorized to manage users");
+  if (!hasPermission(session.role, "users:manage")) {
+    return (
+      <AppShell session={session}>
+        <PageHeader title="Not authorized" description="You do not have permission to access this admin-only page." />
+        <EmptyState title="Admin access required" description="Please return to the dashboard or contact an administrator if you need access." />
+      </AppShell>
+    );
+  }
   const users = await prisma.userProfile.findMany({ orderBy: [{ status: "asc" }, { updatedAt: "desc" }] });
 
   return <AppShell session={session}>
