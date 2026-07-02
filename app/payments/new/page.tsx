@@ -31,7 +31,7 @@ export default async function NewPaymentPage({
           <h2 className="text-2xl font-bold">Create Payment</h2>
           <p className="text-sm text-muted-foreground">Select a family first, then allocate payment only to that family&apos;s open enrollments.</p>
         </div>
-        <Link className="rounded-md border border-border bg-white px-4 py-2 text-sm shadow-sm" href="/payments">Payment list</Link>
+        <Link className="btn-secondary" href="/payments">Payment list</Link>
       </div>
 
       <form className="mb-6 rounded-xl border bg-white p-4" method="get">
@@ -41,7 +41,7 @@ export default async function NewPaymentPage({
             <option value="">Select a family</option>
             {families.map((family) => <option key={family.id} value={family.id}>{family.name}</option>)}
           </select>
-          <button className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white" type="submit">Show outstanding enrollments</button>
+          <button className="btn-primary" type="submit">Show outstanding enrollments</button>
         </div>
       </form>
 
@@ -49,7 +49,7 @@ export default async function NewPaymentPage({
 
       {familyId ? (
         enrollments.length > 0 ? (
-          <form action={createPayment} className="rounded-xl border bg-white p-4">
+          <form action={createPayment} className="card">
             <input type="hidden" name="familyId" value={familyId} />
             <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <label className="text-sm font-medium">Payment method

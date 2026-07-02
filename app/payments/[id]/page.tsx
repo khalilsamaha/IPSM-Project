@@ -45,7 +45,7 @@ export default async function PaymentDetailPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="rounded border px-4 py-2" href="/payments">Back to payments</Link>
-          <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}`}>Download receipt PDF</a>{payment.family.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No family email on file</span>}
+          <a className="btn-primary" href={`/api/receipts/${payment.id}`}>Download receipt PDF</a>{payment.family.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No family email on file</span>}
         </div>
       </div>
 
