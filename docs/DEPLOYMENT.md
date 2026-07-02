@@ -1,55 +1,109 @@
 # Deployment Guide
 
-This checklist prepares the IPSM Music School Management System MVP for Supabase and Vercel production deployment.
+This guide prepares the IPSM Music School Management System MVP for production on Supabase and Vercel.
 
-## Security and access review
+## Production readiness summary
 
-- All application pages are protected by `middleware.ts`; unauthenticated users are redirected to `/login`.
-- Public routes are limited to `/login` and `/forgot-password`.
-- Server pages and API routes also call `requireSession()` before reading or exporting private school data.
-- Reception users can create and update operational records through `records:write`.
-- Admin users inherit reception permissions and can additionally void payments through `finance:delete`.
-- Report exports require `reports:read`.
-- Keep service-role keys out of browser code. Only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` may be exposed client-side.
+- Protected routes: `middleware.ts` redirects unauthenticated users away from every non-public route.
+- Public routes: `/login` and `/forgot-password` only.
+- Server-side authorization: pages, actions, and API routes call `requireSession()` before accessing private data.
+- RBAC: `ADMIN` and `RECEPTION` are the only supported roles.
+- Admin-only capability: payment voiding and user management.
+- Reception capability: operational record entry, payments, expenses, scheduling, and reports.
+- Secrets: never commit database passwords, service-role keys, access tokens, or Vercel tokens.
 
 ## Required environment variables
 
-Create these variables in `.env.local` for local development and in Vercel Project Settings for production:
+Create these variables in local `.env.local` and in Vercel Project Settings for Preview and Production environments.
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `DATABASE_URL` | Yes | Supabase pooled or direct PostgreSQL connection string used by Prisma. |
-| `DIRECT_URL` | Recommended | Direct Supabase database URL for migrations when using a pooled `DATABASE_URL`. |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Public Supabase project URL. Safe to expose. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key. Safe to expose but still project-specific. |
-| `SUPABASE_SERVICE_ROLE_KEY` | No | Only add if future server-only maintenance scripts require it. Never expose with `NEXT_PUBLIC_`. |
+| Variable | Required | Scope | Notes |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | Yes | Server | Supabase PostgreSQL connection string used by Prisma at runtime. Use the Vercel/Supabase recommended pooled connection for serverless runtime. |
+| `DIRECT_URL` | Recommended | Server | Direct Supabase PostgreSQL connection string for migrations when `DATABASE_URL` is pooled. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Browser/server | Public Supabase project URL. Safe for browser exposure. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Browser/server | Public anon key. Safe for browser exposure but still project-specific. |
+| `SUPABASE_SERVICE_ROLE_KEY` | No for current app | Server only | Do not add unless a future server-only maintenance job requires it. Never prefix with `NEXT_PUBLIC_`. |
 
-`.env`, `.env.local`, and other local env variants are ignored by Git. Do not commit real credentials, database URLs, Supabase access tokens, or Vercel tokens.
+Local env files are intentionally ignored by Git. Confirm `.gitignore` contains `.env` and `.env*.local` before adding credentials.
 
-## Supabase deployment checklist
+## Supabase setup
 
 1. Create or select the production Supabase project.
-2. Confirm email/password authentication is enabled.
-3. Configure allowed redirect URLs for the production Vercel domain and local development URL.
-4. Apply migrations in order from `supabase/migrations/` using the Supabase CLI or SQL editor.
-5. Run `npm run prisma:generate` after migrations are available locally.
-6. Seed only non-sensitive demo data if needed; do not seed real credentials.
-7. Create staff users in Supabase Auth.
-8. Set user role metadata to `ADMIN` or `RECEPTION` in `app_metadata.role` where possible.
-9. Verify Row Level Security policy strategy before exposing additional direct client database reads. Current application data access is server-side.
-10. Test login, record creation, payment creation, receipt download, reports export, and admin-only payment voiding.
+2. In Authentication settings, enable email/password authentication.
+3. Add redirect URLs for:
+   - Production Vercel domain, for example `https://your-app.vercel.app/**`.
+   - Any custom production domain.
+   - Local development, for example `http://localhost:3000/**`.
+4. Create staff accounts in Supabase Auth.
+5. Set role metadata for each staff account:
+   - Prefer `app_metadata.role = "ADMIN"` for administrators.
+   - Use `app_metadata.role = "RECEPTION"` for reception staff.
+   - The application falls back to Reception-level access when role metadata is missing or invalid.
+6. Confirm the anon key is used only through `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+7. Do not expose or commit the service-role key.
 
-## Vercel deployment checklist
+## SQL migration steps
+
+Apply migrations in timestamp order from `supabase/migrations/`.
+
+1. Install and authenticate the Supabase CLI if using CLI-based deployment.
+2. Link the project if needed: `supabase link --project-ref <project-ref>`.
+3. Review migration files locally and confirm they target the intended production project.
+4. Apply migrations using the Supabase CLI or the Supabase SQL editor in this order:
+   - `20260629000000_phase_2_operations.sql`
+   - `20260629010000_phase_3_database_review_indexes.sql`
+   - `20260629020000_season_billing_refactor.sql`
+5. Generate Prisma client locally after schema changes: `npm run prisma:generate`.
+6. Run a migration smoke test against a preview database before production.
+7. Seed only non-sensitive demo data if required; never seed real credentials.
+8. Verify schema alignment for families, students, teachers, seasons, enrollments, payments, payment items, expenses, audit logs, and schedule sessions.
+
+## Storage bucket setup
+
+The current MVP generates receipt PDFs on demand and streams report CSVs from authenticated API routes. No persistent bucket is required for the default deployment.
+
+If the production operation chooses to archive generated receipts or exports in Supabase Storage later:
+
+1. Create a private bucket, for example `receipts` or `exports`.
+2. Keep the bucket private; do not use a public bucket for financial documents.
+3. Add server-side upload/download logic only after defining storage RLS policies.
+4. Grant access through authenticated server routes, not direct public object URLs.
+5. Document retention policy, backup expectations, and deletion workflow before storing production financial documents.
+
+## Vercel deployment steps
 
 1. Import the repository into Vercel.
 2. Set Framework Preset to Next.js.
-3. Add all required environment variables from the table above.
-4. Ensure production `DATABASE_URL` points at the production Supabase database.
-5. Keep build command as `npm run build`.
-6. Keep install command as `npm install` unless the team standardizes on another package manager.
-7. Deploy a preview build first and run the QA checklist.
-8. Promote to production only after `npm run typecheck`, `npm test`, and `npm run build` pass.
-9. After production deployment, verify authentication redirects, role-specific actions, and CSV/PDF downloads on the live URL.
+3. Use `npm install` as the install command unless the team standardizes on another package manager.
+4. Use `npm run build` as the build command.
+5. Add all required environment variables for Preview and Production.
+6. Confirm `DATABASE_URL` points to the matching Supabase environment for each Vercel environment.
+7. Deploy a Preview build.
+8. Run the full `docs/QA_CHECKLIST.md` against the Preview URL.
+9. Promote to Production only after typecheck, tests, and build pass.
+10. After production deployment, smoke test login, dashboard, record creation, scheduling validation, payment creation, receipt download, reports export, and admin-only voiding.
+
+## RBAC verification matrix
+
+| Area | Admin | Reception |
+| --- | --- | --- |
+| Dashboard | Allowed | Allowed |
+| Families/students/teachers/seasons/enrollments | Allowed | Allowed |
+| Schedule | Allowed | Allowed |
+| Payments and receipts | Allowed | Allowed |
+| Void payments | Allowed | Denied |
+| Expenses | Allowed | Allowed |
+| Reports and CSV export | Allowed | Allowed |
+| Users page | Allowed | Denied |
+
+## Payment and schedule production checks
+
+- Payment creation validates family ownership, positive allocations, and allocation amounts not exceeding remaining balances.
+- Payment creation updates enrollment paid and remaining balances in a transaction.
+- Receipt downloads require authentication and create audit entries.
+- Payment voiding requires Admin `finance:delete`, reverses allocations in a transaction, and records audit metadata.
+- Schedule session validation rejects invalid time ranges.
+- Schedule save logic must reject overlapping active sessions for the same teacher or student on the same date.
 
 ## Pre-release command checklist
 
@@ -63,6 +117,7 @@ npm run build
 
 ## Rollback plan
 
-- Use Vercel's previous deployment promotion for application rollback.
-- For database issues, avoid destructive hotfixes. Restore from Supabase backups or apply a forward migration that preserves data.
-- Rotate any credential that may have been exposed in logs or local screenshots.
+- Application rollback: promote the previous successful Vercel deployment.
+- Database rollback: prefer forward-only corrective migrations that preserve data. Use Supabase backups only after confirming data loss risk and recovery point.
+- Credential incident: rotate exposed credentials immediately in Supabase and Vercel, then redeploy.
+- Failed release: disable new traffic by rolling back Vercel first, then investigate Supabase logs, Vercel function logs, and audit logs.
