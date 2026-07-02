@@ -11,12 +11,13 @@ const navSections = [
 ] as const;
 
 export function AppShell({ session, children }: { session: AppSession; children: React.ReactNode }) {
-  return <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[18rem_1fr]">
-    <aside className="border-b border-white/10 bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
-      <div className="p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg"><Sparkles className="size-5" /></span><div><p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">Music School</p><h1 className="text-xl font-bold">IPSM Admin</h1></div></div><p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">Simple tools for daily front-desk operations.</p></div>
-      <nav aria-label="Primary navigation" className="flex gap-2 overflow-x-auto px-4 pb-5 lg:block lg:space-y-6 lg:overflow-visible">
-        {navSections.map((section) => <div className="min-w-max lg:min-w-0" key={section.label}><p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{section.label}</p><div className="flex gap-2 lg:block lg:space-y-1">{section.items.map(([label, href, Icon]) => <Link className="group flex items-center gap-3 whitespace-nowrap rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300" href={href} key={href}><Icon className="size-4 text-blue-200 group-hover:text-white" />{label}</Link>)}</div></div>)}
+  return <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+    <aside className="flex max-h-screen min-h-screen flex-col overflow-hidden border-b border-white/10 bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+      <div className="shrink-0 p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg"><Sparkles className="size-5" /></span><div><p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">Music School</p><h1 className="text-xl font-bold">IPSM Admin</h1></div></div><p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">Simple tools for daily front-desk operations.</p></div>
+      <nav aria-label="Primary navigation" className="min-h-0 flex-1 space-y-6 overflow-y-auto overflow-x-hidden px-4 pb-5 [scrollbar-gutter:stable]">
+        {navSections.map((section) => <div key={section.label}><p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{section.label}</p><div className="space-y-1">{section.items.map(([label, href, Icon]) => <Link className="group flex min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300" href={href} key={href}><Icon className="size-4 shrink-0 text-blue-200 group-hover:text-white" /><span className="truncate">{label}</span></Link>)}</div></div>)}
       </nav>
+      <div className="shrink-0 border-t border-white/10 p-4"><form action={signOut}><button className="w-full rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50" type="submit">Sign out</button></form></div>
     </aside>
     <main className="min-w-0 px-4 py-5 sm:px-6 lg:p-8">
       <TopHeader session={session} />
@@ -29,7 +30,6 @@ export function TopHeader({ session }: { session: AppSession }) {
   return <header className="mb-8 flex flex-col gap-4 rounded-[1.5rem] border border-border bg-white/90 p-4 shadow-sm shadow-slate-200/70 backdrop-blur md:flex-row md:items-center md:justify-between">
     <div><p className="text-sm font-medium text-muted-foreground">Welcome back</p><p className="text-lg font-bold">{session.email} <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">{session.role}</span></p></div>
     <form className="relative flex-1 md:max-w-md" action="/families"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input className="h-11 w-full rounded-2xl border border-border bg-slate-50 pl-10 pr-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100" name="q" placeholder="Search a family, student, or receipt" /></form>
-    <form action={signOut}><button className="rounded-2xl border border-border bg-white px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-slate-50" type="submit">Sign out</button></form>
   </header>;
 }
 
