@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Clock, Printer, Search, Sparkles, Users } from "lucide-react";
-import { archiveScheduleSession, cancelScheduleSession, saveScheduleSession } from "@/actions/records";
+import { archiveScheduleSession, cancelScheduleSession, restoreScheduleSession, saveScheduleSession } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { AppShell, DataTable, Pager, PageHeader, StatusBadge } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
@@ -21,7 +21,7 @@ const palette = [
   "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-950",
 ];
 
-type SearchParams = { page?: string; teacherId?: string; studentId?: string; date?: string; seasonId?: string; course?: string; editId?: string; view?: string };
+type SearchParams = { page?: string; teacherId?: string; studentId?: string; date?: string; seasonId?: string; course?: string; editId?: string; view?: string; status?: string };
 type ScheduleRow = Awaited<ReturnType<typeof getScheduleRows>>[number];
 
 async function getScheduleRows(where: Record<string, unknown>, skip?: number, take?: number) {
@@ -77,7 +77,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const weekEnd = new Date(weekStart.getTime() + 6 * dayMs);
   const selectedDate = params.date ?? dateKey(new Date());
 
-  const where: any = { archivedAt: null };
+  const statusFilter = params.status === "archived" ? "archived" : params.status === "all" ? "all" : "active";
+  const where: any = statusFilter === "archived" ? { archivedAt: { not: null } } : statusFilter === "all" ? {} : { archivedAt: null };
   if (params.teacherId) where.teacherId = params.teacherId;
   if (params.studentId) where.studentId = params.studentId;
   if (params.seasonId) where.seasonId = params.seasonId;
@@ -140,6 +141,7 @@ function ScheduleFilters({ params, teachers, students, seasons, weekStart }: { p
     <label className="text-xs font-bold uppercase text-slate-500">Season<select name="seasonId" defaultValue={params.seasonId ?? ""} className="mt-1 w-full rounded-xl border p-2.5 text-sm font-medium normal-case"><option value="">All seasons</option>{seasons.map((s) => <option value={s.id} key={s.id}>{s.name}</option>)}</select></label>
     <label className="text-xs font-bold uppercase text-slate-500">Week / date<input name="date" type="date" defaultValue={params.date ?? dateKey(weekStart)} className="mt-1 w-full rounded-xl border p-2.5 text-sm font-medium normal-case" /></label>
     <label className="text-xs font-bold uppercase text-slate-500">Course<input name="course" placeholder="Course" defaultValue={params.course} className="mt-1 w-full rounded-xl border p-2.5 text-sm font-medium normal-case" /></label>
+    <label className="text-xs font-bold uppercase text-slate-500">Status<select name="status" defaultValue={params.status ?? "active"} className="mt-1 w-full rounded-xl border p-2.5 text-sm font-medium normal-case"><option value="active">Active</option><option value="archived">Archived / Inactive</option><option value="all">All</option></select></label>
     <button className="self-end rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white"><Search className="mr-2 inline size-4" />Filter</button>
   </form>;
 }
@@ -174,7 +176,7 @@ function StudentView({ rows, studentSelected }: { rows: ScheduleRow[]; studentSe
 
 function ListView({ rows, total, page, params }: { rows: ScheduleRow[]; total: number; page: number; params: SearchParams }) {
   const filterHref = (p: number) => hrefWith(params, { page: p > 1 ? String(p) : undefined });
-  return <><DataTable><thead><tr><th>Date</th><th>Time</th><th>Student</th><th>Family</th><th>Teacher</th><th>Course</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((r) => <tr key={r.id}><td>{formatDate(r.sessionDate)}</td><td>{r.startTime}–{r.endTime}</td><td>{r.student.firstName} {r.student.lastName}</td><td>{r.student.family.name}</td><td>{r.teacher.fullName}</td><td>{r.enrollment?.courseName ?? r.title ?? "—"}</td><td><StatusBadge status={r.status} /></td><td className="flex gap-2"><Link className="text-primary" href={`/schedule?editId=${r.id}`}>Edit</Link><form action={cancelScheduleSession}><input type="hidden" name="id" value={r.id}/><ConfirmSubmitButton className="text-primary" message="Cancel this session?">Cancel</ConfirmSubmitButton></form><form action={archiveScheduleSession}><input type="hidden" name="id" value={r.id}/><ConfirmSubmitButton className="text-primary" message="Archive this session?">Archive</ConfirmSubmitButton></form></td></tr>)}</tbody></DataTable><Pager page={page} total={total} hrefFor={filterHref}/></>;
+  return <><DataTable><thead><tr><th>Date</th><th>Time</th><th>Student</th><th>Family</th><th>Teacher</th><th>Course</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((r) => <tr key={r.id}><td>{formatDate(r.sessionDate)}</td><td>{r.startTime}–{r.endTime}</td><td>{r.student.firstName} {r.student.lastName}</td><td>{r.student.family.name}</td><td>{r.teacher.fullName}</td><td>{r.enrollment?.courseName ?? r.title ?? "—"}</td><td><StatusBadge status={r.archivedAt ? "Archived" : r.status} /></td><td className="flex gap-2"><Link className="text-primary" href={`/schedule?editId=${r.id}`}>Edit</Link>{r.archivedAt ? <form action={restoreScheduleSession}><input type="hidden" name="id" value={r.id}/><ConfirmSubmitButton className="text-primary" message="Restore this session?">Restore</ConfirmSubmitButton></form> : <><form action={cancelScheduleSession}><input type="hidden" name="id" value={r.id}/><ConfirmSubmitButton className="text-primary" message="Cancel this session?">Cancel</ConfirmSubmitButton></form><form action={archiveScheduleSession}><input type="hidden" name="id" value={r.id}/><ConfirmSubmitButton className="text-primary" message="Archive this session?">Archive</ConfirmSubmitButton></form></>}</td></tr>)}</tbody></DataTable><Pager page={page} total={total} hrefFor={filterHref}/></>;
 }
 
 function SessionForm({ editSession, students, teachers, seasons, enrollments, params }: { editSession: any; students: any[]; teachers: any[]; seasons: any[]; enrollments: any[]; params: SearchParams }) {
