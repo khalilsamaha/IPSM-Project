@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { formatCurrency, formatDate } from "@/lib/records/format";
-import { nextReceiptNumber } from "@/lib/payments/receipt-number";
+import { generateUniqueReceiptNumber } from "@/lib/payments/receipt-repair";
 
 type PaymentStore = Pick<PrismaClient, "payment">;
 type ReceiptPayment = { receiptNumber: string | null; paymentDate: Date; paymentMethod: string; totalAmountCents: number; family: { name: string; email: string | null; phone: string | null }; items: { amountCents: number; enrollment: { courseName: string; remainingCents: number; student: { firstName: string; lastName: string } } }[] };
@@ -8,8 +8,7 @@ type ReceiptPayment = { receiptNumber: string | null; paymentDate: Date; payment
 function esc(value: string) { return value.replace(/[\\()]/g, "\\$&"); }
 
 export async function generateReceiptNumber(store: PaymentStore, date = new Date()) {
-  const latest = await store.payment.findFirst({ where: { receiptNumber: { not: null } }, orderBy: { receiptNumber: "desc" }, select: { receiptNumber: true } });
-  return nextReceiptNumber(latest?.receiptNumber, date);
+  return generateUniqueReceiptNumber(store, date);
 }
 
 export function receiptPdfPath(paymentId: string) {

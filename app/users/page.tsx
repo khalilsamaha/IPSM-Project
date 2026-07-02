@@ -8,8 +8,9 @@ import { formatDate } from "@/lib/records/format";
 
 const inputClass = "rounded-2xl border border-border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100";
 
-export default async function UsersPage() {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const session = await requireSession();
+  const { error } = await searchParams;
   if (!hasPermission(session.role, "users:manage")) {
     return (
       <AppShell session={session}>
@@ -18,10 +19,14 @@ export default async function UsersPage() {
       </AppShell>
     );
   }
+  const isSupabaseAdminConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
   const users = await prisma.userProfile.findMany({ orderBy: [{ status: "asc" }, { updatedAt: "desc" }] });
 
   return <AppShell session={session}>
     <PageHeader title="User Management" description="Create staff logins, assign roles, reset passwords, and deactivate access without using the Supabase dashboard." />
+    {error ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">{error}</div> : null}
+
+    {!isSupabaseAdminConfigured ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">User management actions are unavailable because SUPABASE_SERVICE_ROLE_KEY is not configured on the server.</div> : null}
 
     <section className="mb-6 rounded-[1.5rem] border border-border bg-white p-5 shadow-sm">
       <h3 className="text-lg font-bold">Create User</h3>
@@ -47,7 +52,7 @@ export default async function UsersPage() {
           <form action={changeUserRole} className="flex items-center gap-2">
             <input type="hidden" name="id" value={user.id} />
             <select className="rounded-xl border border-border px-2 py-1 text-xs font-semibold" name="role" defaultValue={user.role}><option value="RECEPTION">RECEPTION</option><option value="ADMIN">ADMIN</option></select>
-            <button className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">Edit Role</button>
+            {user.authId === session.userId ? <label className="text-xs"><input type="checkbox" name="confirmSelfRoleChange" value="yes" /> Confirm self-change</label> : null}<button className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">Edit Role</button>
           </form>
           <form action={user.status === "ACTIVE" ? deactivateUser : setUserStatus}>
             <input type="hidden" name="id" value={user.id} />

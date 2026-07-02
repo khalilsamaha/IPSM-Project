@@ -1,0 +1,43 @@
+# Roles and Permissions
+
+IPSM supports exactly two application roles: **ADMIN** and **RECEPTION**.
+
+## Role definitions
+
+- **ADMIN** has full access to every module, including user management, settings, reports, voiding payments, and admin-only financial metadata repair tools.
+- **RECEPTION** has daily operational access for families, students, teachers, enrollments, schedules, payments, receipts, and expenses. Reception cannot manage users, access settings, void payments, hard-delete records, or run admin-only repair tools.
+
+## Permissions matrix
+
+| Module / Action | ADMIN | RECEPTION |
+| --- | --- | --- |
+| Dashboard | Yes | Yes |
+| Families create/edit/archive/restore | Yes | Yes |
+| Students create/edit/archive/restore | Yes | Yes |
+| Teachers create/edit/archive/restore | Yes | Yes |
+| Seasons create/edit/archive/restore | Yes | Yes |
+| Enrollments create/edit/archive/restore | Yes | Yes |
+| Schedule sessions create/edit/cancel/archive/restore | Yes | Yes |
+| Payments and receipts create/download/email | Yes | Yes |
+| Void payments | Yes | No |
+| Expenses create/edit/archive/restore | Yes | Yes |
+| Reports | Yes | Yes, while `reports:read` remains enabled |
+| User management | Yes | No |
+| Settings | Yes | No |
+| Financial metadata repair tools | Yes | No |
+| Hard delete operational records | No standard UI action | No |
+
+## Route rules
+
+All application pages and API routes require authentication. `/users` and `/settings` are admin-only and must show a safe Not Authorized state or redirect instead of throwing a server error when opened by Reception.
+
+## Receipt repair diagnostics
+
+Admins can use the repair action exposed beside payments with missing receipt numbers. For production audits, identify inconsistent financial metadata with:
+
+```sql
+select p.id, p.receipt_number from payments p where p.receipt_number is null;
+select r.id, r.payment_id from receipts r where r.receipt_number is null;
+select p.id from payments p left join receipts r on r.payment_id = p.id where r.id is null;
+select p.id from payments p left join payment_items i on i.payment_id = p.id group by p.id having count(i.id) = 0;
+```
