@@ -1,22 +1,15 @@
 import Link from "next/link";
-import { BarChart3, CalendarDays, CreditCard, GraduationCap, Home, Receipt, Search, Settings, Sparkles, Users, WalletCards, UserRoundCog, BookOpen, PlusCircle } from "lucide-react";
+import { Search, Sparkles, PlusCircle } from "lucide-react";
+import { SidebarNav } from "@/components/records/sidebar-nav";
 import { signOut } from "@/actions/auth";
 import type { AppSession } from "@/lib/auth/session";
 
-const navSections = [
-  { label: "Main", items: [["Dashboard", "/dashboard", Home], ["Families", "/families", Users], ["Students", "/students", GraduationCap], ["Teachers", "/teachers", UserRoundCog]] },
-  { label: "Operations", items: [["Seasons", "/seasons", BookOpen], ["Enrollments", "/enrollments", WalletCards], ["Lessons / Schedule", "/schedule", CalendarDays]] },
-  { label: "Finance", items: [["Payments", "/payments", CreditCard], ["Expenses", "/expenses", Receipt], ["Reports", "/reports", BarChart3]] },
-  { label: "Admin", items: [["Users", "/users", Settings]] },
-] as const;
 
 export function AppShell({ session, children }: { session: AppSession; children: React.ReactNode }) {
   return <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
     <aside className="flex max-h-screen min-h-screen flex-col overflow-hidden border-b border-white/10 bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
       <div className="shrink-0 p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg"><Sparkles className="size-5" /></span><div><p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">Music School</p><h1 className="text-xl font-bold">IPSM Admin</h1></div></div><p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">Simple tools for daily front-desk operations.</p></div>
-      <nav aria-label="Primary navigation" className="min-h-0 flex-1 space-y-6 overflow-y-auto overflow-x-hidden px-4 pb-5 [scrollbar-gutter:stable]">
-        {navSections.map((section) => <div key={section.label}><p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{section.label}</p><div className="space-y-1">{section.items.map(([label, href, Icon]) => <Link className="group flex min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300" href={href} key={href}><Icon className="size-4 shrink-0 text-blue-200 group-hover:text-white" /><span className="truncate">{label}</span></Link>)}</div></div>)}
-      </nav>
+      <SidebarNav />
       <div className="shrink-0 border-t border-white/10 p-4"><form action={signOut}><button className="w-full rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50" type="submit">Sign out</button></form></div>
     </aside>
     <main className="min-w-0 px-4 py-5 sm:px-6 lg:p-8">
