@@ -3,7 +3,7 @@ import Link from "next/link";
 import { archiveExpense, restoreExpense } from "@/actions/expenses";
 import { AppShell, Pager, StatusBadge, DataTable, StatusTabs, getStatusFilter, type RecordStatusFilter } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { expensePaymentMethods, formatExpenseAmount } from "@/lib/expenses";
 import { formatDate } from "@/lib/records/format";
 import { getPagination } from "@/lib/records/pagination";
@@ -35,9 +35,9 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
     return query ? `/expenses?${query}` : "/expenses";
   };
   return <AppShell session={session}>
-    <div className="mb-4 flex items-center justify-between"><h2 className="text-2xl font-bold">Expenses</h2><Link className="rounded bg-primary px-4 py-2 text-white" href="/expenses/new">Create expense</Link></div>
+    <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><h2 className="text-2xl font-bold">Expenses</h2><Link className="rounded bg-primary px-4 py-2 text-white" href="/expenses/new">Create expense</Link></div>
     <div className="mb-4"><StatusTabs value={status} hrefFor={(nextStatus: RecordStatusFilter) => { const next = new URLSearchParams(); for (const key of ["dateFrom", "dateTo", "category", "paymentMethod"] as const) if (params[key]) next.set(key, params[key]!); if (nextStatus !== "active") next.set("status", nextStatus); const query = next.toString(); return query ? `/expenses?${query}` : "/expenses"; }} /></div>
-    <form className="mb-4 grid gap-2 rounded-xl border bg-white p-4 md:grid-cols-6">
+    <form className="mb-4 grid gap-2 rounded-xl border bg-white p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <input className="rounded border p-2" type="date" name="dateFrom" defaultValue={params.dateFrom} />
       <input className="rounded border p-2" type="date" name="dateTo" defaultValue={params.dateTo} />
       <input className="rounded border p-2" name="category" list="expense-categories" placeholder="Category" defaultValue={params.category ?? ""} />

@@ -44,14 +44,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       <a className="rounded bg-primary px-4 py-2 text-center text-white" href={exportHref(report, params)}>Export CSV</a>
     </div>
 
-    <section className="mb-4 grid gap-4 md:grid-cols-4">
+    <section className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <div className="rounded-xl border bg-white p-4"><p className="text-sm text-muted-foreground">Revenue</p><p className="text-xl font-bold">{formatCurrency(revenue.totalCents)}</p></div>
       <div className="rounded-xl border bg-white p-4"><p className="text-sm text-muted-foreground">Outstanding</p><p className="text-xl font-bold">{formatCurrency(outstanding.totalCents)}</p></div>
       <div className="rounded-xl border bg-white p-4"><p className="text-sm text-muted-foreground">Expenses</p><p className="text-xl font-bold">{formatCurrency(expenses.totalCents)}</p></div>
       <div className="rounded-xl border bg-white p-4"><p className="text-sm text-muted-foreground">Net profit/loss</p><p className="text-xl font-bold">{formatCurrency(profitLoss.netCents)}</p></div>
     </section>
 
-    <form className="mb-4 grid gap-2 rounded-xl border bg-white p-4 md:grid-cols-6">
+    <form className="mb-4 grid gap-2 rounded-xl border bg-white p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <select className="rounded border p-2" name="report" defaultValue={report}>{reports.map((item) => <option key={item} value={item}>{reportTitle(item)}</option>)}</select>
       <input className="rounded border p-2" type="date" name="dateFrom" defaultValue={params.dateFrom} />
       <input className="rounded border p-2" type="date" name="dateTo" defaultValue={params.dateTo} />

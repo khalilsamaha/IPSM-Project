@@ -3,7 +3,7 @@ import { AppShell, DataTable, EmptyState, PageHeader, StatusBadge } from "@/comp
 import { createUser, changeUserRole, deactivateUser, resetUserPassword, setUserStatus } from "@/actions/users";
 import { hasPermission } from "@/lib/auth/roles";
 import { requireSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/records/format";
 
 const inputClass = "rounded-2xl border border-border bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100";
@@ -31,7 +31,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     <section className="mb-6 rounded-[1.5rem] border border-border bg-white p-5 shadow-sm">
       <h3 className="text-lg font-bold">Create User</h3>
       <p className="mt-1 text-sm text-muted-foreground">Creates a Supabase Auth user and matching application profile linked by auth_id.</p>
-      <form action={createUser} className="mt-4 grid gap-3 md:grid-cols-5">
+      <form action={createUser} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <input className={inputClass} name="name" placeholder="Full name" required />
         <input className={inputClass} name="email" type="email" placeholder="Email" required />
         <input className={inputClass} name="password" type="password" minLength={8} placeholder="Temporary password" required />

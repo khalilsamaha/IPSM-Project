@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/dashboard/data";
+import { prisma } from "@/lib/prisma";
 import { ExpenseForm } from "../../form";
 
 export default async function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
