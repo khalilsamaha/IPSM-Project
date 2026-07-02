@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { ScheduleSessionStatus } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/dashboard/data";
@@ -204,10 +205,28 @@ async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSession
   if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student is already booked during this time.");
 }
 
+function scheduleErrorRedirect(formData: FormData, message: string): never {
+  const query = new URLSearchParams();
+  query.set("error", message);
+  query.set("view", "calendar");
+  for (const key of ["studentId", "teacherId", "enrollmentId", "seasonId", "title", "sessionDate", "startTime", "endTime", "status", "notes"] as const) {
+    const value = formData.get(key);
+    if (typeof value === "string" && value) query.set(key === "sessionDate" ? "date" : `form_${key}`, value);
+  }
+  redirect(`/schedule?${query.toString()}#session-form`);
+}
+
 export async function saveScheduleSession(formData: FormData) {
   await requireRecordsWrite();
-  const data = scheduleSessionSchema.parse(Object.fromEntries(formData));
-  await assertScheduleSessionIsValid(data);
+  let data: z.infer<typeof scheduleSessionSchema>;
+  try {
+    data = scheduleSessionSchema.parse(Object.fromEntries(formData));
+    await assertScheduleSessionIsValid(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) scheduleErrorRedirect(formData, error.issues[0]?.message ?? "Please check the required schedule fields.");
+    if (error instanceof Error) scheduleErrorRedirect(formData, error.message);
+    scheduleErrorRedirect(formData, "Please check the required schedule fields.");
+  }
   const row = data.id ? await prisma.scheduleSession.update({ where: { id: data.id }, data }) : await prisma.scheduleSession.create({ data });
   await audit(data.id ? "update" : "create", "ScheduleSession", row.id, data);
   revalidatePath("/schedule");
