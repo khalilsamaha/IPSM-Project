@@ -82,3 +82,14 @@ npm run build
 - `docs/DATABASE.md` — database overview.
 - `docs/DEPLOYMENT.md` — deployment and security checklist.
 - `docs/QA_CHECKLIST.md` — final MVP QA checklist.
+
+
+## User management environment variables
+
+Admin User Management creates Supabase Auth users from server-side actions and requires these variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL used by browser and server clients.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key used by browser and server session clients.
+- `DATABASE_URL` - pooled PostgreSQL connection string for Prisma.
+- `DIRECT_URL` - direct PostgreSQL connection string for Prisma migrations.
+- `SUPABASE_SERVICE_ROLE_KEY` - server-only Supabase service-role key used by Admin API actions. Never prefix this with `NEXT_PUBLIC_`, expose it to browser code, or log it.

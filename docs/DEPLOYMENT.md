@@ -22,7 +22,7 @@ Create these variables in local `.env.local` and in Vercel Project Settings for 
 | `DIRECT_URL` | Recommended | Server | Direct Supabase PostgreSQL connection string for migrations when `DATABASE_URL` is pooled. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Browser/server | Public Supabase project URL. Safe for browser exposure. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Browser/server | Public anon key. Safe for browser exposure but still project-specific. |
-| `SUPABASE_SERVICE_ROLE_KEY` | No for current app | Server only | Do not add unless a future server-only maintenance job requires it. Never prefix with `NEXT_PUBLIC_`. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server only | Required by Admin User Management server actions for Supabase Admin API operations. Never prefix with `NEXT_PUBLIC_`, expose to browser code, commit, or log it. |
 
 Local env files are intentionally ignored by Git. Confirm `.gitignore` contains `.env` and `.env*.local` before adding credentials.
 
@@ -34,13 +34,10 @@ Local env files are intentionally ignored by Git. Confirm `.gitignore` contains 
    - Production Vercel domain, for example `https://your-app.vercel.app/**`.
    - Any custom production domain.
    - Local development, for example `http://localhost:3000/**`.
-4. Create staff accounts in Supabase Auth.
-5. Set role metadata for each staff account:
-   - Prefer `app_metadata.role = "ADMIN"` for administrators.
-   - Use `app_metadata.role = "RECEPTION"` for reception staff.
-   - The application falls back to Reception-level access when role metadata is missing or invalid.
+4. Bootstrap the first administrator account in Supabase Auth and `public.users`, linking `auth.users.id` to `public.users.auth_id`.
+5. After the first Admin can log in, use `/users` to create additional Admin or Reception users.
 6. Confirm the anon key is used only through `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-7. Do not expose or commit the service-role key.
+7. Confirm the service-role key exists only in server-side environment variables and is never exposed to browser code.
 
 ## SQL migration steps
 

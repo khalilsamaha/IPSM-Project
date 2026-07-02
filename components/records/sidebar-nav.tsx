@@ -56,7 +56,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SidebarNav() {
+export function SidebarNav({ role }: { role?: "ADMIN" | "RECEPTION" }) {
   const pathname = usePathname();
 
   return (
@@ -65,7 +65,7 @@ export function SidebarNav() {
         <div key={section.label ?? `primary-${sectionIndex}`}>
           {section.label ? <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{section.label}</p> : null}
           <div className="space-y-1">
-            {section.items.map(({ label, href, icon: Icon }) => {
+            {section.items.filter((item) => item.href !== "/users" || role === "ADMIN").map(({ label, href, icon: Icon }) => {
               const active = isActivePath(pathname, href);
               return (
                 <Link
