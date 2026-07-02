@@ -1,63 +1,131 @@
 # Final MVP QA Checklist
 
-Use this checklist before promoting the IPSM MVP to production.
+Use this checklist before promoting the IPSM MVP to production. Run it against a seeded preview Supabase project first, then repeat smoke checks in production after release.
 
-## Authentication and authorization
+## Test accounts and roles
 
-- [ ] Logged-out users visiting `/dashboard` are redirected to `/login`.
-- [ ] Logged-in users visiting `/login` are redirected to `/dashboard`.
-- [ ] Admin can access dashboard, records, payments, expenses, reports, and payment void action.
-- [ ] Reception can access dashboard, records, payments, expenses, and reports.
-- [ ] Reception cannot see or perform payment void actions.
-- [ ] Sign out returns the user to `/login`.
+- [ ] Create or identify one `ADMIN` staff account in Supabase Auth with `app_metadata.role = "ADMIN"`.
+- [ ] Create or identify one `RECEPTION` staff account in Supabase Auth with `app_metadata.role = "RECEPTION"`.
+- [ ] Confirm missing/unknown role metadata defaults to Reception-level access and does not expose admin-only actions.
 
-## Records workflows
+## Global route protection and console QA
 
-- [ ] Family create form shows browser validation for required/invalid fields.
-- [ ] Student create form requires a family and student name.
-- [ ] Teacher create form validates email and numeric rate fields.
-- [ ] Season create form validates required dates.
-- [ ] Enrollment create form validates required student, season, course, and fee fields.
-- [ ] Archive/end actions show a confirmation prompt before submitting.
-- [ ] Empty or filtered lists remain understandable and do not show console errors.
+- [ ] Logged-out users visiting `/`, `/dashboard`, `/families`, `/students`, `/teachers`, `/seasons`, `/enrollments`, `/schedule`, `/payments`, `/expenses`, `/reports`, or `/users` are redirected to `/login`.
+- [ ] Public routes are limited to `/login` and `/forgot-password`.
+- [ ] Logged-in users visiting `/login` or `/forgot-password` are redirected to `/dashboard`.
+- [ ] Page refresh preserves the authenticated session on protected routes.
+- [ ] Browser console has no critical errors during navigation, filtering, create, archive, export, receipt download, or void flows.
+- [ ] Network tab shows private data requests returning `401`, `403`, or redirects when unauthenticated.
 
-## Payments and receipts
+## Dashboard
 
+- [ ] Dashboard loads for Admin and Reception.
+- [ ] Metric cards match seeded data totals for active students, active enrollments, outstanding balances, recent payments, and upcoming sessions.
+- [ ] Empty states appear when no upcoming sessions, payments, or outstanding balances exist.
+- [ ] Responsive layout remains readable on mobile, tablet, and desktop widths.
+
+## Families
+
+- [ ] Family create form requires a name and validates invalid email values.
+- [ ] Search filters by family name, email, or phone without console errors.
+- [ ] Archive action prompts for confirmation and removes the family from active workflows.
+- [ ] Student count column matches related student records.
+
+## Students
+
+- [ ] Student create form requires family, first name, and last name.
+- [ ] Date of birth, email, phone, and status fields save correctly.
+- [ ] Search filters by first name, last name, or family name.
+- [ ] Archive action prompts for confirmation and hides inactive records from active workflow selectors.
+
+## Teachers
+
+- [ ] Teacher create form requires full name and validates email and hourly rate field types.
+- [ ] Hourly rate displays as currency after save.
+- [ ] Search filters by teacher name, email, or phone.
+- [ ] Archive action prompts for confirmation and removes archived teachers from active enrollment/schedule selectors.
+
+## Seasons
+
+- [ ] Season create form requires name, start date, and end date.
+- [ ] Planned, Active, Closed, and Archived statuses display with consistent badges.
+- [ ] Search filters by season name.
+- [ ] Archive action prompts for confirmation and removes archived seasons from active workflow selectors.
+
+## Enrollments
+
+- [ ] Enrollment create form requires student, season, course, and fee.
+- [ ] Optional teacher assignment saves and displays correctly.
+- [ ] Final fee and remaining balance reflect fee minus discount.
+- [ ] Duplicate student/season/course combinations are rejected by the database constraint.
+- [ ] Ending an enrollment prompts for confirmation and removes it from active billing workflows.
+
+## Schedule
+
+- [ ] List, calendar, teacher availability, and student views load without console errors.
+- [ ] Schedule create/edit form requires student, teacher, date, start time, and end time.
+- [ ] End time before or equal to start time is rejected with a clear error.
+- [ ] Teacher double-booking for overlapping active sessions on the same date is rejected.
+- [ ] Student double-booking for overlapping active sessions on the same date is rejected.
+- [ ] Cancel and archive actions prompt for confirmation.
+- [ ] Teacher availability view highlights gaps and conflicts correctly.
+
+## Payments, receipts, and voiding
+
+- [ ] Payment list filters by family, season, method, and date range.
 - [ ] Create payment requires a selected family.
-- [ ] Allocation cannot exceed remaining enrollment balance.
+- [ ] Allocation rows only allow positive amounts up to each enrollment's remaining balance.
+- [ ] Total payment amount equals the sum of validated allocations.
 - [ ] Successful payment creation redirects to payment detail with success feedback.
-- [ ] Payment validation errors show clear user-facing messages.
-- [ ] Receipt PDF downloads successfully.
-- [ ] Admin void action shows a confirmation prompt and reverses allocations.
-- [ ] Voided payments are visually marked as void.
+- [ ] Receipt number is generated and visible on the detail page.
+- [ ] Receipt PDF endpoint downloads a PDF and writes an audit log entry.
+- [ ] Validation errors return user-facing messages instead of unhandled exceptions.
+- [ ] Admin sees the void action on non-voided payments.
+- [ ] Reception cannot see or perform payment void actions.
+- [ ] Voiding prompts for confirmation, marks the payment as void, writes audit metadata, and reverses enrollment paid/remaining balances.
+- [ ] Voided payments are visually marked and cannot be voided twice.
 
 ## Expenses
 
-- [ ] Expense creation requires category, date, amount, and description.
-- [ ] Expense filter form works for date range, category, payment method, and archived toggle.
-- [ ] Expense edit form loads existing values.
-- [ ] Expense archive action shows a confirmation prompt.
+- [ ] Expense create form requires category, date, amount, description, and payment method.
+- [ ] Expense list filters by date range, category, payment method, and archived toggle.
+- [ ] Expense edit form loads existing values and persists changes.
+- [ ] Archive action prompts for confirmation and changes the status badge to Archived.
+- [ ] Amounts display with expense-specific formatting.
 
 ## Reports
 
-- [ ] Revenue, outstanding, expenses, profit/loss, and teacher salary report pages load.
-- [ ] CSV exports require authentication.
-- [ ] CSV exports contain the expected headers and filtered rows.
+- [ ] Revenue report loads with date, family, method, receipt, seasons, and total columns.
+- [ ] Outstanding report loads with family, student, season, course, teacher, and remaining columns.
+- [ ] Expenses report loads with date, category, description, method, amount, and status columns.
+- [ ] Profit/loss report cards match revenue minus expenses for the selected filters.
+- [ ] Teacher salary report loads and clearly states current estimated-hours limitations.
+- [ ] Filters apply consistently to on-screen reports and CSV exports.
+- [ ] CSV export endpoints require authentication and `reports:read` permission.
 
-## Responsive and polish
+## Users and RBAC
 
-- [ ] Primary navigation scrolls or wraps on mobile without overlapping content.
-- [ ] Forms are usable on mobile/tablet and desktop.
-- [ ] Tables remain horizontally scrollable on narrow screens.
-- [ ] Loading state appears during route transitions where Next.js streams page loads.
-- [ ] No console errors appear during normal create, filter, export, archive, or void workflows.
+- [ ] Admin can access `/users` and view staff profiles, roles, and status.
+- [ ] Reception cannot access `/users`.
+- [ ] Admin and Reception can access Dashboard, Families, Students, Teachers, Seasons, Enrollments, Schedule, Payments, Expenses, and Reports.
+- [ ] Admin-only payment voiding is controlled by `finance:delete` permission.
+- [ ] Report exports are controlled by `reports:read` permission.
+
+## Supabase schema alignment
+
+- [ ] Prisma schema and Supabase migrations include the same MVP entities: users, families, students, teachers, seasons, enrollments, payments, payment items, expenses, audit logs, and schedule sessions.
+- [ ] Migration order is applied from oldest to newest in `supabase/migrations/`.
+- [ ] Foreign keys prevent orphaned records where required.
+- [ ] Unique enrollment constraint prevents duplicate student/season/course records.
+- [ ] Receipt numbers remain unique when present.
 
 ## Deployment readiness
 
-- [ ] `.env` and `.env.local` are not tracked by Git.
-- [ ] No Supabase service-role keys, database passwords, or access tokens are committed.
+- [ ] `.env` and `.env.local` are ignored by Git and not tracked.
+- [ ] No Supabase service-role keys, database passwords, access tokens, or Vercel tokens are committed.
+- [ ] Required production environment variables are present in Vercel.
+- [ ] Supabase storage buckets are configured if receipt/export archival is enabled by the deployment.
+- [ ] Supabase Auth redirect URLs include the production Vercel domain.
 - [ ] `npm run typecheck` passes.
 - [ ] `npm test` passes.
-- [ ] `npm run build` passes.
-- [ ] Vercel environment variables match production Supabase values.
-- [ ] Supabase migrations have been applied in production.
+- [ ] `npm run build` passes; known non-critical framework/dependency warnings are documented before release.
