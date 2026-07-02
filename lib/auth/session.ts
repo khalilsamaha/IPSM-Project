@@ -7,6 +7,7 @@ export type AppSession = {
   userId: string;
   email: string | null;
   role: Role;
+  status: "ACTIVE" | "INACTIVE";
 };
 
 type AuthUser = {
@@ -17,6 +18,7 @@ type AuthUser = {
 type SessionProfile = {
   email: string | null;
   role: string | null;
+  status?: "ACTIVE" | "INACTIVE" | null;
 } | null;
 
 export function resolveProfileRole(profile: SessionProfile): Role {
@@ -31,13 +33,16 @@ export async function getSession(): Promise<AppSession | null> {
 
   const profile = await prisma.userProfile.findUnique({
     where: { authId: user.id },
-    select: { email: true, role: true },
+    select: { email: true, role: true, status: true },
   });
+
+  if (profile?.status === "INACTIVE") return null;
 
   return {
     userId: user.id,
     email: profile?.email ?? user.email ?? null,
     role: resolveProfileRole(profile),
+    status: profile?.status ?? "ACTIVE",
   };
 }
 
