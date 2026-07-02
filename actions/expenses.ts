@@ -42,3 +42,12 @@ export async function archiveExpense(formData: FormData) {
   await auditExpense("archive", row.id);
   revalidatePath("/expenses");
 }
+
+
+export async function restoreExpense(formData: FormData) {
+  await requireExpenseWrite();
+  const expenseId = idSchema.parse(formData.get("id"));
+  const row = await prisma.expense.update({ where: { id: expenseId }, data: { archivedAt: null } });
+  await auditExpense("restore", row.id);
+  revalidatePath("/expenses");
+}

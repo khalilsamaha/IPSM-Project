@@ -39,6 +39,12 @@ export async function archiveFamily(formData: FormData) {
   await audit("archive", "Family", row.id);
   revalidatePath("/families");
 }
+export async function restoreFamily(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.family.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Family", row.id);
+  revalidatePath("/families");
+}
 
 const studentSchema = z.object({ id: id.optional(), familyId: id, firstName: z.string().trim().min(1), lastName: z.string().trim().min(1), email: optionalEmail, phone: optionalString, dateOfBirth: z.string().optional().transform((v) => v ? new Date(v) : null), status: z.enum(["ACTIVE", "INACTIVE"])});
 export async function saveStudent(formData: FormData) {
@@ -52,6 +58,12 @@ export async function archiveStudent(formData: FormData) {
   await requireRecordsWrite();
   const row = await prisma.student.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "INACTIVE", archivedAt: new Date() } });
   await audit("archive", "Student", row.id);
+  revalidatePath("/students");
+}
+export async function restoreStudent(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.student.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Student", row.id);
   revalidatePath("/students");
 }
 
@@ -71,6 +83,12 @@ export async function archiveTeacher(formData: FormData) {
   await audit("archive", "Teacher", row.id);
   revalidatePath("/teachers");
 }
+export async function restoreTeacher(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.teacher.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Teacher", row.id);
+  revalidatePath("/teachers");
+}
 
 const seasonSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), startDate: z.string().min(1).transform((v) => new Date(v)), endDate: z.string().min(1).transform((v) => new Date(v)), status: z.enum(["PLANNED", "ACTIVE", "CLOSED", "ARCHIVED"]) }).refine((v) => v.endDate >= v.startDate, "End date must be after start date");
 export async function saveSeason(formData: FormData) {
@@ -84,6 +102,12 @@ export async function archiveSeason(formData: FormData) {
   await requireRecordsWrite();
   const row = await prisma.season.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
   await audit("archive", "Season", row.id);
+  revalidatePath("/seasons");
+}
+export async function restoreSeason(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.season.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Season", row.id);
   revalidatePath("/seasons");
 }
 
@@ -103,6 +127,12 @@ export async function archiveEnrollment(formData: FormData) {
   await requireRecordsWrite();
   const row = await prisma.enrollment.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ENDED", archivedAt: new Date() } });
   await audit("archive", "Enrollment", row.id);
+  revalidatePath("/enrollments");
+}
+export async function restoreEnrollment(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.enrollment.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Enrollment", row.id);
   revalidatePath("/enrollments");
 }
 
@@ -136,6 +166,27 @@ export async function voidPayment(formData: FormData) {
   revalidatePath("/enrollments");
 }
 
+
+export async function generateMissingReceiptNumber(formData: FormData) {
+  const session = await requireSession();
+  if (!hasPermission(session.role, "finance:delete")) throw new Error("Not authorized");
+  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
+  const paymentId = id.parse(formData.get("id"));
+  const { generateReceiptNumber, receiptPdfPath } = await import("@/lib/payments/receipt-service");
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({ where: { id: paymentId }, include: { receipt: true } });
+    if (!payment) throw new Error("Payment not found");
+    if (payment.receiptNumber) return;
+    const receiptNumber = await generateReceiptNumber(tx as any);
+    await tx.payment.update({ where: { id: paymentId }, data: { receiptNumber } });
+    if (payment.receipt) await tx.receipt.update({ where: { paymentId }, data: { receiptNumber, deletedAt: null, pdfPath: receiptPdfPath(paymentId) } });
+    else await tx.receipt.create({ data: { paymentId, receiptNumber, pdfPath: receiptPdfPath(paymentId) } });
+    await tx.auditLog.create({ data: { action: "generate_receipt_number", entity: "Payment", entityId: paymentId, createdById: user?.id, actorId: session.userId, metadata: { receiptNumber } } });
+  });
+  revalidatePath("/payments");
+  revalidatePath(`/payments/${paymentId}`);
+}
+
 const blockingStatuses: ScheduleSessionStatus[] = ["SCHEDULED", "COMPLETED", "MISSED"];
 
 async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSessionSchema>) {
@@ -166,6 +217,12 @@ export async function archiveScheduleSession(formData: FormData) {
   await requireRecordsWrite();
   const row = await prisma.scheduleSession.update({ where: { id: id.parse(formData.get("id")) }, data: { archivedAt: new Date() } });
   await audit("archive", "ScheduleSession", row.id);
+  revalidatePath("/schedule");
+}
+export async function restoreScheduleSession(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.scheduleSession.update({ where: { id: id.parse(formData.get("id")) }, data: { archivedAt: null } });
+  await audit("restore", "ScheduleSession", row.id);
   revalidatePath("/schedule");
 }
 
