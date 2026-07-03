@@ -107,8 +107,8 @@ model Family {
 
 model Student {
   id          String        @id @default(uuid()) @db.Uuid
-  familyId    String        @map("family_id") @db.Uuid
-  family      Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  familyId    String?       @map("family_id") @db.Uuid
+  family      Family?       @relation(fields: [familyId], references: [id], onDelete: SetNull)
   firstName   String        @map("first_name")
   lastName    String        @map("last_name")
   email       String?

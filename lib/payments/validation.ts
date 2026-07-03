@@ -8,7 +8,7 @@ export type PaymentAllocationInput = {
 export type PaymentEnrollmentValidationRecord = {
   id: string;
   remainingCents: number;
-  student: { familyId: string };
+  student: { familyId: string | null };
 };
 
 export type ValidatedPaymentAllocation = {
