@@ -46,3 +46,37 @@ Phase 1 adds academic configuration without changing the finance architecture:
 6. Scheduling is not redesigned in this phase; existing lesson booking validation remains the source of truth.
 
 The Enrollments page remains a records page. Register Student is still the primary creation workflow.
+
+## Phase 2: student/family registration architecture
+
+Phase 2 keeps the existing family-based payment allocation, receipt generation, void/reversal, auth/RBAC, and schedule architecture intact. The upgrade focuses on student identity, family detail capture, and a clearer registration workflow.
+
+### Student ID
+
+- `Student.studentCode` stores a unique generated ID such as `STU-2026-000001`.
+- New student creation calls the shared student creation helper so IDs are generated consistently.
+- The database migration backfills existing students in created order and adds a unique index.
+- Search and display surfaces include Student ID where it helps staff identify a student: student list, registration summary/selectors, enrollments, payments, schedule, dashboard, and outstanding reports.
+
+### Family / Group
+
+Family records remain the payer/grouping entity for payments. Phase 2 extends the Family model with optional parent, address, and emergency contact fields. All fields are nullable so existing family records and independent students remain valid.
+
+### Register Student flow
+
+The registration workflow branches into four explicit paths:
+
+1. New independent student: create one student without `familyId`, then create enrollment.
+2. New family/group: create family/group parent details, create one or more students, then enroll the selected primary student.
+3. Existing family/group: select family/group, create one or more students, then enroll the selected primary student.
+4. Existing student: select an existing student and create a new enrollment only.
+
+For multi-student family/group registrations, Phase 2 creates all entered student profiles but creates exactly one enrollment for the selected primary student. Additional students can be enrolled in a follow-up registration.
+
+### Boundaries intentionally unchanged
+
+- Payment allocation remains family-based.
+- Receipt generation is unchanged.
+- Void/reversal behavior is unchanged.
+- Auth/RBAC is unchanged.
+- Schedule storage and double-booking validation are unchanged.

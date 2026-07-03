@@ -163,7 +163,8 @@ async function main() {
     });
   }
 
-  for (const [id, familyId, firstName, lastName, dateOfBirth] of students) {
+  for (const [index, [id, familyId, firstName, lastName, dateOfBirth]] of students.entries()) {
+    const studentCode = `STU-2026-${String(index + 1).padStart(6, "0")}`;
     await prisma.student.upsert({
       where: { id },
       update: {
@@ -172,9 +173,11 @@ async function main() {
         lastName,
         dateOfBirth: new Date(dateOfBirth),
         status: "ACTIVE",
+        studentCode,
       },
       create: {
         id,
+        studentCode,
         familyId,
         firstName,
         lastName,
