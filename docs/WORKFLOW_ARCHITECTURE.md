@@ -14,16 +14,17 @@ This intentionally avoids changing receipt or reversal logic during the UX refac
 
 The **Register Student** workflow adds a guided path for Admin and Reception users:
 
-1. Choose **Independent student**, **Existing Family / Group**, or **New Family / Group**.
-2. Add student details. Existing or new Family / Group registrations can add multiple students in one submission.
+1. Choose one explicit registration type: `independent_student`, `new_family_group`, `existing_family_group`, or `existing_student`.
+2. Add student details only for new-student paths. Existing or new Family / Group registrations can add multiple students in one submission; existing-student registration only selects the student and does not edit the profile.
 3. For multiple students, choose the primary student who receives the enrollment, optional Initial Payment allocation, and optional Book First Lesson in this phase.
 4. Select season, course, teacher, Amount Due, and discount.
 5. Create the enrollment for the primary student.
 6. Optionally record an Initial Payment with existing allocation/receipt rules.
 7. Optionally Book First Lesson with existing schedule validation.
-8. Finish with a summary and receipt link when a payment was created.
+8. Review a clear pre-submit summary covering registration type, students, Family / Group, season, course, teacher, amount due, initial payment, balance estimate, and first lesson details.
+9. Finish with a success summary and receipt link when a payment was created.
 
-The Students page is now a records/list page for searching, filtering active/archived/all students, archiving, and restoring. Register Student is the preferred creation workflow. Standalone family, enrollment, payment, and schedule pages remain available.
+The Students page is now a records/list page for searching, filtering active/archived/all students, archiving, and restoring. It points creation work to **Register Student**. Standalone family, enrollment, payment, and schedule pages remain available for record maintenance and specialized operations.
 
 ## Payment workflow
 

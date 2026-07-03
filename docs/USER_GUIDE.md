@@ -47,8 +47,8 @@ A family can have one or more students.
 Recommended workflow:
 
 1. Use **Register Student** when creating a new student registration.
-2. Choose Independent student, Existing Family / Group, or New Family / Group.
-3. Add one or more students when the registration belongs to a Family / Group.
+2. Choose **New independent student**, **New family / group**, **Existing family / group**, or **Existing student, new enrollment**.
+3. Add one or more students when the registration belongs to a Family / Group, or select the existing student when only a new enrollment is needed.
 4. Create the primary student enrollment, optional Initial Payment, and optional Book First Lesson in the guided flow.
 5. Record later payments against the Family / Group when applicable.
 
@@ -67,7 +67,7 @@ Use this section to:
 - Archive inactive students
 - Restore archived students
 
-Use **Register Student** as the preferred creation workflow for new students, family/group registrations, enrollment, optional Initial Payment, and optional Book First Lesson.
+Use **Register Student** as the main entry point for creating students and enrollments. Keep this page for viewing, searching, archiving, and restoring records; do not use it as the primary creation workflow.
 
 ---
 
@@ -348,8 +348,15 @@ Potential future improvements include:
 
 ## Guided registration and booking
 
-Use **Register Student** for the preferred front-desk creation workflow. It supports an independent student, an existing Family / Group, or a new Family / Group with multiple students. It creates one enrollment for the selected primary student, can collect an Initial Payment, and can Book First Lesson.
+Use **Register Student** for the preferred front-desk creation workflow. It supports four explicit registration types:
 
-Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an independent student when collecting an initial payment.
+- **New independent student**: creates one student without a Family / Group unless payment compatibility requires a payer record.
+- **New family / group with one or more students**: creates the Family / Group, creates one or more students under it, and enrolls the selected primary student.
+- **Existing family / group, add student**: selects an existing Family / Group, creates one or more new students under it, and enrolls the selected primary student.
+- **Existing student, new enrollment**: selects an existing student and creates a new season/course enrollment without editing the student profile.
+
+The workflow creates one enrollment for the selected primary student, can collect an Initial Payment, and can Book First Lesson.
+
+Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an independent student only when collecting an initial payment. Initial payments continue through existing allocation and receipt behavior. First Lesson booking continues through existing schedule validation, including double-booking checks.
 
 Use **Lessons / Calendar** to book lessons from day, week, teacher, student, or list views. Filters are available for teacher, student, course, season, status, and date.
