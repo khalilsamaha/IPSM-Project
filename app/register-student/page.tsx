@@ -7,11 +7,14 @@ import { RegisterStudentWorkflowForm } from "./register-student-workflow-form";
 export default async function RegisterStudentPage({ searchParams }: { searchParams: Promise<{ error?: string; success?: string; enrollmentId?: string; paymentId?: string; sessionId?: string; students?: string }> }) {
   const session = await requireSession();
   const params = await searchParams;
-  const [students, families, seasons, teachers] = await Promise.all([
+  const [students, families, seasons, teachers, courses, levels, pricings] = await Promise.all([
     prisma.student.findMany({ where: { status: "ACTIVE" }, include: { family: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
     prisma.family.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
     prisma.season.findMany({ where: { status: { in: ["PLANNED", "ACTIVE"] } }, orderBy: { startDate: "desc" } }),
     prisma.teacher.findMany({ where: { status: "ACTIVE" }, orderBy: { fullName: "asc" } }),
+    prisma.course.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
+    prisma.courseLevel.findMany({ where: { status: "ACTIVE" }, orderBy: { order: "asc" } }),
+    prisma.coursePricing.findMany({ where: { status: "ACTIVE" }, select: { courseId: true, levelId: true, seasonId: true, priceCents: true } }),
   ]);
 
   return <AppShell session={session}>
@@ -23,6 +26,9 @@ export default async function RegisterStudentPage({ searchParams }: { searchPara
       families={families.map((family) => ({ id: family.id, name: family.name }))}
       seasons={seasons.map((season) => ({ id: season.id, name: season.name }))}
       teachers={teachers.map((teacher) => ({ id: teacher.id, fullName: teacher.fullName }))}
+      courses={courses.map((course) => ({ id: course.id, name: course.name }))}
+      levels={levels.map((level) => ({ id: level.id, name: level.name }))}
+      pricings={pricings.map((pricing) => ({ courseId: pricing.courseId, levelId: pricing.levelId, seasonId: pricing.seasonId, price: (pricing.priceCents / 100).toFixed(2) }))}
     />
   </AppShell>;
 }

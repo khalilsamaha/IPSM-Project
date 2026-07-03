@@ -41,3 +41,18 @@ select r.id, r.payment_id from receipts r where r.receipt_number is null;
 select p.id from payments p left join receipts r on r.payment_id = p.id where r.id is null;
 select p.id from payments p left join payment_items i on i.payment_id = p.id group by p.id having count(i.id) = 0;
 ```
+
+## Phase 1 Academic Configuration Permissions
+
+- **Admin**
+  - Can create, edit, and archive Courses.
+  - Can create, edit, and archive Course Levels.
+  - Can create, edit, and archive Course Pricing records.
+  - Can use configured Course/Level/Pricing values during registration.
+
+- **Reception**
+  - Can view and use active Courses, Course Levels, and configured Pricing during Register Student.
+  - Cannot manage Courses, Course Levels, or Course Pricing.
+  - Continues to use existing registration and records workflows.
+
+Finance permissions are unchanged: family-based payments, receipt generation, allocation, void, and reversal behavior are not modified by Phase 1.

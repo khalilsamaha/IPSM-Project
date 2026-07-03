@@ -33,3 +33,16 @@ Existing family payment rules are preserved. Independent students can be registe
 ## Booking workflow
 
 The schedule page now emphasizes **Book Lesson** language and separates day, week, teacher, student, and list views. Booking continues to use the same ScheduleSession validation, including teacher/student double-booking prevention and season date checks.
+
+## Phase 1 Academic Foundation Workflow
+
+Phase 1 adds academic configuration without changing the finance architecture:
+
+1. Admin configures Courses, Course Levels, and Course Pricing.
+2. Reception and Admin use those active Courses and Levels in Register Student.
+3. Register Student stores optional `courseId` and `levelId` on Enrollment and copies `Course.name` into the legacy `courseName` field for backward-compatible display, search, and reports.
+4. Course Pricing suggests the enrollment fee for the selected Course + Level + Season. If there is no season-specific price, a global Course + Level price may be used.
+5. Payments, receipt generation, payment allocation, voids, and reversals remain family-based and unchanged in this phase.
+6. Scheduling is not redesigned in this phase; existing lesson booking validation remains the source of truth.
+
+The Enrollments page remains a records page. Register Student is still the primary creation workflow.

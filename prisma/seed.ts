@@ -107,6 +107,10 @@ const students = [
   ],
 ] as const;
 
+
+const courseNames = ["Piano", "Guitar", "Saxophone", "Violin", "Dance", "Chess", "Solfège", "Music Theory"] as const;
+const levelNames = ["Beginner", "Level 1", "Level 2", "Advanced"] as const;
+
 const season = {
   id: "70000000-0000-0000-0000-000000000002",
   name: "Summer 2026",
@@ -184,6 +188,35 @@ async function main() {
     update: season,
     create: season,
   });
+
+  for (const [index, name] of courseNames.entries()) {
+    await prisma.course.upsert({
+      where: { name },
+      update: { status: "ACTIVE" },
+      create: { id: `a1000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`, name },
+    });
+  }
+
+  for (const [index, name] of levelNames.entries()) {
+    await prisma.courseLevel.upsert({
+      where: { name },
+      update: { order: index + 1, status: "ACTIVE" },
+      create: { id: `a2000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`, name, order: index + 1 },
+    });
+  }
+
+  const seededCourses = await prisma.course.findMany({ where: { name: { in: [...courseNames] } } });
+  const seededLevels = await prisma.courseLevel.findMany({ where: { name: { in: [...levelNames] } } });
+  for (const course of seededCourses) {
+    for (const level of seededLevels) {
+      await prisma.coursePricing.upsert({
+        where: { courseId_levelId_seasonId: { courseId: course.id, levelId: level.id, seasonId: season.id } },
+        update: { priceCents: level.order >= 4 ? 60000 : 45000, status: "ACTIVE" },
+        create: { courseId: course.id, levelId: level.id, seasonId: season.id, priceCents: level.order >= 4 ? 60000 : 45000 },
+      });
+    }
+  }
+
 
   for (const [id, fullName, email, phone, hourlyRateCents] of teachers) {
     await prisma.teacher.upsert({

@@ -42,7 +42,7 @@ export async function getRevenueReport(filters: ReportFilters) {
 export async function getOutstandingReport(filters: ReportFilters) {
   const rows = await prisma.enrollment.findMany({
     where: { AND: [filters.familyId ? { student: { familyId: filters.familyId } } : {}, filters.studentId ? { studentId: filters.studentId } : {}, filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.teacherId ? { teacherId: filters.teacherId } : {}, { remainingCents: { gt: 0 } }] },
-    include: { student: { include: { family: true } }, season: true, teacher: true },
+    include: { student: { include: { family: true } }, season: true, teacher: true, course: true },
     orderBy: [{ season: { startDate: "desc" } }, { student: { lastName: "asc" } }],
   });
   return { rows, totalCents: sumOutstandingCents(rows) };
@@ -64,7 +64,7 @@ export async function getProfitLossReport(filters: ReportFilters) {
 export async function getTeacherSalaryReport(filters: ReportFilters) {
   const rows = await prisma.teacher.findMany({
     where: filters.teacherId ? { id: filters.teacherId } : {},
-    include: { enrollments: { where: { AND: [filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, filters.familyId ? { student: { familyId: filters.familyId } } : {}] }, include: { student: { include: { family: true } }, season: true } } },
+    include: { enrollments: { where: { AND: [filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, filters.familyId ? { student: { familyId: filters.familyId } } : {}] }, include: { student: { include: { family: true } }, season: true, course: true } } },
     orderBy: { fullName: "asc" },
   });
   const mapped = rows.map((teacher) => ({ ...teacher, estimatedHours: null as number | null, estimatedSalaryCents: estimateTeacherSalaryCents(teacher.hourlyRateCents, null) }));
