@@ -251,6 +251,8 @@ model Enrollment {
   finalFeeCents  Int              @default(0) @map("final_fee_cents")
   paidCents      Int              @default(0) @map("paid_cents")
   remainingCents Int              @default(0) @map("remaining_cents")
+  enrollmentStartDate DateTime     @map("enrollment_start_date") @db.Date
+  enrollmentEndDate   DateTime     @map("enrollment_end_date") @db.Date
   status         EnrollmentStatus @default(ACTIVE)
   paymentItems   PaymentItem[]
   scheduleSessions ScheduleSession[]
@@ -258,7 +260,7 @@ model Enrollment {
   updatedAt      DateTime         @updatedAt @map("updated_at")
   archivedAt     DateTime?        @map("archived_at")
 
-  @@unique([studentId, seasonId, courseName])
+  @@index([studentId, seasonId, courseId, levelId])
   @@index([studentId])
   @@index([seasonId])
   @@index([teacherId])

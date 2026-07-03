@@ -80,3 +80,13 @@ For multi-student family/group registrations, Phase 2 creates all entered studen
 - Void/reversal behavior is unchanged.
 - Auth/RBAC is unchanged.
 - Schedule storage and double-booking validation are unchanged.
+
+## Phase 3 Enrollment Dates, Multiple Courses, and Suggested Pricing
+
+Enrollment remains the season billing record for a student. Phase 3 adds explicit `enrollmentStartDate` and `enrollmentEndDate` fields so a season enrollment can represent full-season or mid-season participation without changing payment allocation, receipt generation, or void/reversal behavior.
+
+The registration workflow defaults enrollment dates from the selected season. Staff can set a custom mid-season start or earlier end date, and server-side validation rejects date ranges outside the season with staff-friendly messages. Existing enrollment rows are backfilled from their season dates during migration.
+
+Multiple courses are modeled as multiple Enrollment records for the same student and season. The uniqueness guard is now the same student + season + course + level combination, which prevents accidental duplicate registrations while allowing combinations such as Piano Level 1, Solfège Beginner, and Music Theory Level 1 in the same season. The legacy `courseName` snapshot remains for compatibility and reporting.
+
+CoursePricing drives suggested fees in Register Student. Once season, course, level, and dates are selected, the UI presents the full-season configured price plus a prorated suggestion. The documented initial proration formula is: `full season price × active enrollment days / season days`, rounded to cents. The suggestion does not override the existing discount/manual adjustment workflow.

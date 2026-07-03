@@ -401,3 +401,13 @@ For family/group paths, the registration screen explains that only the selected 
 ### Students page
 
 The `/students` page remains a records and management list for search, filtering, archive, and restore. Use the **Register Student** button on that page for new registrations instead of using inline student creation.
+
+## Phase 3 Enrollment Dates and Pricing
+
+Enrollments now include an enrollment start date and enrollment end date. When Register Student is used, the dates default to the selected season start and end dates, and staff can move the start date later for a mid-season registration. The system validates that enrollment dates stay inside the selected season and shows a friendly error if they do not.
+
+Students may take more than one course in the same season. Register each course as a separate enrollment; the duplicate guard blocks only the same student, season, course, and level combination while allowing different courses or levels.
+
+When season, course, level, and enrollment dates are selected, Register Student shows the configured full-season Course Pricing amount and a suggested prorated amount. The first proration rule is intentionally simple: full price multiplied by active enrollment days divided by total season days, rounded to cents. Staff can still use the full price, the prorated suggestion, discounts, or manual amount adjustments supported by the existing workflow.
+
+The Enrollments page is a management and reporting page. It displays student ID, student, family/group, season, course, level, teacher, start/end dates, amount due, paid, remaining balance, status, and actions to view the student, record payment, book a lesson, or end the enrollment.
