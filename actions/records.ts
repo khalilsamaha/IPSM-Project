@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
+import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
 import { scheduleSessionSchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
@@ -116,14 +117,19 @@ export async function restoreSeason(formData: FormData) {
   revalidatePath("/seasons");
 }
 
-const enrollmentSchema = z.object({ id: id.optional(), studentId: id, seasonId: id, teacherId: id.or(z.literal("")).transform((v) => v || null), courseName: z.string().trim().min(1), fee: z.string().default("0"), discount: z.string().default("0"), status: z.enum(["ACTIVE", "PAUSED", "ENDED", "CANCELLED"]) });
+const enrollmentSchema = z.object({ id: id.optional(), studentId: id, seasonId: id, teacherId: id.or(z.literal("")).transform((v) => v || null), courseName: z.string().trim().min(1), courseId: id.or(z.literal("")).optional().transform((v) => v || null), levelId: id.or(z.literal("")).optional().transform((v) => v || null), enrollmentStartDate: z.string().optional(), enrollmentEndDate: z.string().optional(), fee: z.string().default("0"), discount: z.string().default("0"), status: z.enum(["ACTIVE", "PAUSED", "ENDED", "CANCELLED"]) });
 export async function saveEnrollment(formData: FormData) {
   await requireRecordsWrite();
   const parsed = enrollmentSchema.parse(Object.fromEntries(formData));
+  const season = await prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true } });
+  if (!season) throw new Error("Choose a valid season.");
+  const enrollmentStartDate = parsed.enrollmentStartDate ? new Date(parsed.enrollmentStartDate) : season.startDate;
+  const enrollmentEndDate = parsed.enrollmentEndDate ? new Date(parsed.enrollmentEndDate) : season.endDate;
+  if (enrollmentStartDate < season.startDate || enrollmentEndDate > season.endDate || enrollmentEndDate < enrollmentStartDate) throw new Error("Enrollment dates must stay inside the selected season.");
   const feeCents = dollarsToCents(parsed.fee);
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
-  const data = { id: parsed.id, studentId: parsed.studentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, status: parsed.status, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents };
+  const data = { id: parsed.id, studentId: parsed.studentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, courseId: parsed.courseId, levelId: parsed.levelId, enrollmentStartDate, enrollmentEndDate, status: parsed.status, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents };
   const row = data.id ? await prisma.enrollment.update({ where: { id: data.id }, data }) : await prisma.enrollment.create({ data });
   await audit(data.id ? "update" : "create", "Enrollment", row.id, data);
   revalidatePath("/enrollments");
@@ -304,6 +310,8 @@ const registrationSchema = z.object({
   levelId: id,
   courseName: z.string().trim().optional(),
   teacherId: id.or(z.literal("")).optional().transform((v) => v || null),
+  enrollmentStartDate: z.string().optional(),
+  enrollmentEndDate: z.string().optional(),
   fee: z.string().default("0"),
   discount: z.string().default("0"),
   initialPayment: z.string().default("0"),
@@ -337,9 +345,13 @@ export async function registerStudentWorkflow(formData: FormData) {
   } catch (error) {
     registrationErrorRedirect(error instanceof z.ZodError ? error.issues[0]?.message ?? "Please check the registration form." : "Please check the registration form.");
   }
-  const course = await prisma.course.findUnique({ where: { id: parsed.courseId }, select: { name: true } });
+  const [course, season] = await Promise.all([prisma.course.findUnique({ where: { id: parsed.courseId }, select: { name: true } }), prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true } })]);
   if (!course) registrationErrorRedirect("Choose a valid course.");
+  if (!season) registrationErrorRedirect("Choose a valid season.");
   const courseName = course.name;
+  const enrollmentStartDate = parsed.enrollmentStartDate ? new Date(parsed.enrollmentStartDate) : season.startDate;
+  const enrollmentEndDate = parsed.enrollmentEndDate ? new Date(parsed.enrollmentEndDate) : season.endDate;
+  if (enrollmentStartDate < season.startDate || enrollmentEndDate > season.endDate || enrollmentEndDate < enrollmentStartDate) registrationErrorRedirect("Enrollment dates must stay inside the selected season.");
   const feeCents = dollarsToCents(parsed.fee);
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
@@ -387,7 +399,9 @@ export async function registerStudentWorkflow(formData: FormData) {
       }
       if (!primaryStudentId) throw new Error("Choose which student should receive the enrollment.");
 
-      const enrollment = await tx.enrollment.create({ data: { studentId: primaryStudentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseId: parsed.courseId, levelId: parsed.levelId, courseName, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents } });
+      const duplicate = await tx.enrollment.findFirst({ where: { studentId: primaryStudentId, seasonId: parsed.seasonId, courseId: parsed.courseId, levelId: parsed.levelId, archivedAt: null } });
+      if (duplicate) throw new Error("This student is already enrolled in that course and level for the selected season.");
+      const enrollment = await tx.enrollment.create({ data: { studentId: primaryStudentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseId: parsed.courseId, levelId: parsed.levelId, courseName, enrollmentStartDate, enrollmentEndDate, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents } });
       await tx.auditLog.create({ data: { action: "create", entity: "Enrollment", entityId: enrollment.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", registrationType: normalizedRegistrationType, primaryStudentId, additionalStudentIds: createdStudentIds.filter((studentId) => studentId !== primaryStudentId) } } });
 
       let sessionRow = null;

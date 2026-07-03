@@ -240,6 +240,8 @@ async function main() {
     finalFeeCents: index % 3 === 0 ? 60000 : 45000,
     paidCents: 0,
     remainingCents: index % 3 === 0 ? 60000 : 45000,
+    enrollmentStartDate: season.startDate,
+    enrollmentEndDate: season.endDate,
   }));
 
   enrollmentSeeds.push({
@@ -253,6 +255,8 @@ async function main() {
     finalFeeCents: 60000,
     paidCents: 0,
     remainingCents: 60000,
+    enrollmentStartDate: season.startDate,
+    enrollmentEndDate: season.endDate,
   });
 
   for (const enrollment of enrollmentSeeds) {
