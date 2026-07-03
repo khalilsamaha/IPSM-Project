@@ -9,6 +9,7 @@ const enrollments: PaymentEnrollmentValidationRecord[] = [
   { id: "30000000-0000-0000-0000-000000000001", remainingCents: 5000, student: { familyId: familyA } },
   { id: "30000000-0000-0000-0000-000000000002", remainingCents: 7500, student: { familyId: familyA } },
   { id: "30000000-0000-0000-0000-000000000003", remainingCents: 9000, student: { familyId: familyB } },
+  { id: "30000000-0000-0000-0000-000000000004", remainingCents: 4000, student: { familyId: null } },
 ];
 
 describe("validatePaymentAllocations", () => {
@@ -29,6 +30,14 @@ describe("validatePaymentAllocations", () => {
       enrollments,
       allocations: [{ enrollmentId: enrollments[2].id, amount: "10.00" }],
     })).toThrow(PaymentValidationError);
+  });
+
+  it("rejects independent-student enrollments until a payer Family / Group is attached", () => {
+    expect(() => validatePaymentAllocations({
+      familyId: familyA,
+      enrollments,
+      allocations: [{ enrollmentId: enrollments[3].id, amount: "10.00" }],
+    })).toThrow("All allocations must belong to the selected family.");
   });
 
   it("rejects empty allocations", () => {

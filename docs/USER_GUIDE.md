@@ -344,3 +344,11 @@ Potential future improvements include:
 - Advanced payroll
 - Multi-branch support
 - Advanced analytics
+
+## Guided registration and booking
+
+Use **Register Student** for the fastest front-desk workflow. It can create or select a student, optionally attach a Family / Group, create the enrollment, collect an initial payment, and book the first lesson.
+
+Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an independent student when collecting an initial payment.
+
+Use **Lessons / Calendar** to book lessons from day, week, teacher, student, or list views. Filters are available for teacher, student, course, season, status, and date.

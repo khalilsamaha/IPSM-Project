@@ -143,3 +143,7 @@ npm run build
 - Database rollback: prefer forward-only corrective migrations that preserve data. Use Supabase backups only after confirming data loss risk and recovery point.
 - Credential incident: rotate exposed credentials immediately in Supabase and Vercel, then redeploy.
 - Failed release: disable new traffic by rolling back Vercel first, then investigate Supabase logs, Vercel function logs, and audit logs.
+
+## Optional student family migration
+
+Migration `20260703000000_optional_student_family_workflow.sql` makes `students.family_id` nullable and changes the foreign key to `ON DELETE SET NULL`. Apply it with the normal Supabase/Prisma migration process before deploying code that creates independent students.

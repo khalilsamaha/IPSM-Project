@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     rows = data.rows.map((row) => [formatDate(row.paymentDate), row.family.name, row.paymentMethod, row.receiptNumber ?? "", Array.from(new Set(row.items.map((item) => item.enrollment.season.name))).join("; "), row.totalAmountCents]);
   } else if (report === "outstanding") {
     const data = await getOutstandingReport(filters);
-    rows = data.rows.map((row) => [row.student.family.name, `${row.student.firstName} ${row.student.lastName}`, row.season.name, row.courseName, row.teacher?.fullName ?? "", row.remainingCents]);
+    rows = data.rows.map((row) => [row.student.family?.name ?? "Independent", `${row.student.firstName} ${row.student.lastName}`, row.season.name, row.courseName, row.teacher?.fullName ?? "", row.remainingCents]);
   } else if (report === "expenses") {
     const data = await getExpenseReport(filters);
     rows = data.rows.map((row) => [formatDate(row.expenseDate), row.category, row.description, row.paymentMethod, row.amountCents, row.archivedAt ? "Archived" : "Active"]);
