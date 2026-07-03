@@ -360,3 +360,15 @@ The workflow creates one enrollment for the selected primary student, can collec
 Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an independent student only when collecting an initial payment. Initial payments continue through existing allocation and receipt behavior. First Lesson booking continues through existing schedule validation, including double-booking checks.
 
 Use **Lessons / Calendar** to book lessons from day, week, teacher, student, or list views. Filters are available for teacher, student, course, season, status, and date.
+
+## Phase 1 Academic Foundation
+
+The Register Student workflow now uses configured academic records instead of a free-text course entry:
+
+- **Course Catalog:** Admin users maintain active and archived courses such as Piano, Guitar, Saxophone, Violin, Dance, Chess, Solfège, and Music Theory.
+- **Course Levels:** Admin users maintain ordered levels such as Beginner, Level 1, Level 2, and Advanced.
+- **Pricing Matrix:** Admin users configure prices by Course + Level, optionally scoped to a Season.
+- **Registration:** Admin and Reception users select Season, Course, and Level from dropdowns. When a matching active price exists, the workflow offers the configured fee as the suggested enrollment amount.
+- **Missing pricing:** If no matching price exists, the form displays: “No configured price found. Admin should configure pricing.” Users may continue with a manual fee only where the existing workflow permits manual fee entry.
+
+Existing enrollments remain valid because the legacy `courseName` value is still stored and displayed whenever a related Course record is not available.

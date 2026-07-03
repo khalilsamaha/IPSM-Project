@@ -286,7 +286,9 @@ const registrationSchema = z.object({
   phone: optionalString,
   primaryStudentIndex: z.string().default("0"),
   seasonId: id,
-  courseName: z.string().trim().min(1, "Course is required."),
+  courseId: id,
+  levelId: id,
+  courseName: z.string().trim().optional(),
   teacherId: id.or(z.literal("")).optional().transform((v) => v || null),
   fee: z.string().default("0"),
   discount: z.string().default("0"),
@@ -321,6 +323,9 @@ export async function registerStudentWorkflow(formData: FormData) {
   } catch (error) {
     registrationErrorRedirect(error instanceof z.ZodError ? error.issues[0]?.message ?? "Please check the registration form." : "Please check the registration form.");
   }
+  const course = await prisma.course.findUnique({ where: { id: parsed.courseId }, select: { name: true } });
+  if (!course) registrationErrorRedirect("Choose a valid course.");
+  const courseName = course.name;
   const feeCents = dollarsToCents(parsed.fee);
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
@@ -368,14 +373,14 @@ export async function registerStudentWorkflow(formData: FormData) {
       }
       if (!primaryStudentId) throw new Error("Choose which student should receive the enrollment.");
 
-      const enrollment = await tx.enrollment.create({ data: { studentId: primaryStudentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents } });
+      const enrollment = await tx.enrollment.create({ data: { studentId: primaryStudentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseId: parsed.courseId, levelId: parsed.levelId, courseName, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents } });
       await tx.auditLog.create({ data: { action: "create", entity: "Enrollment", entityId: enrollment.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", registrationType: normalizedRegistrationType, primaryStudentId, additionalStudentIds: createdStudentIds.filter((studentId) => studentId !== primaryStudentId) } } });
 
       let sessionRow = null;
       if (parsed.bookFirstSession) {
         if (!parsed.teacherId) throw new Error("Choose a teacher before booking the first lesson.");
         if (!parsed.sessionDate || !parsed.startTime || !parsed.endTime) throw new Error("Date, start time, and end time are required to book the first lesson.");
-        const sessionData = scheduleSessionSchema.parse({ studentId: primaryStudentId, teacherId: parsed.teacherId, enrollmentId: enrollment.id, seasonId: parsed.seasonId, sessionDate: parsed.sessionDate, startTime: parsed.startTime, endTime: parsed.endTime, status: "SCHEDULED", title: parsed.courseName });
+        const sessionData = scheduleSessionSchema.parse({ studentId: primaryStudentId, teacherId: parsed.teacherId, enrollmentId: enrollment.id, seasonId: parsed.seasonId, sessionDate: parsed.sessionDate, startTime: parsed.startTime, endTime: parsed.endTime, status: "SCHEDULED", title: courseName });
         await assertScheduleSessionIsValid(sessionData);
         sessionRow = await tx.scheduleSession.create({ data: sessionData });
         await tx.auditLog.create({ data: { action: "create", entity: "ScheduleSession", entityId: sessionRow.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow" } } });
@@ -411,4 +416,57 @@ export async function registerStudentWorkflow(formData: FormData) {
     logServerError("registration.workflow", error, {});
     registrationErrorRedirect(error instanceof Error ? error.message : "Unable to register student. Please check the form and try again.");
   }
+}
+
+async function requireAdminConfig() {
+  const session = await requireSession();
+  if (session.role !== "ADMIN") throw new Error("Not authorized");
+  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
+  return { session, createdById: user?.id };
+}
+
+const courseSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), category: optionalString, description: optionalString, status: z.enum(["ACTIVE", "ARCHIVED"]) });
+export async function saveCourse(formData: FormData) {
+  await requireAdminConfig();
+  const data = courseSchema.parse(Object.fromEntries(formData));
+  const row = data.id ? await prisma.course.update({ where: { id: data.id }, data }) : await prisma.course.create({ data });
+  await audit(data.id ? "update" : "create", "Course", row.id, data);
+  revalidatePath("/admin/courses");
+}
+export async function archiveCourse(formData: FormData) {
+  await requireAdminConfig();
+  const row = await prisma.course.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+  await audit("archive", "Course", row.id);
+  revalidatePath("/admin/courses");
+}
+
+const courseLevelSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), order: z.coerce.number().int().default(0), status: z.enum(["ACTIVE", "ARCHIVED"]) });
+export async function saveCourseLevel(formData: FormData) {
+  await requireAdminConfig();
+  const data = courseLevelSchema.parse(Object.fromEntries(formData));
+  const row = data.id ? await prisma.courseLevel.update({ where: { id: data.id }, data }) : await prisma.courseLevel.create({ data });
+  await audit(data.id ? "update" : "create", "CourseLevel", row.id, data);
+  revalidatePath("/admin/course-levels");
+}
+export async function archiveCourseLevel(formData: FormData) {
+  await requireAdminConfig();
+  const row = await prisma.courseLevel.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+  await audit("archive", "CourseLevel", row.id);
+  revalidatePath("/admin/course-levels");
+}
+
+const coursePricingSchema = z.object({ id: id.optional(), courseId: id, levelId: id, seasonId: id.or(z.literal("")).optional().transform((v) => v || null), price: z.string().default("0"), status: z.enum(["ACTIVE", "ARCHIVED"]) });
+export async function saveCoursePricing(formData: FormData) {
+  await requireAdminConfig();
+  const parsed = coursePricingSchema.parse(Object.fromEntries(formData));
+  const data = { id: parsed.id, courseId: parsed.courseId, levelId: parsed.levelId, seasonId: parsed.seasonId, priceCents: dollarsToCents(parsed.price), status: parsed.status };
+  const row = data.id ? await prisma.coursePricing.update({ where: { id: data.id }, data }) : await prisma.coursePricing.create({ data });
+  await audit(data.id ? "update" : "create", "CoursePricing", row.id, data);
+  revalidatePath("/admin/course-pricing");
+}
+export async function archiveCoursePricing(formData: FormData) {
+  await requireAdminConfig();
+  const row = await prisma.coursePricing.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED" } });
+  await audit("archive", "CoursePricing", row.id);
+  revalidatePath("/admin/course-pricing");
 }

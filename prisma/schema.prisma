@@ -55,6 +55,11 @@ enum ScheduleSessionStatus {
   MISSED
 }
 
+enum AcademicConfigStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 model UserProfile {
   id               String     @id @default(uuid()) @db.Uuid
   authId           String     @unique @map("auth_id") @db.Uuid
@@ -134,6 +139,7 @@ model Season {
   status      SeasonStatus @default(PLANNED)
   enrollments Enrollment[]
   scheduleSessions ScheduleSession[]
+  coursePricings CoursePricing[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   archivedAt  DateTime?    @map("archived_at")
@@ -160,6 +166,58 @@ model Teacher {
   @@map("teachers")
 }
 
+model Course {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String               @unique
+  category    String?
+  description String?
+  status      AcademicConfigStatus @default(ACTIVE)
+  enrollments Enrollment[]
+  pricings    CoursePricing[]
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  archivedAt  DateTime?            @map("archived_at")
+
+  @@index([status])
+  @@map("courses")
+}
+
+model CourseLevel {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String               @unique
+  order       Int                  @default(0)
+  status      AcademicConfigStatus @default(ACTIVE)
+  enrollments Enrollment[]
+  pricings    CoursePricing[]
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  archivedAt  DateTime?            @map("archived_at")
+
+  @@index([status, order])
+  @@map("course_levels")
+}
+
+model CoursePricing {
+  id         String               @id @default(uuid()) @db.Uuid
+  courseId   String               @map("course_id") @db.Uuid
+  course     Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  levelId    String               @map("level_id") @db.Uuid
+  level      CourseLevel          @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  seasonId   String?              @map("season_id") @db.Uuid
+  season     Season?              @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  priceCents Int                  @map("price_cents")
+  status     AcademicConfigStatus @default(ACTIVE)
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+
+  @@unique([courseId, levelId, seasonId])
+  @@index([courseId])
+  @@index([levelId])
+  @@index([seasonId])
+  @@index([status])
+  @@map("course_pricings")
+}
+
 model Enrollment {
   id             String           @id @default(uuid()) @db.Uuid
   studentId      String           @map("student_id") @db.Uuid
@@ -169,6 +227,10 @@ model Enrollment {
   teacherId      String?          @map("teacher_id") @db.Uuid
   teacher        Teacher?         @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   courseName     String           @map("course_name")
+  courseId       String?          @map("course_id") @db.Uuid
+  course         Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  levelId        String?          @map("level_id") @db.Uuid
+  level          CourseLevel?     @relation(fields: [levelId], references: [id], onDelete: SetNull)
   feeCents       Int              @default(0) @map("fee_cents")
   discountCents  Int              @default(0) @map("discount_cents")
   finalFeeCents  Int              @default(0) @map("final_fee_cents")
@@ -185,6 +247,8 @@ model Enrollment {
   @@index([studentId])
   @@index([seasonId])
   @@index([teacherId])
+  @@index([courseId])
+  @@index([levelId])
   @@index([status])
   @@map("enrollments")
 }

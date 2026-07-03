@@ -31,6 +31,9 @@ const navSections: NavSection[] = [
     label: "Academic",
     items: [
       { label: "Seasons", href: "/seasons", icon: BookOpen },
+      { label: "Courses", href: "/admin/courses", icon: BookOpen },
+      { label: "Course Levels", href: "/admin/course-levels", icon: BookOpen },
+      { label: "Course Pricing", href: "/admin/course-pricing", icon: WalletCards },
       { label: "Register Student", href: "/register-student", icon: UserPlus },
       { label: "Enrollments", href: "/enrollments", icon: WalletCards },
       { label: "Lessons / Calendar", href: "/schedule", icon: CalendarDays },
