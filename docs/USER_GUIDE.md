@@ -411,3 +411,15 @@ Students may take more than one course in the same season. Register each course 
 When season, course, level, and enrollment dates are selected, Register Student shows the configured full-season Course Pricing amount and a suggested prorated amount. The first proration rule is intentionally simple: full price multiplied by active enrollment days divided by total season days, rounded to cents. Staff can still use the full price, the prorated suggestion, discounts, or manual amount adjustments supported by the existing workflow.
 
 The Enrollments page is a management and reporting page. It displays student ID, student, family/group, season, course, level, teacher, start/end dates, amount due, paid, remaining balance, status, and actions to view the student, record payment, book a lesson, or end the enrollment.
+
+## Phase 4 payment balance visibility
+
+The Create Payment screen keeps payments family-based. Staff first search for the Family / Group payer with the searchable family selector, which includes family name, parent names, contact details, student names, and Student IDs in the option text. After selecting a family, the screen shows every open enrollment for that family before money is recorded.
+
+For each enrollment, staff can review Student ID, student name, season, course, level, amount due, paid amount, and remaining balance. A season summary highlights unpaid balances across current and previous seasons, and the Total outstanding line shows the full selected-family balance before allocations are entered.
+
+Independent students without a Family / Group are not hidden or silently paid under the wrong payer. Because payment records still require a family payer, assign or create a Family / Group payer before collecting payment for an independent student. The payment form displays this behavior so front-desk staff know why an independent student may not appear in the payer selector.
+
+The Payments page now supports filters for Family / Group, Student name, Student ID, receipt number, season, payment method, status, and date range. The payment table includes receipt number, Family / Group, student(s), season(s), payment date, method, allocation count/amount, total, status, and actions to view, download the receipt, prepare an email receipt, and access admin-only voiding through the payment detail screen.
+
+Family and Student list pages include balance summaries where applicable: current season balance, previous unpaid balance, and total outstanding.

@@ -90,3 +90,15 @@ The registration workflow defaults enrollment dates from the selected season. St
 Multiple courses are modeled as multiple Enrollment records for the same student and season. The uniqueness guard is now the same student + season + course + level combination, which prevents accidental duplicate registrations while allowing combinations such as Piano Level 1, Solfège Beginner, and Music Theory Level 1 in the same season. The legacy `courseName` snapshot remains for compatibility and reporting.
 
 CoursePricing drives suggested fees in Register Student. Once season, course, level, and dates are selected, the UI presents the full-season configured price plus a prorated suggestion. The documented initial proration formula is: `full season price × active enrollment days / season days`, rounded to cents. The suggestion does not override the existing discount/manual adjustment workflow.
+
+## Phase 4 payment visibility upgrade
+
+Phase 4 improves payment discovery and balance review without changing the underlying payment architecture. `Payment.familyId` remains required, `PaymentItem` continues to allocate money to enrollment rows, and existing allocation, receipt, void, and reversal services remain the source of truth.
+
+Payment creation now begins with a searchable Family / Group selector whose option metadata includes family name, parent names, phone/email contacts, student names, and Student IDs. Once a payer is selected, the workflow shows all unpaid enrollment balances for that family by student, season, course, level, amount due, paid amount, and remaining amount. It also summarizes outstanding balances by season so previous unpaid seasons stay visible before the payment is created.
+
+Independent students remain supported through the existing safe behavior: payment collection requires assigning or creating a Family / Group payer record before a family-based payment can be created. The UI explicitly states this instead of implying independent students can be paid without a payer.
+
+The Payments index adds operational filters for Family / Group, Student, Student ID, receipt number, season, payment method, status, and date range. Table columns now emphasize receipt number, payer group, covered students and seasons, allocation count/amount, total, status, and receipt actions while preserving admin-only void access.
+
+Family and Student profile/list surfaces expose current-season balance, previous unpaid balance, and total outstanding so staff can understand balances before entering the payment workflow.
