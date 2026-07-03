@@ -25,7 +25,7 @@ export default async function DashboardPage() {
     </section>
     <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <QuickActionCard href="/families" title="Add Family" description="Create a family record." />
-      <QuickActionCard href="/students" title="Add Student" description="Add a student to a family." />
+      <QuickActionCard href="/register-student" title="Register Student" description="Create an independent student or family group registration." />
       <QuickActionCard href="/payments/new" title="Create Payment" description="Record and allocate a payment." />
       <QuickActionCard href="/expenses/new" title="Add Expense" description="Track money spent." />
       <QuickActionCard href="/schedule" title="Add Session" description="Book a lesson." />

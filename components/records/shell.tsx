@@ -6,13 +6,13 @@ import type { AppSession } from "@/lib/auth/session";
 
 
 export function AppShell({ session, children }: { session: AppSession; children: React.ReactNode }) {
-  return <div className="min-h-screen bg-background text-foreground overflow-x-hidden lg:grid lg:min-h-screen lg:grid-cols-[18rem_minmax(0,1fr)]">
-    <aside className="flex min-h-screen min-w-0 flex-col overflow-hidden border-b border-white/10 bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+  return <div className="min-h-screen bg-background text-foreground overflow-x-hidden lg:h-screen lg:overflow-hidden lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+    <aside className="flex min-h-screen min-w-0 flex-col overflow-hidden border-b border-white/10 bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:min-h-0 lg:shrink-0 lg:border-b-0 lg:border-r">
       <div className="shrink-0 p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg"><Sparkles className="size-5" /></span><div><p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">Music School</p><h1 className="text-xl font-bold">IPSM Admin</h1></div></div><p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">Simple tools for daily front-desk operations.</p></div>
       <SidebarNav role={session.role} />
       <div className="mt-auto shrink-0 border-t border-white/10 bg-slate-950 p-4"><form action={signOut}><button className="w-full rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50" type="submit">Sign out</button></form></div>
     </aside>
-    <main className="min-w-0 max-w-full overflow-x-hidden px-4 py-5 sm:px-6 lg:p-8">
+    <main className="min-w-0 max-w-full overflow-x-hidden px-4 py-5 sm:px-6 lg:h-screen lg:overflow-y-auto lg:p-8">
       <TopHeader session={session} />
       {children}
     </main>
