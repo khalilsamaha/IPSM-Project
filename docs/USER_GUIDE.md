@@ -372,3 +372,32 @@ The Register Student workflow now uses configured academic records instead of a 
 - **Missing pricing:** If no matching price exists, the form displays: “No configured price found. Admin should configure pricing.” Users may continue with a manual fee only where the existing workflow permits manual fee entry.
 
 Existing enrollments remain valid because the legacy `courseName` value is still stored and displayed whenever a related Course record is not available.
+
+## Phase 2 student and family registration
+
+### Student ID
+
+Every student has a generated Student ID in the format `STU-YYYY-000001`. The ID is created automatically for new students and existing students are backfilled during the Phase 2 migration. Use this ID when searching Students, Enrollments, Schedule, Payments, and reports so staff can distinguish students with similar names.
+
+### Independent student
+
+An independent student is a student record with no Family / Group attached. Use **Register Student → New independent student** to create one student, continue to enrollment, optionally take an initial payment, and optionally book a first lesson. Because payments remain family-based in this phase, the system may create a lightweight payer Family / Group only when an initial payment is required.
+
+### Family / Group and parent details
+
+A Family / Group can represent a household, sibling group, company group, or other payer/student grouping. Family records now include father details, mother details, address, and emergency contact details. These fields are optional so existing families remain valid.
+
+### Register Student workflow
+
+Register Student supports four clear paths:
+
+1. **New independent student** — creates one student without a Family / Group and then creates the enrollment for that student.
+2. **New family / group with one or more students** — creates the Family / Group with parent details, creates one or more students under it, and creates the enrollment for the selected primary student.
+3. **Existing family / group, add student** — selects an existing Family / Group, creates one or more students under it, and creates the enrollment for the selected primary student.
+4. **Existing student, new enrollment** — selects an existing student and creates a new enrollment without implying profile editing.
+
+For family/group paths, the registration screen explains that only the selected primary student receives the enrollment in this phase. Other students are created under the Family / Group and can be enrolled next.
+
+### Students page
+
+The `/students` page remains a records and management list for search, filtering, archive, and restore. Use the **Register Student** button on that page for new registrations instead of using inline student creation.

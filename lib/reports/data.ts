@@ -21,7 +21,7 @@ const dateRange = (field: "paymentDate" | "expenseDate", filters: ReportFilters)
 export async function getReportLookups() {
   const [families, students, seasons, teachers, expenseCategories, paymentMethods] = await Promise.all([
     prisma.family.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.student.findMany({ orderBy: [{ lastName: "asc" }, { firstName: "asc" }], select: { id: true, firstName: true, lastName: true } }),
+    prisma.student.findMany({ orderBy: [{ lastName: "asc" }, { firstName: "asc" }], select: { id: true, studentCode: true, firstName: true, lastName: true } }),
     prisma.season.findMany({ orderBy: { startDate: "desc" }, select: { id: true, name: true } }),
     prisma.teacher.findMany({ orderBy: { fullName: "asc" }, select: { id: true, fullName: true } }),
     prisma.expense.findMany({ distinct: ["category"], orderBy: { category: "asc" }, select: { category: true } }),

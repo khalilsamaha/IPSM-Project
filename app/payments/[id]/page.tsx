@@ -70,7 +70,7 @@ export default async function PaymentDetailPage({
           <tbody>
             {payment.items.map((item) => (
               <tr className="border-t" key={item.id}>
-                <td className="p-3">{item.enrollment.student.firstName} {item.enrollment.student.lastName}</td>
+                <td className="p-3">{item.enrollment.student.studentCode} — {item.enrollment.student.firstName} {item.enrollment.student.lastName}</td>
                 <td>{item.enrollment.courseName}</td>
                 <td>{item.enrollment.season.name}</td>
                 <td>{formatCurrency(item.amountCents)}</td><td>{formatCurrency(item.enrollment.remainingCents)}</td>

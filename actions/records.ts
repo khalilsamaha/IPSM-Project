@@ -10,6 +10,7 @@ import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
 import { scheduleSessionSchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
+import { createStudentWithCode } from "@/lib/students";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -27,7 +28,7 @@ const optionalEmail = z.string().trim().email().or(z.literal("")).optional().tra
 const optionalString = z.string().trim().optional().transform((v) => v || null);
 const id = z.string().uuid();
 
-const familySchema = z.object({ id: id.optional(), name: z.string().trim().min(1), email: optionalEmail, phone: optionalString, status: z.enum(["ACTIVE", "INACTIVE"]), notes: optionalString });
+const familySchema = z.object({ id: id.optional(), name: z.string().trim().min(1), email: optionalEmail, phone: optionalString, fatherFirstName: optionalString, fatherLastName: optionalString, fatherJob: optionalString, fatherPhone: optionalString, fatherEmail: optionalEmail, motherFirstName: optionalString, motherLastName: optionalString, motherJob: optionalString, motherPhone: optionalString, motherEmail: optionalEmail, address: optionalString, emergencyContactName: optionalString, emergencyContactPhone: optionalString, status: z.enum(["ACTIVE", "INACTIVE"]), notes: optionalString });
 export async function saveFamily(formData: FormData) {
   await requireRecordsWrite();
   const data = familySchema.parse(Object.fromEntries(formData));
@@ -54,7 +55,7 @@ export async function saveStudent(formData: FormData) {
   const parsed = studentSchema.parse(Object.fromEntries(formData));
   const { id: studentId, familyId, ...studentData } = parsed;
   const data = familyId ? { ...studentData, family: { connect: { id: familyId } } } : studentData;
-  const row = studentId ? await prisma.student.update({ where: { id: studentId }, data: data as any }) : await prisma.student.create({ data: data as any });
+  const row = studentId ? await prisma.student.update({ where: { id: studentId }, data: data as any }) : await createStudentWithCode(prisma.student, data as any);
   await audit(studentId ? "update" : "create", "Student", row.id, data);
   revalidatePath("/students");
 }
@@ -280,6 +281,19 @@ const registrationSchema = z.object({
   familyEmail: optionalEmail,
   familyPhone: optionalString,
   familyNotes: optionalString,
+  fatherFirstName: optionalString,
+  fatherLastName: optionalString,
+  fatherJob: optionalString,
+  fatherPhone: optionalString,
+  fatherEmail: optionalEmail,
+  motherFirstName: optionalString,
+  motherLastName: optionalString,
+  motherJob: optionalString,
+  motherPhone: optionalString,
+  motherEmail: optionalEmail,
+  address: optionalString,
+  emergencyContactName: optionalString,
+  emergencyContactPhone: optionalString,
   firstName: z.string().trim().optional(),
   lastName: z.string().trim().optional(),
   email: optionalEmail,
@@ -342,7 +356,7 @@ export async function registerStudentWorkflow(formData: FormData) {
       if (normalizedRegistrationType === "existing_family_group" && !familyId) throw new Error("Choose an existing Family / Group or switch registration type.");
       if (normalizedRegistrationType === "new_family_group") {
         if (!parsed.familyName) throw new Error("Family / Group name is required for a new family registration.");
-        const family = await tx.family.create({ data: { name: parsed.familyName, email: parsed.familyEmail, phone: parsed.familyPhone, notes: parsed.familyNotes } });
+        const family = await tx.family.create({ data: { name: parsed.familyName, email: parsed.familyEmail, phone: parsed.familyPhone, notes: parsed.familyNotes, fatherFirstName: parsed.fatherFirstName, fatherLastName: parsed.fatherLastName, fatherJob: parsed.fatherJob, fatherPhone: parsed.fatherPhone, fatherEmail: parsed.fatherEmail, motherFirstName: parsed.motherFirstName, motherLastName: parsed.motherLastName, motherJob: parsed.motherJob, motherPhone: parsed.motherPhone, motherEmail: parsed.motherEmail, address: parsed.address, emergencyContactName: parsed.emergencyContactName, emergencyContactPhone: parsed.emergencyContactPhone } });
         familyId = family.id;
         await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", explicitFamilyFields: true } } });
       }
@@ -362,7 +376,7 @@ export async function registerStudentWorkflow(formData: FormData) {
       for (const row of studentRows) {
         if (!row.firstName || !row.lastName) throw new Error("Each added student needs a first and last name.");
         const studentData = familyId ? { firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone, dateOfBirth: row.dateOfBirth, family: { connect: { id: familyId } } } : { firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone, dateOfBirth: row.dateOfBirth };
-        const student = await tx.student.create({ data: studentData as any });
+        const student = await createStudentWithCode(tx.student, studentData as any);
         createdStudentIds.push(student.id);
         await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId } } });
       }

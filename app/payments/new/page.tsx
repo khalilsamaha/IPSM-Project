@@ -66,11 +66,11 @@ export default async function NewPaymentPage({
             </div>
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-left text-sm">
-                <thead className="bg-muted"><tr><th className="p-3">Student</th><th>Season</th><th>Course</th><th>Teacher</th><th>Remaining</th><th>Allocation</th></tr></thead>
+                <thead className="bg-muted"><tr><th className="p-3">Student ID</th><th>Student</th><th>Season</th><th>Course</th><th>Teacher</th><th>Remaining</th><th>Allocation</th></tr></thead>
                 <tbody>
                   {enrollments.map((enrollment) => (
                     <tr className="border-t" key={enrollment.id}>
-                      <td className="p-3 font-medium">{enrollment.student.firstName} {enrollment.student.lastName}</td>
+                      <td className="p-3 font-mono text-xs font-bold">{enrollment.student.studentCode}</td><td className="font-medium">{enrollment.student.firstName} {enrollment.student.lastName}</td>
                       <td>{enrollment.season.name}</td>
                       <td>{enrollment.courseName}</td>
                       <td>{enrollment.teacher?.fullName ?? "—"}</td>

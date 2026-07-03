@@ -98,6 +98,19 @@ model Family {
   name       String
   email      String?
   phone      String?
+  fatherFirstName String? @map("father_first_name")
+  fatherLastName String? @map("father_last_name")
+  fatherJob String? @map("father_job")
+  fatherPhone String? @map("father_phone")
+  fatherEmail String? @map("father_email")
+  motherFirstName String? @map("mother_first_name")
+  motherLastName String? @map("mother_last_name")
+  motherJob String? @map("mother_job")
+  motherPhone String? @map("mother_phone")
+  motherEmail String? @map("mother_email")
+  address String?
+  emergencyContactName String? @map("emergency_contact_name")
+  emergencyContactPhone String? @map("emergency_contact_phone")
   status     FamilyStatus @default(ACTIVE)
   notes      String?
   students   Student[]
@@ -114,6 +127,7 @@ model Student {
   id          String        @id @default(uuid()) @db.Uuid
   familyId    String?       @map("family_id") @db.Uuid
   family      Family?       @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  studentCode String        @unique @map("student_code")
   firstName   String        @map("first_name")
   lastName    String        @map("last_name")
   email       String?
@@ -127,6 +141,7 @@ model Student {
   archivedAt  DateTime?     @map("archived_at")
 
   @@index([familyId])
+  @@index([studentCode])
   @@index([status])
   @@map("students")
 }

@@ -15,7 +15,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   const session = await requireSession();
   const { q, page, skip, take } = getPagination(params);
   const status = getStatusFilter(params.status);
-  const where = { AND: [status === "archived" ? { status: "INACTIVE" as const } : status === "active" ? { status: "ACTIVE" as const } : {}, q ? { OR: [{ firstName: { contains: q, mode: "insensitive" as const } }, { lastName: { contains: q, mode: "insensitive" as const } }, { family: { name: { contains: q, mode: "insensitive" as const } } }] } : {}] };
+  const where = { AND: [status === "archived" ? { status: "INACTIVE" as const } : status === "active" ? { status: "ACTIVE" as const } : {}, q ? { OR: [{ studentCode: { contains: q, mode: "insensitive" as const } }, { firstName: { contains: q, mode: "insensitive" as const } }, { lastName: { contains: q, mode: "insensitive" as const } }, { family: { name: { contains: q, mode: "insensitive" as const } } }] } : {}] };
   const [rows, total] = await Promise.all([
     prisma.student.findMany({ where, include: { family: true }, orderBy: { updatedAt: "desc" }, skip, take }),
     prisma.student.count({ where }),
@@ -29,8 +29,8 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
       </div>
       <Link className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm" href="/register-student">Register Student</Link>
     </div>
-    <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)]"><SearchBox q={q} placeholder="Search students" /><StatusTabs value={status} hrefFor={(nextStatus: RecordStatusFilter) => hrefFor(1, q, nextStatus)} /></div>
-    <DataTable><thead className="bg-muted"><tr><th className="p-3">Student</th><th>Family</th><th>DOB</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map(r => <tr className="border-t" key={r.id}><td className="p-3 font-medium">{r.firstName} {r.lastName}</td><td>{r.family?.name ?? "Independent student"}</td><td>{formatDate(r.dateOfBirth)}</td><td><StatusBadge status={r.status} /></td><td>{r.status === "INACTIVE" ? <form action={restoreStudent}><input type="hidden" name="id" value={r.id} /><ConfirmSubmitButton className="text-primary" message="Restore this student?">Restore</ConfirmSubmitButton></form> : <form action={archiveStudent}><input type="hidden" name="id" value={r.id} /><ConfirmSubmitButton className="text-primary" message="Archive this record? This will hide it from active workflows.">Archive</ConfirmSubmitButton></form>}</td></tr>)}</tbody></DataTable>
+    <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)]"><SearchBox q={q} placeholder="Search students or Student ID" /><StatusTabs value={status} hrefFor={(nextStatus: RecordStatusFilter) => hrefFor(1, q, nextStatus)} /></div>
+    <DataTable><thead className="bg-muted"><tr><th className="p-3">Student ID</th><th>Student</th><th>Family</th><th>DOB</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map(r => <tr className="border-t" key={r.id}><td className="p-3 font-mono text-xs font-bold">{r.studentCode}</td><td className="font-medium">{r.firstName} {r.lastName}</td><td>{r.family?.name ?? "Independent student"}</td><td>{formatDate(r.dateOfBirth)}</td><td><StatusBadge status={r.status} /></td><td>{r.status === "INACTIVE" ? <form action={restoreStudent}><input type="hidden" name="id" value={r.id} /><ConfirmSubmitButton className="text-primary" message="Restore this student?">Restore</ConfirmSubmitButton></form> : <form action={archiveStudent}><input type="hidden" name="id" value={r.id} /><ConfirmSubmitButton className="text-primary" message="Archive this record? This will hide it from active workflows.">Archive</ConfirmSubmitButton></form>}</td></tr>)}</tbody></DataTable>
     <Pager page={page} total={total} hrefFor={(p) => hrefFor(p, q, status)} />
   </AppShell>;
 }
