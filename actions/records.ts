@@ -261,14 +261,27 @@ export async function cancelScheduleSession(formData: FormData) {
   revalidatePath("/schedule");
 }
 
-const registrationSchema = z.object({
-  studentId: id.or(z.literal("new")),
-  familyId: id.or(z.literal("")).optional().transform((v) => v || null),
-  createFamilyFromStudent: z.string().optional(),
+const registrationStudentInputSchema = z.object({
   firstName: z.string().trim().optional(),
   lastName: z.string().trim().optional(),
   email: optionalEmail,
   phone: optionalString,
+});
+
+const registrationSchema = z.object({
+  studentId: id.or(z.literal("new")).optional().default("new"),
+  registrationType: z.enum(["independent", "existing-family", "new-family"]).default("independent"),
+  familyId: id.or(z.literal("")).optional().transform((v) => v || null),
+  createFamilyFromStudent: z.string().optional(),
+  familyName: z.string().trim().optional(),
+  familyEmail: optionalEmail,
+  familyPhone: optionalString,
+  familyNotes: optionalString,
+  firstName: z.string().trim().optional(),
+  lastName: z.string().trim().optional(),
+  email: optionalEmail,
+  phone: optionalString,
+  primaryStudentIndex: z.string().default("0"),
   seasonId: id,
   courseName: z.string().trim().min(1, "Course is required."),
   teacherId: id.or(z.literal("")).optional().transform((v) => v || null),
@@ -286,9 +299,24 @@ function registrationErrorRedirect(message: string): never {
   redirect(`/register-student?error=${encodeURIComponent(message)}`);
 }
 
+function getRegistrationStudents(formData: FormData) {
+  const firstNames = formData.getAll("studentFirstName").map(String);
+  const lastNames = formData.getAll("studentLastName").map(String);
+  const emails = formData.getAll("studentEmail").map(String);
+  const phones = formData.getAll("studentPhone").map(String);
+  const rows = firstNames.map((firstName, index) => registrationStudentInputSchema.parse({ firstName, lastName: lastNames[index] ?? "", email: emails[index] ?? "", phone: phones[index] ?? "" }))
+    .filter((row) => row.firstName || row.lastName || row.email || row.phone);
+  return rows;
+}
+
 export async function registerStudentWorkflow(formData: FormData) {
   const { createdById, session } = await requireRecordsWrite();
-  const parsed = registrationSchema.parse(Object.fromEntries(formData));
+  let parsed: z.infer<typeof registrationSchema>;
+  try {
+    parsed = registrationSchema.parse(Object.fromEntries(formData));
+  } catch (error) {
+    registrationErrorRedirect(error instanceof z.ZodError ? error.issues[0]?.message ?? "Please check the registration form." : "Please check the registration form.");
+  }
   const feeCents = dollarsToCents(parsed.fee);
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
@@ -296,35 +324,56 @@ export async function registerStudentWorkflow(formData: FormData) {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      let studentId = parsed.studentId === "new" ? null : parsed.studentId;
-      let familyId = parsed.familyId;
+      let familyId = parsed.registrationType === "existing-family" ? parsed.familyId : null;
+      const createdStudentIds: string[] = [];
+      let primaryStudentId = parsed.studentId === "new" ? null : parsed.studentId;
 
-      if (!studentId) {
-        if (!parsed.firstName || !parsed.lastName) throw new Error("First and last name are required for a new student.");
-        if (!familyId && parsed.createFamilyFromStudent) {
-          const family = await tx.family.create({ data: { name: `${parsed.lastName} Family / Group`, email: parsed.email, phone: parsed.phone } });
-          familyId = family.id;
-          await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow" } } });
-        }
-        const student = await tx.student.create({ data: { familyId, firstName: parsed.firstName, lastName: parsed.lastName, email: parsed.email, phone: parsed.phone } });
-        studentId = student.id;
-        await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow" } } });
+      if (parsed.registrationType === "existing-family" && !familyId) throw new Error("Choose an existing Family / Group or switch to Independent student.");
+      if (parsed.registrationType === "new-family") {
+        if (!parsed.familyName) throw new Error("Family / Group name is required for a new family registration.");
+        const family = await tx.family.create({ data: { name: parsed.familyName, email: parsed.familyEmail, phone: parsed.familyPhone, notes: parsed.familyNotes } });
+        familyId = family.id;
+        await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", explicitFamilyFields: true } } });
       }
 
-      const enrollment = await tx.enrollment.create({ data: { studentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents } });
-      await tx.auditLog.create({ data: { action: "create", entity: "Enrollment", entityId: enrollment.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow" } } });
+      const studentRows = getRegistrationStudents(formData);
+      if (!primaryStudentId && studentRows.length === 0 && (parsed.firstName || parsed.lastName)) studentRows.push({ firstName: parsed.firstName, lastName: parsed.lastName, email: parsed.email, phone: parsed.phone });
+      if (!primaryStudentId && studentRows.length === 0) throw new Error("Add at least one student before confirming registration.");
+      if (parsed.registrationType === "independent" && studentRows.length > 1) throw new Error("Multiple students require an existing or new Family / Group.");
+
+      if (!familyId && parsed.createFamilyFromStudent && studentRows[0]) {
+        const family = await tx.family.create({ data: { name: `${studentRows[0].lastName} Family / Group`, email: studentRows[0].email, phone: studentRows[0].phone } });
+        familyId = family.id;
+        await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", legacyCreateFamilyFromStudent: true } } });
+      }
+
+      for (const row of studentRows) {
+        if (!row.firstName || !row.lastName) throw new Error("Each added student needs a first and last name.");
+        const student = await tx.student.create({ data: { familyId, firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone } });
+        createdStudentIds.push(student.id);
+        await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId } } });
+      }
+
+      if (!primaryStudentId) {
+        const requestedIndex = Math.max(0, Number.parseInt(parsed.primaryStudentIndex, 10) || 0);
+        primaryStudentId = createdStudentIds[Math.min(requestedIndex, createdStudentIds.length - 1)];
+      }
+      if (!primaryStudentId) throw new Error("Choose which student should receive the enrollment.");
+
+      const enrollment = await tx.enrollment.create({ data: { studentId: primaryStudentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents } });
+      await tx.auditLog.create({ data: { action: "create", entity: "Enrollment", entityId: enrollment.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", primaryStudentId, additionalStudentIds: createdStudentIds.filter((studentId) => studentId !== primaryStudentId) } } });
 
       let sessionRow = null;
       if (parsed.bookFirstSession) {
         if (!parsed.teacherId) throw new Error("Choose a teacher before booking the first lesson.");
         if (!parsed.sessionDate || !parsed.startTime || !parsed.endTime) throw new Error("Date, start time, and end time are required to book the first lesson.");
-        const sessionData = scheduleSessionSchema.parse({ studentId, teacherId: parsed.teacherId, enrollmentId: enrollment.id, seasonId: parsed.seasonId, sessionDate: parsed.sessionDate, startTime: parsed.startTime, endTime: parsed.endTime, status: "SCHEDULED", title: parsed.courseName });
+        const sessionData = scheduleSessionSchema.parse({ studentId: primaryStudentId, teacherId: parsed.teacherId, enrollmentId: enrollment.id, seasonId: parsed.seasonId, sessionDate: parsed.sessionDate, startTime: parsed.startTime, endTime: parsed.endTime, status: "SCHEDULED", title: parsed.courseName });
         await assertScheduleSessionIsValid(sessionData);
         sessionRow = await tx.scheduleSession.create({ data: sessionData });
         await tx.auditLog.create({ data: { action: "create", entity: "ScheduleSession", entityId: sessionRow.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow" } } });
       }
 
-      return { enrollmentId: enrollment.id, sessionId: sessionRow?.id ?? null, needsPayment: initialPaymentCents > 0, familyId, studentId };
+      return { enrollmentId: enrollment.id, sessionId: sessionRow?.id ?? null, needsPayment: initialPaymentCents > 0, familyId, studentId: primaryStudentId, createdStudentCount: createdStudentIds.length };
     });
 
     let paymentId: string | null = null;
@@ -334,6 +383,7 @@ export async function registerStudentWorkflow(formData: FormData) {
         const student = await prisma.student.findUniqueOrThrow({ where: { id: result.studentId } });
         const family = await prisma.family.create({ data: { name: `${student.lastName} Family / Group`, email: student.email, phone: student.phone, notes: "Lightweight payer record created for an independent student payment." } });
         await prisma.student.update({ where: { id: result.studentId }, data: { familyId: family.id } });
+        await prisma.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", paymentCompatibility: true } } });
         familyId = family.id;
       }
       const { createPaymentWithAllocations } = await import("@/lib/payments/payment-service");
@@ -345,7 +395,7 @@ export async function registerStudentWorkflow(formData: FormData) {
     revalidatePath("/students");
     revalidatePath("/enrollments");
     revalidatePath("/schedule");
-    const successUrl = `/register-student?success=1&enrollmentId=${result.enrollmentId}${result.sessionId ? `&sessionId=${result.sessionId}` : ""}${paymentId ? `&paymentId=${paymentId}` : ""}`;
+    const successUrl = `/register-student?success=1&enrollmentId=${result.enrollmentId}&students=${result.createdStudentCount}${result.sessionId ? `&sessionId=${result.sessionId}` : ""}${paymentId ? `&paymentId=${paymentId}` : ""}`;
     redirect(successUrl);
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;

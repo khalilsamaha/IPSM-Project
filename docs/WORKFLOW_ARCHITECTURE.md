@@ -14,21 +14,20 @@ This intentionally avoids changing receipt or reversal logic during the UX refac
 
 The **Register Student** workflow adds a guided path for Admin and Reception users:
 
-1. Create or select a student.
-2. Optionally select or create a Family / Group.
-3. Select season and course.
-4. Assign a teacher.
-5. Set Amount Due and discount.
-6. Create the enrollment.
-7. Optionally record an initial payment with existing allocation/receipt rules.
-8. Optionally book the first lesson with existing schedule validation.
-9. Finish with a summary and receipt link when a payment was created.
+1. Choose **Independent student**, **Existing Family / Group**, or **New Family / Group**.
+2. Add student details. Existing or new Family / Group registrations can add multiple students in one submission.
+3. For multiple students, choose the primary student who receives the enrollment, optional Initial Payment allocation, and optional Book First Lesson in this phase.
+4. Select season, course, teacher, Amount Due, and discount.
+5. Create the enrollment for the primary student.
+6. Optionally record an Initial Payment with existing allocation/receipt rules.
+7. Optionally Book First Lesson with existing schedule validation.
+8. Finish with a summary and receipt link when a payment was created.
 
-Standalone student, family, enrollment, payment, and schedule pages remain available.
+The Students page is now a records/list page for searching, filtering active/archived/all students, archiving, and restoring. Register Student is the preferred creation workflow. Standalone family, enrollment, payment, and schedule pages remain available.
 
 ## Payment workflow
 
-Existing family payment rules are preserved. Independent students can be registered without a family, but payment collection requires a payer Family / Group record. The registration workflow creates one automatically when needed for an initial payment.
+Existing family payment rules are preserved. Independent students can be registered without a Family / Group, but payment collection requires a payer Family / Group record. The registration workflow creates one automatically only when needed for an Initial Payment, avoiding fake family records for unpaid independent registrations.
 
 ## Booking workflow
 

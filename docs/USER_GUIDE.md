@@ -46,27 +46,28 @@ A family can have one or more students.
 
 Recommended workflow:
 
-1. Create the family first.
-2. Add students under that family.
-3. Create enrollments for those students.
-4. Record payments against the family.
+1. Use **Register Student** when creating a new student registration.
+2. Choose Independent student, Existing Family / Group, or New Family / Group.
+3. Add one or more students when the registration belongs to a Family / Group.
+4. Create the primary student enrollment, optional Initial Payment, and optional Book First Lesson in the guided flow.
+5. Record later payments against the Family / Group when applicable.
 
 ---
 
 ## Students
 
-The Students section stores student information.
+The Students section stores student information and is mainly a records/list page.
 
-Each student belongs to one family.
+Students may be independent or attached to a Family / Group. Family / Group is optional and is mainly used for multiple students or shared payer/contact details.
 
 Use this section to:
 
-- Add students
-- Update student details
 - Search students
+- View active, archived, or all students
 - Archive inactive students
+- Restore archived students
 
-After creating a student, create an enrollment for the appropriate season and course.
+Use **Register Student** as the preferred creation workflow for new students, family/group registrations, enrollment, optional Initial Payment, and optional Book First Lesson.
 
 ---
 
@@ -347,7 +348,7 @@ Potential future improvements include:
 
 ## Guided registration and booking
 
-Use **Register Student** for the fastest front-desk workflow. It can create or select a student, optionally attach a Family / Group, create the enrollment, collect an initial payment, and book the first lesson.
+Use **Register Student** for the preferred front-desk creation workflow. It supports an independent student, an existing Family / Group, or a new Family / Group with multiple students. It creates one enrollment for the selected primary student, can collect an Initial Payment, and can Book First Lesson.
 
 Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an independent student when collecting an initial payment.
 
