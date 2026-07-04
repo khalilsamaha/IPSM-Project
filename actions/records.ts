@@ -9,7 +9,7 @@ import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
 import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
-import { scheduleSessionSchema, timeWindowsOverlap } from "@/lib/schedule/validation";
+import { roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
 
@@ -155,6 +155,46 @@ export async function restoreEnrollment(formData: FormData) {
   revalidatePath("/enrollments");
 }
 
+
+export async function saveRoom(formData: FormData) {
+  await requireRecordsWrite();
+  const data = roomSchema.parse(Object.fromEntries(formData));
+  const row = data.id ? await prisma.room.update({ where: { id: data.id }, data }) : await prisma.room.create({ data });
+  await audit(data.id ? "update" : "create", "Room", row.id, data);
+  revalidatePath("/rooms");
+  revalidatePath("/schedule");
+}
+export async function archiveRoom(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.room.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+  await audit("archive", "Room", row.id);
+  revalidatePath("/rooms");
+  revalidatePath("/schedule");
+}
+export async function restoreRoom(formData: FormData) {
+  await requireRecordsWrite();
+  const row = await prisma.room.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Room", row.id);
+  revalidatePath("/rooms");
+  revalidatePath("/schedule");
+}
+
+export async function saveTeacherAvailability(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const data = teacherAvailabilitySchema.parse(Object.fromEntries(formData));
+  const row = data.id ? await prisma.teacherAvailability.update({ where: { id: data.id }, data }) : await prisma.teacherAvailability.create({ data });
+  await prisma.auditLog.create({ data: { action: data.id ? "update" : "create", entity: "TeacherAvailability", entityId: row.id, createdById, actorId: session.userId, metadata: data } });
+  revalidatePath("/teacher-availability");
+  revalidatePath("/schedule");
+}
+export async function archiveTeacherAvailability(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const row = await prisma.teacherAvailability.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+  await prisma.auditLog.create({ data: { action: "archive", entity: "TeacherAvailability", entityId: row.id, createdById, actorId: session.userId } });
+  revalidatePath("/teacher-availability");
+  revalidatePath("/schedule");
+}
+
 const paymentSchema = z.object({ familyId: id, paymentDate: z.string().min(1).transform((v) => new Date(v)), paymentMethod: z.string().trim().min(1), notes: optionalString });
 
 export async function createPayment(formData: FormData) {
@@ -224,19 +264,21 @@ async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSession
     if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session date must be inside the selected season date range.");
   }
   const where = { sessionDate: data.sessionDate, archivedAt: null, status: { in: blockingStatuses }, ...(data.id ? { NOT: { id: data.id } } : {}) };
-  const [teacherSessions, studentSessions] = await Promise.all([
+  const [teacherSessions, studentSessions, roomSessions] = await Promise.all([
     prisma.scheduleSession.findMany({ where: { ...where, teacherId: data.teacherId }, select: { startTime: true, endTime: true } }),
     prisma.scheduleSession.findMany({ where: { ...where, studentId: data.studentId }, select: { startTime: true, endTime: true } }),
+    data.roomId ? prisma.scheduleSession.findMany({ where: { ...where, roomId: data.roomId }, select: { startTime: true, endTime: true } }) : Promise.resolve([]),
   ]);
   if (teacherSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Teacher is already booked during this time.");
   if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student is already booked during this time.");
+  if (roomSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Room is already booked during this time.");
 }
 
 function scheduleErrorRedirect(formData: FormData, message: string): never {
   const query = new URLSearchParams();
   query.set("error", message);
   query.set("view", "calendar");
-  for (const key of ["studentId", "teacherId", "enrollmentId", "seasonId", "title", "sessionDate", "startTime", "endTime", "status", "notes"] as const) {
+  for (const key of ["studentId", "teacherId", "roomId", "enrollmentId", "seasonId", "title", "sessionDate", "startTime", "endTime", "status", "notes"] as const) {
     const value = formData.get(key);
     if (typeof value === "string" && value) query.set(key === "sessionDate" ? "date" : `form_${key}`, value);
   }
