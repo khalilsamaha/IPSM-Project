@@ -1,11 +1,12 @@
 import { AppShell, DataTable, PageHeader, StatusBadge } from "@/components/records/shell";
 import { NotAuthorized } from "@/lib/auth/not-authorized";
 import { requireSession } from "@/lib/auth/session";
+import { isAdminOrHigher } from "@/lib/auth/roles";
 import { getDataIntegrityDiagnostics } from "@/lib/diagnostics/data-integrity";
 
 export default async function DiagnosticsPage() {
   const session = await requireSession();
-  if (session.role !== "ADMIN") return <NotAuthorized session={session} />;
+  if (!isAdminOrHigher(session.role)) return <NotAuthorized session={session} />;
   const checks = await getDataIntegrityDiagnostics();
   return <AppShell session={session}>
     <PageHeader title="Data Integrity Diagnostics" description="Admin-only production readiness checks for records that need repair before closeout, reporting, or audit review." />

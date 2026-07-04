@@ -12,7 +12,7 @@ The system helps manage families, students, teachers, seasons, enrollments, less
 
 ### Admin
 
-Admin users have full access to the application, including operational modules, finance, reports, and user management.
+Super Admin users have the highest system-owner access. Admin users have operational administrator access to modules, finance, reports, and normal user management, but they do not manage the protected system-owner account.
 
 ### Reception
 
@@ -225,9 +225,9 @@ Use reports weekly or monthly to review revenue, unpaid balances, expenses, prof
 
 ## Users
 
-The Users section is available to Admin users.
+The Users section is available to Super Admin and Admin users. Reception users cannot access user management.
 
-Admins can manage application access and user roles.
+Super Admin can see all accounts, including the protected system owner. Admins can manage normal application access and user roles, but the built-in `admin@ipsm.local` system-owner account is hidden and cannot be edited, deactivated, deleted, or modified by normal Admin users.
 
 Recommended roles:
 
@@ -290,7 +290,7 @@ Use filters to narrow results by:
 - Review remaining balances before recording payments.
 - Void incorrect payments instead of deleting them.
 - Check teacher and student availability before adding sessions.
-- Keep user access limited to the correct role.
+- Keep user access limited to the correct role. Treat Admin users as operational administrators and reserve Super Admin/system-owner access for the protected owner account.
 - Sign out when using a shared computer.
 
 ---
@@ -303,7 +303,7 @@ Check that the email is correct, the account is active, and the user exists in t
 
 ### Cannot access Users
 
-Only Admin users can access User Management.
+Only Super Admin and Admin users can access User Management. Normal Admin users manage operational staff accounts only; the protected `admin@ipsm.local` system-owner account is visible only to Super Admin.
 
 ### Cannot create payment
 

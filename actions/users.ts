@@ -6,11 +6,12 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/roles";
+import { hasPermission, isProtectedUser, isSuperAdmin, type Role } from "@/lib/auth/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logServerError } from "@/lib/server-log";
 
 const roleSchema = z.enum(["ADMIN", "RECEPTION"]);
+const editableRoleSchema = z.enum(["ADMIN", "RECEPTION"]);
 const statusSchema = z.enum(["ACTIVE", "INACTIVE"]);
 
 const createUserSchema = z.object({
@@ -49,6 +50,12 @@ async function audit(action: string, actorId: string | null, entityId: string | 
       metadata: metadata as Prisma.InputJsonValue | undefined,
     },
   });
+}
+
+async function blockProtectedUserMutation(session: { role: Role }, actorId: string | null, target: { id: string; role: string; email: string }) {
+  if (!isProtectedUser(target) || isSuperAdmin(session.role)) return;
+  await audit("protected_user_modification_blocked", actorId, target.id, { email: target.email, role: target.role });
+  userErrorRedirect("Not authorized to modify the protected system owner account.");
 }
 
 export async function createUser(formData: FormData) {
@@ -93,9 +100,10 @@ export async function createUser(formData: FormData) {
 export async function changeUserRole(formData: FormData) {
   const { actorId, session } = await requireUserManager();
   const id = profileIdSchema.parse(formData.get("id"));
-  const role = roleSchema.parse(formData.get("role"));
+  const role = editableRoleSchema.parse(formData.get("role"));
 
-  const previous = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { role: true, authId: true } });
+  const previous = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { id: true, role: true, authId: true, email: true } });
+  await blockProtectedUserMutation(session, actorId, previous);
   if (previous.authId === session.userId && previous.role === "ADMIN" && role !== "ADMIN" && formData.get("confirmSelfRoleChange") !== "yes") userErrorRedirect("Confirm before removing your own Admin access.");
   const user = await prisma.userProfile.update({ where: { id }, data: { role } });
   try {
@@ -113,7 +121,8 @@ export async function setUserStatus(formData: FormData) {
   const { actorId, session } = await requireUserManager();
   const id = profileIdSchema.parse(formData.get("id"));
   const status = statusSchema.parse(formData.get("status"));
-  const user = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { authId: true, email: true, status: true } });
+  const user = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { id: true, authId: true, email: true, role: true, status: true } });
+  await blockProtectedUserMutation(session, actorId, user);
   if (user.authId === session.userId && status === "INACTIVE") userErrorRedirect("You cannot disable your own account.");
 
   const updated = await prisma.userProfile.update({ where: { id }, data: { status, archivedAt: status === "INACTIVE" ? new Date() : null } });
@@ -122,10 +131,11 @@ export async function setUserStatus(formData: FormData) {
 }
 
 export async function resetUserPassword(formData: FormData) {
-  const { actorId } = await requireUserManager();
+  const { actorId, session } = await requireUserManager();
   const id = profileIdSchema.parse(formData.get("id"));
   const password = z.string().min(8, "Temporary password must be at least 8 characters.").parse(formData.get("password"));
-  const user = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { authId: true, email: true } });
+  const user = await prisma.userProfile.findUniqueOrThrow({ where: { id }, select: { id: true, authId: true, email: true, role: true } });
+  await blockProtectedUserMutation(session, actorId, user);
 
   try {
     const { error } = await createAdminClient().auth.admin.updateUserById(user.authId, { password });

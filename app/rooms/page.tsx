@@ -3,6 +3,7 @@ import { archiveRoom, restoreRoom, saveRoom } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { AppShell, DataTable, PageHeader, StatusBadge, StatusTabs, getStatusFilter, type RecordStatusFilter } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
+import { isAdminOrHigher } from "@/lib/auth/roles";
 import { NotAuthorized } from "@/lib/auth/not-authorized";
 import { prisma } from "@/lib/prisma";
 
@@ -11,7 +12,7 @@ const hrefFor = (status: RecordStatusFilter) => status === "active" ? "/rooms" :
 
 export default async function RoomsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const session = await requireSession();
-  if (session.role !== "ADMIN") return <NotAuthorized session={session} />;
+  if (!isAdminOrHigher(session.role)) return <NotAuthorized session={session} />;
   const params = await searchParams;
   const status = getStatusFilter(params.status);
   const where = status === "active" ? { status: "ACTIVE" as const } : status === "archived" ? { status: "ARCHIVED" as const } : {};

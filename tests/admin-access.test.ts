@@ -35,13 +35,15 @@ describe("admin-only navigation and route access", () => {
     expect(canViewNavigationItem("RECEPTION", "/expenses")).toBe(true);
   });
 
-  it("keeps configuration navigation visible for admins", () => {
+  it("keeps configuration navigation visible for admins and super admins", () => {
     expect(canViewNavigationItem("ADMIN", "/settings#school-profile")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/settings#receipt-settings")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/settings#advanced-settings")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/users")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/admin/academic-pricing")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/rooms")).toBe(true);
+    expect(canViewNavigationItem("SUPER_ADMIN", "/users")).toBe(true);
+    expect(canViewNavigationItem("SUPER_ADMIN", "/admin/diagnostics")).toBe(true);
   });
 
   it("blocks reception users from protected admin routes", () => {
@@ -54,11 +56,14 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("RECEPTION", "/seasons")).toBe(false);
   });
 
-  it("keeps admin access to protected admin routes unchanged", () => {
+  it("keeps admin and super admin access to protected admin routes", () => {
     expect(canAccessProtectedRoute("ADMIN", "/settings")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/users")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/admin/courses")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/admin/diagnostics")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/rooms")).toBe(true);
+    expect(canAccessProtectedRoute("SUPER_ADMIN", "/settings")).toBe(true);
+    expect(canAccessProtectedRoute("SUPER_ADMIN", "/users")).toBe(true);
+    expect(canAccessProtectedRoute("SUPER_ADMIN", "/admin/courses")).toBe(true);
   });
 });
