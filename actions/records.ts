@@ -12,6 +12,7 @@ import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
 import { minutesFromTime, roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
+import { buildPaymentCompatibilityFamilyData, buildStudentCreateData, shouldCreatePaymentCompatibilityFamily } from "@/lib/registration/independent-student";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -62,10 +63,15 @@ export async function saveStudent(formData: FormData) {
   await requireRecordsWrite();
   const parsed = studentSchema.parse(Object.fromEntries(formData));
   const { id: studentId, familyId, ...studentData } = parsed;
-  const data = familyId ? { ...studentData, family: { connect: { id: familyId } } } : studentData;
-  const row = studentId ? await prisma.student.update({ where: { id: studentId }, data: data as any }) : await createStudentWithCode(prisma.student, data as any);
-  await audit(studentId ? "update" : "create", "Student", row.id, data);
-  revalidatePath("/students");
+  const data = familyId ? { ...studentData, family: { connect: { id: familyId } } } : { ...studentData, family: { disconnect: true } };
+  try {
+    const row = studentId ? await prisma.student.update({ where: { id: studentId }, data: data as any }) : await createStudentWithCode(prisma.student, familyId ? data as any : studentData as any);
+    await audit(studentId ? "update" : "create", "Student", row.id, data);
+    revalidatePath("/students");
+  } catch (error) {
+    logServerError("student.save", error, { studentId, familyId });
+    redirect(`/students?error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to save student. Please check the form and try again.")}`);
+  }
 }
 export async function archiveStudent(formData: FormData) {
   await requireRecordsWrite();
@@ -448,7 +454,7 @@ export async function registerStudentWorkflow(formData: FormData) {
 
       for (const row of studentRows) {
         if (!row.firstName || !row.lastName) throw new Error("Each added student needs a first and last name.");
-        const studentData = familyId ? { firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone, dateOfBirth: row.dateOfBirth, family: { connect: { id: familyId } } } : { firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone, dateOfBirth: row.dateOfBirth };
+        const studentData = buildStudentCreateData({ firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone, dateOfBirth: row.dateOfBirth }, familyId);
         const student = await createStudentWithCode(tx.student, studentData as any);
         createdStudentIds.push(student.id);
         await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId } } });
@@ -481,13 +487,14 @@ export async function registerStudentWorkflow(formData: FormData) {
     let paymentId: string | null = null;
     if (result.needsPayment) {
       let familyId = result.familyId;
-      if (!familyId) {
+      if (shouldCreatePaymentCompatibilityFamily(familyId, initialPaymentCents)) {
         const student = await prisma.student.findUniqueOrThrow({ where: { id: result.studentId } });
-        const family = await prisma.family.create({ data: { name: `${student.lastName} Family / Group`, email: student.email, phone: student.phone, notes: "Lightweight payer record created for an independent student payment." } });
+        const family = await prisma.family.create({ data: buildPaymentCompatibilityFamilyData(student) });
         await prisma.student.update({ where: { id: result.studentId }, data: { familyId: family.id } });
         await prisma.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", paymentCompatibility: true } } });
         familyId = family.id;
       }
+      if (!familyId) throw new Error("A Family / Group payer is required before recording an initial payment.");
       const { createPaymentWithAllocations } = await import("@/lib/payments/payment-service");
       const payment = await createPaymentWithAllocations(prisma, { familyId, paymentDate: new Date(), paymentMethod: parsed.paymentMethod, notes: "Initial payment from registration workflow", createdById, actorId: session.userId, allocations: [{ enrollmentId: result.enrollmentId, amountCents: initialPaymentCents }] });
       paymentId = payment.id;
