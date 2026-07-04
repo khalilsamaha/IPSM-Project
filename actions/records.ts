@@ -528,12 +528,14 @@ export async function saveCourse(formData: FormData) {
   const row = data.id ? await prisma.course.update({ where: { id: data.id }, data }) : await prisma.course.create({ data });
   await audit(data.id ? "update" : "create", "Course", row.id, data);
   revalidatePath("/admin/courses");
+  revalidatePath("/admin/academic-pricing");
 }
 export async function archiveCourse(formData: FormData) {
   await requireAdminConfig();
   const row = await prisma.course.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
   await audit("archive", "Course", row.id);
   revalidatePath("/admin/courses");
+  revalidatePath("/admin/academic-pricing");
 }
 
 const courseLevelSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), order: z.coerce.number().int().default(0), status: z.enum(["ACTIVE", "ARCHIVED"]) });
@@ -543,12 +545,14 @@ export async function saveCourseLevel(formData: FormData) {
   const row = data.id ? await prisma.courseLevel.update({ where: { id: data.id }, data }) : await prisma.courseLevel.create({ data });
   await audit(data.id ? "update" : "create", "CourseLevel", row.id, data);
   revalidatePath("/admin/course-levels");
+  revalidatePath("/admin/academic-pricing");
 }
 export async function archiveCourseLevel(formData: FormData) {
   await requireAdminConfig();
   const row = await prisma.courseLevel.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
   await audit("archive", "CourseLevel", row.id);
   revalidatePath("/admin/course-levels");
+  revalidatePath("/admin/academic-pricing");
 }
 
 const coursePricingSchema = z.object({ id: id.optional(), courseId: id, levelId: id, seasonId: id.or(z.literal("")).optional().transform((v) => v || null), price: z.string().default("0"), status: z.enum(["ACTIVE", "ARCHIVED"]) });
@@ -559,10 +563,12 @@ export async function saveCoursePricing(formData: FormData) {
   const row = data.id ? await prisma.coursePricing.update({ where: { id: data.id }, data }) : await prisma.coursePricing.create({ data });
   await audit(data.id ? "update" : "create", "CoursePricing", row.id, data);
   revalidatePath("/admin/course-pricing");
+  revalidatePath("/admin/academic-pricing");
 }
 export async function archiveCoursePricing(formData: FormData) {
   await requireAdminConfig();
   const row = await prisma.coursePricing.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED" } });
   await audit("archive", "CoursePricing", row.id);
   revalidatePath("/admin/course-pricing");
+  revalidatePath("/admin/academic-pricing");
 }
