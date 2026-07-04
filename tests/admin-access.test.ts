@@ -6,6 +6,7 @@ describe("admin-only navigation and route access", () => {
     expect(canViewNavigationItem("RECEPTION", "/settings")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/users")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/admin/course-pricing")).toBe(false);
+    expect(canViewNavigationItem("RECEPTION", "/admin/diagnostics")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/rooms")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/teacher-availability")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/seasons")).toBe(false);
@@ -23,6 +24,7 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("RECEPTION", "/settings")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/users")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/admin/courses")).toBe(false);
+    expect(canAccessProtectedRoute("RECEPTION", "/admin/diagnostics")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/rooms")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/teacher-availability")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/seasons")).toBe(false);
@@ -32,6 +34,7 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("ADMIN", "/settings")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/users")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/admin/courses")).toBe(true);
+    expect(canAccessProtectedRoute("ADMIN", "/admin/diagnostics")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/rooms")).toBe(true);
   });
 });

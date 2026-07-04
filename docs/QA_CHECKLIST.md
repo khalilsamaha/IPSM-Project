@@ -132,3 +132,18 @@ Use this checklist before promoting the IPSM MVP to production. Run it against a
 - [ ] `npm run typecheck` passes.
 - [ ] `npm test` passes.
 - [ ] `npm run build` passes; known non-critical framework/dependency warnings are documented before release.
+
+## Phase 10 Final Stabilization QA
+
+### Route and authorization audit
+- Confirm `/dashboard`, `/register-student`, `/families`, `/students`, `/teachers`, `/enrollments`, `/schedule`, `/payments`, `/expenses`, and `/reports` require authentication and load for Admin and Reception.
+- Confirm `/users`, `/settings`, `/seasons`, `/rooms`, `/teacher-availability`, `/admin/courses`, `/admin/course-levels`, `/admin/course-pricing`, and `/admin/diagnostics` require Admin access and show the friendly Not Authorized state to Reception users instead of throwing or crashing.
+- Confirm unauthenticated users redirect to `/login`.
+
+### Data integrity diagnostics
+Admins should review `/admin/diagnostics` before production closeout. The page covers payments missing receipt numbers, payments without payment items, payment total/allocation mismatches, negative enrollment balances, sessions missing rooms, duplicate student codes, and duplicate course pricing combinations.
+
+### Layout readiness
+- Verify there is no body-level horizontal scroll on desktop or mobile widths.
+- Verify the sidebar remains full height on desktop and does not cut off the sign-out control.
+- Verify crowded tables scroll inside the DataTable container rather than expanding the body.

@@ -25,3 +25,12 @@ group by p.id having coalesce(sum(i.amount_cents),0) <> p.total_amount_cents or 
 ## Safe logging
 
 Server logs use sanitized structured messages. Never log passwords, tokens, service role keys, API keys, authorization headers, or database URLs.
+
+## Phase 10 data integrity diagnostics
+
+Use `/admin/diagnostics` when reports, receipts, balances, or scheduling data look inconsistent. Any non-zero check should be investigated before season closing or financial reconciliation:
+- Repair missing receipt numbers with the receipt repair flow before issuing receipts.
+- Review payments without items and payment total/allocation mismatches against the payment ledger.
+- Correct negative enrollment balances before publishing outstanding-balance reports.
+- Add missing rooms to scheduled/completed/missed sessions when room utilization is expected.
+- Resolve duplicate student codes or duplicate course pricing records before importing more records.

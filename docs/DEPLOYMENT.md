@@ -147,3 +147,7 @@ npm run build
 ## Optional student family migration
 
 Migration `20260703000000_optional_student_family_workflow.sql` makes `students.family_id` nullable and changes the foreign key to `ON DELETE SET NULL`. Apply it with the normal Supabase/Prisma migration process before deploying code that creates independent students.
+
+## Phase 10 pre-deployment gates
+
+Run `npm run typecheck`, `npm test`, and `npm run build` before promoting a release. After deployment, sign in as Admin and Reception to verify route authorization and review `/admin/diagnostics` for data-integrity warnings.

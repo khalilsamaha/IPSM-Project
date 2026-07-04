@@ -463,3 +463,7 @@ Configuration cards include:
 - **Users & Roles**: user management and ADMIN / RECEPTION role assignment.
 
 Reception users do not see this area in the sidebar. If a Reception user manually enters an Admin configuration URL, the application redirects safely or displays a Not Authorized message instead of exposing the page.
+
+## Phase 10 stabilization notes
+
+The final stabilized workflow keeps daily Reception work on Dashboard, Register Student, Families, Students, Teachers, Enrollments, Schedule, Payments, Expenses, and Reports. Admin-only configuration is grouped under Settings, including course setup, seasons, rooms, teacher availability, users, and Data Integrity Diagnostics.
