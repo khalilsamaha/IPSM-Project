@@ -78,8 +78,8 @@ export default async function SettingsPage() {
   return (
     <AppShell session={session}>
       <PageHeader
-        title="School Configuration"
-        description="Admin-only configuration for academic setup, scheduling setup, finance reference data, school profile settings, and user access. Daily Reception workflows remain available from the main navigation."
+        title="System / Admin Settings"
+        description="Admin-only tools for school profile details, receipt settings, advanced diagnostics, and user access. Academic, finance, and scheduling setup links live under their matching sidebar categories."
       />
       <section className="grid gap-5 lg:grid-cols-2">
         {cards.map((card) => (
@@ -93,7 +93,7 @@ export default async function SettingsPage() {
 function ConfigSectionCard({ card }: { card: ConfigCard }) {
   const Icon = card.icon;
   return (
-    <article className="rounded-[1.5rem] border border-border bg-white p-5 shadow-sm">
+    <article id={card.title === "School Profile" ? "school-profile" : card.title === "Users & Roles" ? "advanced-settings" : card.title === "Finance Setup" ? "receipt-settings" : undefined} className="scroll-mt-6 rounded-[1.5rem] border border-border bg-white p-5 shadow-sm">
       <div className="flex items-start gap-4">
         <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
           <Icon className="size-5" />

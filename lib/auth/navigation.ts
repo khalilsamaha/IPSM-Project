@@ -9,14 +9,17 @@ const adminOnlyRoutes = [
   "/teacher-availability",
 ] as const;
 
+const adminOnlyNavigationRoutes = [...adminOnlyRoutes] as const;
+
 export function canViewNavigationItem(role: Role | null | undefined, href: string) {
-  if (!adminOnlyRoutes.some((route) => href === route || href.startsWith(`${route}/`))) return true;
+  const [pathname] = href.split("#");
+  if (!adminOnlyNavigationRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))) return true;
   return role === "ADMIN";
 }
 
 export function canAccessProtectedRoute(role: Role | null | undefined, pathname: string) {
-  if (pathname === "/settings") return hasPermission(role, "settings:manage");
-  if (pathname === "/users") return hasPermission(role, "users:manage");
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) return hasPermission(role, "settings:manage");
+  if (pathname === "/users" || pathname.startsWith("/users/")) return hasPermission(role, "users:manage");
   if (adminOnlyRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))) return role === "ADMIN";
   return true;
 }

@@ -444,26 +444,25 @@ Use **View closing report** on the Seasons page to review the season summary: st
 
 ## Phase 6 Scheduling Foundation: Rooms and Teacher Availability
 
-Rooms are managed from **School Configuration > Scheduling Setup** by Admin users. Admins can add active rooms such as Room 1, Piano Room, Dance Room, or Theory Room, optionally recording capacity and notes. Archived rooms are hidden from new booking choices but historical schedule sessions remain valid.
+Rooms are managed from **Scheduling > Rooms** by Admin users. Admins can add active rooms such as Room 1, Piano Room, Dance Room, or Theory Room, optionally recording capacity and notes. Archived rooms are hidden from new booking choices but historical schedule sessions remain valid.
 
 When booking or editing a lesson from **Lessons / Calendar**, the room field is optional. Existing sessions with no room continue to work. If a room is selected, the system prevents another active blocking session from using that room at an overlapping time and shows: “Room is already booked during this time.” Cancelled and archived sessions do not block room booking.
 
-Teacher availability is managed from **School Configuration > Scheduling Setup** by Admin users. Admins can add, edit, and archive availability windows by teacher, day of week, optional season, effective date range, and notes. Reception users use the schedule teacher view while booking, but do not receive direct access to the Teacher Availability configuration page.
+Teacher availability is managed from **Scheduling > Teacher Availability** by Admin users. Admins can add, edit, and archive availability windows by teacher, day of week, optional season, effective date range, and notes. Reception users use the schedule teacher view while booking, but do not receive direct access to the Teacher Availability configuration page.
 
-## School Configuration (Admin only)
+## Sidebar navigation and admin configuration
 
-The **School Configuration** area is available from the System section of the sidebar for Admin users only. It is the central landing page for school setup and keeps configuration separate from daily Reception workflows.
+The sidebar is organized by workflow area instead of placing every setup task under one **School Configuration** menu. Admin users see configuration links next to the area they affect:
 
-Configuration cards include:
+- **Daily Operations**: Register Student, Payments, Lessons / Schedule, and Expenses.
+- **People**: Families, Students, and Teachers.
+- **Academic**: Seasons, Enrollments, and Courses & Pricing.
+- **Scheduling**: Lessons / Schedule, Rooms, and Teacher Availability.
+- **Finance**: Payments, Expenses, and Reports. Payment Methods and Expense Categories should appear here when dedicated metadata screens are implemented.
+- **System / Admin**: Users, School Profile, Receipt Settings, and Advanced Settings.
 
-- **Academic Setup**: Seasons, Courses, Course Levels, and Course Pricing Matrix.
-- **Scheduling Setup**: Rooms and Teacher Availability.
-- **Finance Setup**: payment methods, expense categories, and discount types when those metadata screens are implemented. Current payment behavior is not changed from this page.
-- **School Profile**: school profile and receipt settings placeholders for future setup fields.
-- **Users & Roles**: user management and ADMIN / RECEPTION role assignment.
-
-Reception users do not see this area in the sidebar. If a Reception user manually enters an Admin configuration URL, the application redirects safely or displays a Not Authorized message instead of exposing the page.
+Reception users see daily operational links, but do not see Users, Advanced Settings, course/pricing management, Rooms management, Teacher Availability management, Seasons management, or sensitive system configuration. If a Reception user manually enters an Admin configuration URL, the application redirects safely or displays a Not Authorized message instead of exposing the page.
 
 ## Phase 10 stabilization notes
 
-The final stabilized workflow keeps daily Reception work on Dashboard, Register Student, Families, Students, Teachers, Enrollments, Schedule, Payments, Expenses, and Reports. Admin-only configuration is grouped under Settings, including course setup, seasons, rooms, teacher availability, users, and Data Integrity Diagnostics.
+The final stabilized workflow keeps daily Reception work on Dashboard, Register Student, Families, Students, Teachers, Enrollments, Schedule, Payments, Expenses, and Reports. Admin-only configuration is distributed to the matching sidebar categories: Academic for seasons and courses/pricing, Scheduling for rooms and teacher availability, Finance for reports and future finance metadata, and System / Admin for users, school profile, receipt settings, and advanced diagnostics.
