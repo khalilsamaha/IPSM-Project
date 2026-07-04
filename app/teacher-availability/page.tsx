@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { archiveTeacherAvailability, saveTeacherAvailability } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
@@ -11,6 +12,7 @@ const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 
 export default async function TeacherAvailabilityPage({ searchParams }: { searchParams: Promise<Params> }) {
   const session = await requireSession();
+  if (session.role !== "ADMIN") redirect("/dashboard");
   const params = await searchParams;
   const where = { status: "ACTIVE" as const, ...(params.teacherId ? { teacherId: params.teacherId } : {}) };
   const [rows, teachers, seasons, editRow, bookings] = await Promise.all([

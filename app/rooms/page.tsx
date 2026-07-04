@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { archiveRoom, restoreRoom, saveRoom } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
@@ -10,6 +11,7 @@ const hrefFor = (status: RecordStatusFilter) => status === "active" ? "/rooms" :
 
 export default async function RoomsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const session = await requireSession();
+  if (session.role !== "ADMIN") redirect("/dashboard");
   const params = await searchParams;
   const status = getStatusFilter(params.status);
   const where = status === "active" ? { status: "ACTIVE" as const } : status === "archived" ? { status: "ARCHIVED" as const } : {};

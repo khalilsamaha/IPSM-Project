@@ -157,7 +157,7 @@ export async function restoreEnrollment(formData: FormData) {
 
 
 export async function saveRoom(formData: FormData) {
-  await requireRecordsWrite();
+  await requireAdminAction();
   const data = roomSchema.parse(Object.fromEntries(formData));
   const row = data.id ? await prisma.room.update({ where: { id: data.id }, data }) : await prisma.room.create({ data });
   await audit(data.id ? "update" : "create", "Room", row.id, data);
@@ -165,14 +165,14 @@ export async function saveRoom(formData: FormData) {
   revalidatePath("/schedule");
 }
 export async function archiveRoom(formData: FormData) {
-  await requireRecordsWrite();
+  await requireAdminAction();
   const row = await prisma.room.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
   await audit("archive", "Room", row.id);
   revalidatePath("/rooms");
   revalidatePath("/schedule");
 }
 export async function restoreRoom(formData: FormData) {
-  await requireRecordsWrite();
+  await requireAdminAction();
   const row = await prisma.room.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
   await audit("restore", "Room", row.id);
   revalidatePath("/rooms");
