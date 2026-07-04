@@ -439,8 +439,22 @@ Use **View closing report** on the Seasons page to review the season summary: st
 
 ## Phase 6 Scheduling Foundation: Rooms and Teacher Availability
 
-Rooms are managed from **Rooms** in the Academic navigation. Staff can add active rooms such as Room 1, Piano Room, Dance Room, or Theory Room, optionally recording capacity and notes. Archived rooms are hidden from new booking choices but historical schedule sessions remain valid.
+Rooms are managed from **School Configuration > Scheduling Setup** by Admin users. Admins can add active rooms such as Room 1, Piano Room, Dance Room, or Theory Room, optionally recording capacity and notes. Archived rooms are hidden from new booking choices but historical schedule sessions remain valid.
 
 When booking or editing a lesson from **Lessons / Calendar**, the room field is optional. Existing sessions with no room continue to work. If a room is selected, the system prevents another active blocking session from using that room at an overlapping time and shows: “Room is already booked during this time.” Cancelled and archived sessions do not block room booking.
 
-Teacher availability is available from **Teacher Availability**. Admin users can add, edit, and archive availability windows by teacher, day of week, optional season, effective date range, and notes. Reception users can view availability and use the schedule teacher view while booking without redesigning the schedule workflow.
+Teacher availability is managed from **School Configuration > Scheduling Setup** by Admin users. Admins can add, edit, and archive availability windows by teacher, day of week, optional season, effective date range, and notes. Reception users use the schedule teacher view while booking, but do not receive direct access to the Teacher Availability configuration page.
+
+## School Configuration (Admin only)
+
+The **School Configuration** area is available from the System section of the sidebar for Admin users only. It is the central landing page for school setup and keeps configuration separate from daily Reception workflows.
+
+Configuration cards include:
+
+- **Academic Setup**: Seasons, Courses, Course Levels, and Course Pricing Matrix.
+- **Scheduling Setup**: Rooms and Teacher Availability.
+- **Finance Setup**: payment methods, expense categories, and discount types when those metadata screens are implemented. Current payment behavior is not changed from this page.
+- **School Profile**: school profile and receipt settings placeholders for future setup fields.
+- **Users & Roles**: user management and ADMIN / RECEPTION role assignment.
+
+Reception users do not see this area in the sidebar. If a Reception user manually enters an Admin configuration URL, the application redirects safely or displays a Not Authorized message instead of exposing the page.

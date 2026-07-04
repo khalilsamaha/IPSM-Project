@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { activateSeason, archiveSeason, closeSeason, restoreSeason, saveSeason } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
@@ -12,6 +13,7 @@ const statuses = ["all", "PLANNED", "ACTIVE", "CLOSED", "ARCHIVED"];
 export default async function SeasonsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const params = await searchParams;
   const session = await requireSession();
+  if (session.role !== "ADMIN") redirect("/dashboard");
   const isAdmin = session.role === "ADMIN";
   const where = { AND: [params.status && params.status !== "all" ? { status: params.status as any } : {}, params.q ? { name: { contains: params.q, mode: "insensitive" as const } } : {}] };
   const rows = await prisma.season.findMany({ where, orderBy: { startDate: "desc" } });

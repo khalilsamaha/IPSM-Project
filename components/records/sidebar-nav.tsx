@@ -31,14 +31,9 @@ const navSections: NavSection[] = [
     label: "Academic",
     items: [
       { label: "Seasons", href: "/seasons", icon: BookOpen },
-      { label: "Courses", href: "/admin/courses", icon: BookOpen },
-      { label: "Course Levels", href: "/admin/course-levels", icon: BookOpen },
-      { label: "Course Pricing", href: "/admin/course-pricing", icon: WalletCards },
       { label: "Register Student", href: "/register-student", icon: UserPlus },
       { label: "Enrollments", href: "/enrollments", icon: WalletCards },
       { label: "Lessons / Calendar", href: "/schedule", icon: CalendarDays },
-      { label: "Rooms", href: "/rooms", icon: Home },
-      { label: "Teacher Availability", href: "/teacher-availability", icon: CalendarDays },
     ],
   },
   {
@@ -52,8 +47,8 @@ const navSections: NavSection[] = [
   {
     label: "System",
     items: [
+      { label: "School Configuration", href: "/settings", icon: SlidersHorizontal },
       { label: "Users", href: "/users", icon: Settings },
-      { label: "Settings", href: "/settings", icon: SlidersHorizontal },
     ],
   },
 ];
