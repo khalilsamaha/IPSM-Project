@@ -9,7 +9,7 @@ import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
 import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
-import { roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
+import { minutesFromTime, roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
 
@@ -257,21 +257,30 @@ export async function generateMissingReceiptNumber(formData: FormData) {
 const blockingStatuses: ScheduleSessionStatus[] = ["SCHEDULED", "COMPLETED", "MISSED"];
 
 async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSessionSchema>) {
-  const seasonId = data.seasonId;
-  if (seasonId) {
-    const season = await prisma.season.findUnique({ where: { id: seasonId }, select: { startDate: true, endDate: true, status: true } });
-    if (season?.status === "CLOSED" && !data.id) throw new Error("Closed seasons do not accept new lesson bookings.");
-    if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session date must be inside the selected season date range.");
+  const [season, enrollment] = await Promise.all([
+    data.seasonId ? prisma.season.findUnique({ where: { id: data.seasonId }, select: { startDate: true, endDate: true, status: true } }) : Promise.resolve(null),
+    data.enrollmentId ? prisma.enrollment.findUnique({ where: { id: data.enrollmentId }, select: { studentId: true, teacherId: true, seasonId: true, enrollmentStartDate: true, enrollmentEndDate: true } }) : Promise.resolve(null),
+  ]);
+  if (season?.status === "CLOSED" && !data.id) throw new Error("Closed seasons do not accept new lesson bookings.");
+  if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session is outside season dates.");
+  if (enrollment) {
+    if (enrollment.studentId !== data.studentId) throw new Error("Selected enrollment does not belong to this student.");
+    if (enrollment.teacherId && enrollment.teacherId !== data.teacherId) throw new Error("Selected teacher does not match the enrollment teacher.");
+    if (data.sessionDate < enrollment.enrollmentStartDate || data.sessionDate > enrollment.enrollmentEndDate) throw new Error("Session is outside enrollment dates.");
   }
   const where = { sessionDate: data.sessionDate, archivedAt: null, status: { in: blockingStatuses }, ...(data.id ? { NOT: { id: data.id } } : {}) };
-  const [teacherSessions, studentSessions, roomSessions] = await Promise.all([
+  const availabilitySeasonId = data.seasonId ?? enrollment?.seasonId;
+  const [teacherSessions, studentSessions, roomSessions, availabilityRows] = await Promise.all([
     prisma.scheduleSession.findMany({ where: { ...where, teacherId: data.teacherId }, select: { startTime: true, endTime: true } }),
     prisma.scheduleSession.findMany({ where: { ...where, studentId: data.studentId }, select: { startTime: true, endTime: true } }),
     data.roomId ? prisma.scheduleSession.findMany({ where: { ...where, roomId: data.roomId }, select: { startTime: true, endTime: true } }) : Promise.resolve([]),
+    prisma.teacherAvailability.findMany({ where: { teacherId: data.teacherId, dayOfWeek: data.sessionDate.getUTCDay(), status: "ACTIVE", archivedAt: null, OR: availabilitySeasonId ? [{ seasonId: null }, { seasonId: availabilitySeasonId }] : [{ seasonId: null }] }, select: { startTime: true, endTime: true, effectiveFrom: true, effectiveTo: true } }),
   ]);
-  if (teacherSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Teacher is already booked during this time.");
-  if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student is already booked during this time.");
-  if (roomSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Room is already booked during this time.");
+  const matchingAvailability = availabilityRows.filter((row) => (!row.effectiveFrom || data.sessionDate >= row.effectiveFrom) && (!row.effectiveTo || data.sessionDate <= row.effectiveTo));
+  if (!matchingAvailability.some((row) => minutesFromTime(row.startTime) <= minutesFromTime(data.startTime) && minutesFromTime(data.endTime) <= minutesFromTime(row.endTime))) throw new Error("Teacher is not available.");
+  if (teacherSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Teacher already has a session.");
+  if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student already has another session.");
+  if (roomSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Room is already booked.");
 }
 
 function scheduleErrorRedirect(formData: FormData, message: string): never {

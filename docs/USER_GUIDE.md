@@ -130,26 +130,31 @@ Always review the final fee before recording payments.
 
 ## Lessons / Calendar
 
-The Lessons / Calendar section is used to manage scheduled lessons.
+The Lessons / Calendar section is used to manage scheduled lessons with operational visibility across the whole school. Existing sessions remain visible even when older records do not have a room or linked enrollment.
 
-It allows you to view:
+Each lesson card or row shows the student, teacher, enrollment, season, course/instrument, level, room, date, start/end time, status, and notes when available. If the session is linked to an enrollment, the course/instrument and level come from that enrollment first.
 
-- Weekly lesson calendar
-- Teacher schedule
-- Student schedule
-- Booked sessions
-- Available time slots
-- Cancelled, completed, missed, and scheduled sessions
+Available schedule views:
 
-### Add a Session
+- **General View**: compact all-session list with filters for season, date, teacher, room, course/instrument, student, and status.
+- **Teacher View**: selected teacher week, availability windows, booked sessions, remaining free slots, and visible double-booking warnings.
+- **Room View**: sessions grouped by room with occupancy counts and free room slots.
+- **Course / Instrument View**: sessions grouped by course or instrument so staff can review demand by program.
+- **Student View**: the selected student's upcoming schedule.
+- **Week Grid**: a compact calendar grid for smaller weekly checks; use grouped/list views when many sessions would overcrowd a calendar.
 
-1. Open Lessons / Calendar.
-2. Select Add Session.
-3. Choose student, enrollment, teacher, season, date, start time, and end time.
-4. Add notes if needed.
-5. Save the session.
+### Book Lesson
 
-The system should prevent teacher and student double-booking.
+1. Select the season.
+2. Select the student.
+3. Select the enrollment/course.
+4. Select the teacher.
+5. Review teacher availability.
+6. Select the date and start/end time.
+7. Select an available room.
+8. Confirm booking.
+
+Schedule validation prevents teacher double-booking, student double-booking, room double-booking, booking outside season dates, booking outside enrollment dates, and booking outside teacher availability. Staff see friendly messages such as “Teacher is not available.”, “Teacher already has a session.”, “Student already has another session.”, “Room is already booked.”, “Session is outside season dates.”, and “Session is outside enrollment dates.”
 
 ---
 
