@@ -56,3 +56,9 @@ select p.id from payments p left join payment_items i on i.payment_id = p.id gro
   - Continues to use existing registration and records workflows.
 
 Finance permissions are unchanged: family-based payments, receipt generation, allocation, void, and reversal behavior are not modified by Phase 1.
+
+## Phase 5 season lifecycle permissions
+
+- **Admin** can create seasons, activate/open seasons, close seasons, archive seasons, reopen closed seasons, and view/export season closing reports.
+- **Reception** can view season statuses and closing reports but cannot activate, close, archive, or reopen seasons.
+- Closed seasons remain visible to both roles. Reception can still take payments against outstanding balances from closed seasons, but normal registration and lesson booking workflows block new enrollments and sessions for closed seasons.

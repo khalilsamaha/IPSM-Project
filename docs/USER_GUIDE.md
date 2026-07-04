@@ -423,3 +423,11 @@ Independent students without a Family / Group are not hidden or silently paid un
 The Payments page now supports filters for Family / Group, Student name, Student ID, receipt number, season, payment method, status, and date range. The payment table includes receipt number, Family / Group, student(s), season(s), payment date, method, allocation count/amount, total, status, and actions to view, download the receipt, prepare an email receipt, and access admin-only voiding through the payment detail screen.
 
 Family and Student list pages include balance summaries where applicable: current season balance, previous unpaid balance, and total outstanding.
+
+## Phase 5: Season lifecycle and closing report
+
+Admins manage the season lifecycle from **Seasons**. A season can be **Planned**, **Active**, **Closed**, or **Archived**. Planned seasons can be activated, active seasons can be closed, closed seasons can be reopened or archived, and archived seasons remain historical records rather than deleted data.
+
+When a season is closed, staff can still view the season, enrollments, sessions, payments, balances, and reports. New registrations and new lesson bookings for that closed season are blocked during normal workflows. Payments toward outstanding balances from closed seasons remain allowed from the Payments workflow, so old balances can still be collected and receipts remain valid.
+
+Use **View closing report** on the Seasons page to review the season summary: students, families, enrollments, course breakdown, payments received, outstanding balances, expenses, profit/loss, completed/cancelled/missed sessions, teacher summary, unpaid families, and unpaid students. The full page includes a CSV export link. The general **Reports** page also includes a **Season closing** report option; choose a season and export CSV if needed.
