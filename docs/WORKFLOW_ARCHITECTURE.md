@@ -32,7 +32,11 @@ Existing family payment rules are preserved. Independent students can be registe
 
 ## Booking workflow
 
-The schedule page now emphasizes **Book Lesson** language and separates day, week, teacher, student, and list views. Booking continues to use the same ScheduleSession validation, including teacher/student double-booking prevention and season date checks.
+The schedule page now emphasizes full operational visibility through **General**, **Teacher**, **Room**, **Course / Instrument**, **Student**, and compact **Week Grid** views. The default General View uses filters and compact rows instead of relying on an overcrowded calendar grid, while grouped views expose teacher capacity, room occupancy, course/instrument demand, and a selected student's timetable.
+
+The Book Lesson workflow is ordered as season → student → enrollment/course → teacher → teacher availability → date/time → available room → confirmation. ScheduleSession remains the source of lesson records, existing sessions remain usable even without a room or enrollment, and payment logic is not part of this workflow.
+
+Booking validation now blocks teacher, student, and room overlaps; sessions outside the selected season dates; sessions outside linked enrollment dates; and sessions outside active teacher availability windows. Friendly validation copy is intentionally operational: “Teacher is not available.”, “Teacher already has a session.”, “Student already has another session.”, “Room is already booked.”, “Session is outside season dates.”, and “Session is outside enrollment dates.”
 
 ## Phase 1 Academic Foundation Workflow
 
