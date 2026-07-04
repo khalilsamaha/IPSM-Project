@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookOpen, CalendarDays, CreditCard, GraduationCap, Home, Receipt, Settings, SlidersHorizontal, UserPlus, UserRoundCog, Users, WalletCards } from "lucide-react";
+import { BarChart3, BookOpen, CalendarDays, CreditCard, GraduationCap, Home, Receipt, Settings, SlidersHorizontal, Tags, UserPlus, UserRoundCog, Users, WalletCards } from "lucide-react";
 import { canViewNavigationItem } from "@/lib/auth/navigation";
 
 type NavItem = {
@@ -31,6 +31,7 @@ const navSections: NavSection[] = [
     label: "Academic",
     items: [
       { label: "Seasons", href: "/seasons", icon: BookOpen },
+      { label: "Academic Pricing", href: "/admin/academic-pricing", icon: Tags },
       { label: "Register Student", href: "/register-student", icon: UserPlus },
       { label: "Enrollments", href: "/enrollments", icon: WalletCards },
       { label: "Lessons / Calendar", href: "/schedule", icon: CalendarDays },
