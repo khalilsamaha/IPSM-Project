@@ -6,6 +6,7 @@ import { ScheduleSessionStatus, SeasonStatus } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
+import { isAdminOrHigher } from "@/lib/auth/roles";
 import { hasPermission } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
 import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
@@ -23,7 +24,7 @@ async function requireRecordsWrite() {
 
 async function requireAdminAction() {
   const session = await requireSession();
-  if (session.role !== "ADMIN") throw new Error("Not authorized");
+  if (!isAdminOrHigher(session.role)) throw new Error("Not authorized");
   const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
   return { session, createdById: user?.id };
 }
@@ -516,7 +517,7 @@ export async function registerStudentWorkflow(formData: FormData) {
 
 async function requireAdminConfig() {
   const session = await requireSession();
-  if (session.role !== "ADMIN") throw new Error("Not authorized");
+  if (!isAdminOrHigher(session.role)) throw new Error("Not authorized");
   const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
   return { session, createdById: user?.id };
 }

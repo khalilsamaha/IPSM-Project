@@ -146,12 +146,12 @@ const teachers = [
 async function main() {
   await prisma.userProfile.upsert({
     where: { email: "admin@ipsm.local" },
-    update: { role: Role.ADMIN, status: "ACTIVE" },
+    update: { role: Role.SUPER_ADMIN, status: "ACTIVE" },
     create: {
       authId: "00000000-0000-0000-0000-000000000001",
       name: "System Administrator",
       email: "admin@ipsm.local",
-      role: Role.ADMIN,
+      role: Role.SUPER_ADMIN,
     },
   });
 

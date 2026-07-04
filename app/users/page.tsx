@@ -1,7 +1,7 @@
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { AppShell, DataTable, EmptyState, PageHeader, StatusBadge } from "@/components/records/shell";
 import { createUser, changeUserRole, deactivateUser, resetUserPassword, setUserStatus } from "@/actions/users";
-import { hasPermission } from "@/lib/auth/roles";
+import { hasPermission, isProtectedUser, isSuperAdmin } from "@/lib/auth/roles";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/records/format";
@@ -20,7 +20,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     );
   }
   const isSupabaseAdminConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const users = await prisma.userProfile.findMany({ orderBy: [{ status: "asc" }, { updatedAt: "desc" }] });
+  const isSystemOwner = isSuperAdmin(session.role);
+  const users = await prisma.userProfile.findMany({
+    where: isSystemOwner ? undefined : { role: { not: "SUPER_ADMIN" }, email: { not: "admin@ipsm.local", mode: "insensitive" } },
+    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+  });
 
   return <AppShell session={session}>
     <PageHeader title="User Management" description="Create staff logins, assign roles, reset passwords, and deactivate access without using the Supabase dashboard." />
@@ -48,7 +52,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       <td>{formatDate(user.createdAt)}</td>
       <td>{formatDate(user.updatedAt)}</td>
       <td className="min-w-[28rem]">
-        <div className="flex flex-wrap gap-2">
+        {isProtectedUser(user) ? <span className="text-sm font-semibold text-slate-500">Protected system owner</span> : <div className="flex flex-wrap gap-2">
           <form action={changeUserRole} className="flex items-center gap-2">
             <input type="hidden" name="id" value={user.id} />
             <select className="rounded-xl border border-border px-2 py-1 text-xs font-semibold" name="role" defaultValue={user.role}><option value="RECEPTION">RECEPTION</option><option value="ADMIN">ADMIN</option></select>
@@ -66,13 +70,13 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             <input className="w-40 rounded-xl border border-border px-2 py-1 text-xs" name="password" type="password" minLength={8} placeholder="Temp password" required />
             <ConfirmSubmitButton className="rounded-xl bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700" message={`Set a temporary password for ${user.email}?`}>Reset Password</ConfirmSubmitButton>
           </form>
-        </div>
+        </div>}
       </td>
     </tr>)}</tbody></DataTable> : <EmptyState title="No users found" description="Create the first staff user from the form above." />}
   </AppShell>;
 }
 
 function RoleBadge({ role }: { role: string }) {
-  const tone = role === "ADMIN" ? "bg-violet-50 text-violet-700 ring-violet-200" : "bg-blue-50 text-blue-700 ring-blue-200";
+  const tone = role === "SUPER_ADMIN" ? "bg-amber-50 text-amber-800 ring-amber-200" : role === "ADMIN" ? "bg-violet-50 text-violet-700 ring-violet-200" : "bg-blue-50 text-blue-700 ring-blue-200";
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${tone}`}>{role}</span>;
 }

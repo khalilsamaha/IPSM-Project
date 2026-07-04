@@ -1,5 +1,7 @@
 "use client";
 
+import type { Role } from "@/lib/auth/roles";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -77,7 +79,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
-export function SidebarNav({ role }: { role?: "ADMIN" | "RECEPTION" }) {
+export function SidebarNav({ role }: { role?: Role }) {
   const pathname = usePathname();
 
   return (
