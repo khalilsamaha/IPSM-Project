@@ -126,3 +126,7 @@ Phase 6 adds two lightweight scheduling resources without replacing the existing
 - Availability helpers calculate total available hours, booked hours, and remaining hours for simple admin/reception planning views.
 
 This phase intentionally keeps the schedule UI familiar: rooms are an optional booking selector, availability is a separate management/reference view, and the calendar is not fully redesigned.
+
+## Phase 10 production readiness flow
+
+Before production handoff, Admin should run Data Integrity Diagnostics from Settings and resolve non-zero findings. Reception workflows continue to use friendly validation messages for registration, enrollment, payment allocation, and schedule conflicts so raw validation errors are not exposed during normal operation.

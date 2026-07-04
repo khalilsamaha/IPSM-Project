@@ -87,3 +87,10 @@ Phase 8 centralizes Admin-only setup into **School Configuration** (`/settings`)
   - Cannot activate, close, archive, restore, or otherwise perform season lifecycle actions.
 
 Payment creation, receipt generation, payment allocation, voiding rules, and payment service logic are unchanged by Phase 8.
+
+## Phase 10 route access matrix
+
+Admin-only pages: `/users`, `/settings`, `/seasons`, `/rooms`, `/teacher-availability`, `/admin/courses`, `/admin/course-levels`, `/admin/course-pricing`, and `/admin/diagnostics`.
+Reception-accessible protected pages: `/dashboard`, `/register-student`, `/families`, `/students`, `/teachers`, `/enrollments`, `/schedule`, `/payments`, `/expenses`, and `/reports`.
+
+Reception users who open an Admin-only page should see a friendly Not Authorized page, not a production exception or raw redirect loop.

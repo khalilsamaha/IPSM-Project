@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { archiveRoom, restoreRoom, saveRoom } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { AppShell, DataTable, PageHeader, StatusBadge, StatusTabs, getStatusFilter, type RecordStatusFilter } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
+import { NotAuthorized } from "@/lib/auth/not-authorized";
 import { prisma } from "@/lib/prisma";
 
 type Params = { status?: string; editId?: string };
@@ -11,7 +11,7 @@ const hrefFor = (status: RecordStatusFilter) => status === "active" ? "/rooms" :
 
 export default async function RoomsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const session = await requireSession();
-  if (session.role !== "ADMIN") redirect("/dashboard");
+  if (session.role !== "ADMIN") return <NotAuthorized session={session} />;
   const params = await searchParams;
   const status = getStatusFilter(params.status);
   const where = status === "active" ? { status: "ACTIVE" as const } : status === "archived" ? { status: "ARCHIVED" as const } : {};

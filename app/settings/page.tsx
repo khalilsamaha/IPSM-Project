@@ -59,6 +59,7 @@ const cards: ConfigCard[] = [
     links: [
       { label: "User management", href: "/users" },
       { label: "Roles", href: "/users" },
+      { label: "Data diagnostics", href: "/admin/diagnostics" },
     ],
   },
 ];
