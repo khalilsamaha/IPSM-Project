@@ -209,12 +209,17 @@ Reports help the school understand financial and operational performance.
 Common reports include:
 
 - Revenue report
-- Outstanding balance report
 - Expense report
 - Profit and loss report
-- Teacher activity or salary report when available
+- Outstanding balance report
+- Season closing report
+- Course enrollment report
+- Teacher schedule / availability report
+- Room utilization report
 
-Use reports weekly or monthly to review revenue, unpaid balances, expenses, and profitability.
+Reports can be filtered by season, date range, course, level, teacher, room, family, student, Student ID, payment status, payment method, and expense category where those filters apply. Revenue excludes voided payments and uses the matching payment allocations for the selected season/course/student filters. Expenses exclude archived expenses unless **Include archived expenses** is selected. Outstanding balances are grouped by family, student, season, and course, and season closing reports also show unpaid balances from previous seasons. Course columns use the course relation when available and fall back to the legacy course name for older records.
+
+Use reports weekly or monthly to review revenue, unpaid balances, expenses, profitability, course enrollment, teacher scheduling, room usage, and season closing readiness. Use **Export CSV** on any report to download the filtered table without changing the on-screen filters.
 
 ---
 

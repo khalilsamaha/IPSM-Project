@@ -95,12 +95,15 @@ Use this checklist before promoting the IPSM MVP to production. Run it against a
 
 ## Reports
 
-- [ ] Revenue report loads with date, family, method, receipt, seasons, and total columns.
-- [ ] Outstanding report loads with family, student, season, course, teacher, and remaining columns.
-- [ ] Expenses report loads with date, category, description, method, amount, and status columns.
-- [ ] Profit/loss report cards match revenue minus expenses for the selected filters.
-- [ ] Teacher salary report loads and clearly states current estimated-hours limitations.
-- [ ] Filters apply consistently to on-screen reports and CSV exports.
+- [ ] Revenue report loads with date, family, method, receipt, seasons, courses, and allocation total columns; voided payments are excluded.
+- [ ] Expenses report loads with date, category, description, method, amount, and status columns; archived expenses are excluded unless explicitly included.
+- [ ] Profit/loss report cards match filtered revenue minus filtered expenses.
+- [ ] Outstanding report loads with family, Student ID, student, season, course, level, teacher, and remaining columns.
+- [ ] Season closing report requires a selected season and shows payments, outstanding, previous-season unpaid balances, expenses, profit/loss, course summary, teacher summary, and unpaid students.
+- [ ] Course enrollment report groups enrollments by season/course/level and uses related course names with legacy course-name fallback.
+- [ ] Teacher schedule / availability report shows teacher availability blocks, scheduled sessions, completed sessions, and rooms.
+- [ ] Room utilization report shows room capacity, scheduled sessions, completed/cancelled counts, and teachers.
+- [ ] Filters for season, date range, course, level, teacher, room, family, student, Student ID, and payment status apply consistently to applicable on-screen reports and CSV exports.
 - [ ] CSV export endpoints require authentication and `reports:read` permission.
 
 ## Users and RBAC
