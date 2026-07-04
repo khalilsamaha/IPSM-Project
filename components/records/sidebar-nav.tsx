@@ -37,6 +37,8 @@ const navSections: NavSection[] = [
       { label: "Register Student", href: "/register-student", icon: UserPlus },
       { label: "Enrollments", href: "/enrollments", icon: WalletCards },
       { label: "Lessons / Calendar", href: "/schedule", icon: CalendarDays },
+      { label: "Rooms", href: "/rooms", icon: Home },
+      { label: "Teacher Availability", href: "/teacher-availability", icon: CalendarDays },
     ],
   },
   {

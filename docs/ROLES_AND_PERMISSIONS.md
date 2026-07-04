@@ -62,3 +62,9 @@ Finance permissions are unchanged: family-based payments, receipt generation, al
 - **Admin** can create seasons, activate/open seasons, close seasons, archive seasons, reopen closed seasons, and view/export season closing reports.
 - **Reception** can view season statuses and closing reports but cannot activate, close, archive, or reopen seasons.
 - Closed seasons remain visible to both roles. Reception can still take payments against outstanding balances from closed seasons, but normal registration and lesson booking workflows block new enrollments and sessions for closed seasons.
+
+## Phase 6 Scheduling Permissions
+
+- **Admin** can manage rooms and teacher availability, including creating, editing, and archiving availability rules.
+- **Reception** can view rooms, choose an active room when booking a lesson, and view teacher availability for booking support.
+- Existing booking permissions still apply: schedule session creation and updates continue to use the records workflow permissions, while teacher availability maintenance is restricted to Admin.

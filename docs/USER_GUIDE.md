@@ -431,3 +431,11 @@ Admins manage the season lifecycle from **Seasons**. A season can be **Planned**
 When a season is closed, staff can still view the season, enrollments, sessions, payments, balances, and reports. New registrations and new lesson bookings for that closed season are blocked during normal workflows. Payments toward outstanding balances from closed seasons remain allowed from the Payments workflow, so old balances can still be collected and receipts remain valid.
 
 Use **View closing report** on the Seasons page to review the season summary: students, families, enrollments, course breakdown, payments received, outstanding balances, expenses, profit/loss, completed/cancelled/missed sessions, teacher summary, unpaid families, and unpaid students. The full page includes a CSV export link. The general **Reports** page also includes a **Season closing** report option; choose a season and export CSV if needed.
+
+## Phase 6 Scheduling Foundation: Rooms and Teacher Availability
+
+Rooms are managed from **Rooms** in the Academic navigation. Staff can add active rooms such as Room 1, Piano Room, Dance Room, or Theory Room, optionally recording capacity and notes. Archived rooms are hidden from new booking choices but historical schedule sessions remain valid.
+
+When booking or editing a lesson from **Lessons / Calendar**, the room field is optional. Existing sessions with no room continue to work. If a room is selected, the system prevents another active blocking session from using that room at an overlapping time and shows: “Room is already booked during this time.” Cancelled and archived sessions do not block room booking.
+
+Teacher availability is available from **Teacher Availability**. Admin users can add, edit, and archive availability windows by teacher, day of week, optional season, effective date range, and notes. Reception users can view availability and use the schedule teacher view while booking without redesigning the schedule workflow.

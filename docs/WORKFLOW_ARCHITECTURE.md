@@ -110,3 +110,15 @@ Season status now drives workflow access without deleting historical records. `P
 Season lifecycle transitions are Admin-only actions on the Seasons page: activate, close, archive, and reopen. Closing a season does not mutate existing enrollments, sessions, payments, or expenses; it only changes the season status and writes an audit log.
 
 The season closing report is generated from current normalized records: enrollments provide student/family/course/outstanding totals, non-voided payment items provide received revenue for the season, expenses are date-filtered to the season range, and schedule sessions provide completed/cancelled/missed and teacher summaries. CSV export uses the same report source as the page.
+
+## Phase 6 Scheduling Foundation
+
+Phase 6 adds two lightweight scheduling resources without replacing the existing lesson calendar workflow:
+
+- `Room` stores active or archived teaching spaces with optional capacity and description.
+- `ScheduleSession.roomId` is nullable so all existing lessons remain valid after migration.
+- Room conflict validation runs alongside the existing teacher and student conflict validation. Only blocking lesson statuses (`SCHEDULED`, `COMPLETED`, `MISSED`) with `archivedAt = null` prevent overlaps; `CANCELLED` or archived sessions are ignored.
+- `TeacherAvailability` stores recurring day-of-week availability windows, optional season scoping, optional effective dates, status, and notes.
+- Availability helpers calculate total available hours, booked hours, and remaining hours for simple admin/reception planning views.
+
+This phase intentionally keeps the schedule UI familiar: rooms are an optional booking selector, availability is a separate management/reference view, and the calendar is not fully redesigned.
