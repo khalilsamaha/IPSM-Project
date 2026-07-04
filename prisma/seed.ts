@@ -1,412 +1,57 @@
-import { Role } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
-const families = [
-  [
-    "10000000-0000-0000-0000-000000000001",
-    "Rivera Family",
-    "rivera@example.com",
-    "555-0100",
-  ],
-  [
-    "10000000-0000-0000-0000-000000000002",
-    "Chen Family",
-    "chen@example.com",
-    "555-0101",
-  ],
-  [
-    "10000000-0000-0000-0000-000000000003",
-    "Patel Family",
-    "patel@example.com",
-    "555-0102",
-  ],
-  [
-    "10000000-0000-0000-0000-000000000004",
-    "Johnson Family",
-    "johnson@example.com",
-    "555-0103",
-  ],
-  [
-    "10000000-0000-0000-0000-000000000005",
-    "Garcia Family",
-    "garcia@example.com",
-    "555-0104",
-  ],
-] as const;
+const SUPER_ADMIN_EMAIL = "admin@ipsm.local";
+const SUPER_ADMIN_NAME = "System Administrator";
+const SUPER_ADMIN_AUTH_ID = process.env.IPSM_SEED_SUPER_ADMIN_AUTH_ID;
 
-const students = [
-  [
-    "20000000-0000-0000-0000-000000000001",
-    families[0][0],
-    "Mia",
-    "Rivera",
-    "2014-03-12",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000002",
-    families[0][0],
-    "Leo",
-    "Rivera",
-    "2016-08-22",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000003",
-    families[1][0],
-    "Ava",
-    "Chen",
-    "2013-11-05",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000004",
-    families[1][0],
-    "Ethan",
-    "Chen",
-    "2015-01-18",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000005",
-    families[2][0],
-    "Nina",
-    "Patel",
-    "2012-06-09",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000006",
-    families[2][0],
-    "Arjun",
-    "Patel",
-    "2017-02-14",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000007",
-    families[3][0],
-    "Sophie",
-    "Johnson",
-    "2011-09-30",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000008",
-    families[3][0],
-    "Miles",
-    "Johnson",
-    "2015-12-03",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000009",
-    families[4][0],
-    "Isabella",
-    "Garcia",
-    "2014-04-27",
-  ],
-  [
-    "20000000-0000-0000-0000-000000000010",
-    families[4][0],
-    "Mateo",
-    "Garcia",
-    "2016-10-16",
-  ],
-] as const;
+async function protectSuperAdminProfile() {
+  const existingSuperAdmin = await prisma.userProfile.findUnique({
+    where: { email: SUPER_ADMIN_EMAIL },
+  });
 
+  if (existingSuperAdmin) {
+    await prisma.userProfile.update({
+      where: { email: SUPER_ADMIN_EMAIL },
+      data: {
+        name: existingSuperAdmin.name || SUPER_ADMIN_NAME,
+        role: Role.SUPER_ADMIN,
+        status: UserStatus.ACTIVE,
+      },
+    });
 
-const courseNames = ["Piano", "Guitar", "Saxophone", "Violin", "Dance", "Chess", "Solfège", "Music Theory"] as const;
-const levelNames = ["Beginner", "Level 1", "Level 2", "Advanced"] as const;
+    console.info(`${SUPER_ADMIN_EMAIL} exists and has been kept as an active SUPER_ADMIN.`);
+    return;
+  }
 
-const season = {
-  id: "70000000-0000-0000-0000-000000000002",
-  name: "Summer 2026",
-  startDate: new Date("2026-06-08"),
-  endDate: new Date("2026-08-28"),
-  status: "ACTIVE",
-} as const;
+  if (!SUPER_ADMIN_AUTH_ID) {
+    console.info(
+      `No ${SUPER_ADMIN_EMAIL} profile exists. Skipping SUPER_ADMIN creation because ` +
+        "IPSM_SEED_SUPER_ADMIN_AUTH_ID is not set.",
+    );
+    return;
+  }
 
-const teachers = [
-  [
-    "80000000-0000-0000-0000-000000000001",
-    "Grace Kim",
-    "grace.kim@example.com",
-    "555-0200",
-    6500,
-  ],
-  [
-    "80000000-0000-0000-0000-000000000002",
-    "Daniel Brooks",
-    "daniel.brooks@example.com",
-    "555-0201",
-    7000,
-  ],
-  [
-    "80000000-0000-0000-0000-000000000003",
-    "Elena Martinez",
-    "elena.martinez@example.com",
-    "555-0202",
-    6800,
-  ],
-] as const;
-
-async function main() {
-  await prisma.userProfile.upsert({
-    where: { email: "admin@ipsm.local" },
-    update: { role: Role.SUPER_ADMIN, status: "ACTIVE" },
-    create: {
-      authId: "00000000-0000-0000-0000-000000000001",
-      name: "System Administrator",
-      email: "admin@ipsm.local",
+  await prisma.userProfile.create({
+    data: {
+      authId: SUPER_ADMIN_AUTH_ID,
+      name: SUPER_ADMIN_NAME,
+      email: SUPER_ADMIN_EMAIL,
       role: Role.SUPER_ADMIN,
+      status: UserStatus.ACTIVE,
     },
   });
 
-  for (const [id, name, email, phone] of families) {
-    await prisma.family.upsert({
-      where: { id },
-      update: { name, email, phone, status: "ACTIVE" },
-      create: { id, name, email, phone },
-    });
-  }
+  console.info(`${SUPER_ADMIN_EMAIL} was created as an active SUPER_ADMIN.`);
+}
 
-  for (const [index, [id, familyId, firstName, lastName, dateOfBirth]] of students.entries()) {
-    const studentCode = `STU-2026-${String(index + 1).padStart(6, "0")}`;
-    await prisma.student.upsert({
-      where: { id },
-      update: {
-        familyId,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth),
-        status: "ACTIVE",
-        studentCode,
-      },
-      create: {
-        id,
-        studentCode,
-        familyId,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth),
-      },
-    });
-  }
+async function main() {
+  await protectSuperAdminProfile();
 
-  await prisma.season.upsert({
-    where: { id: season.id },
-    update: season,
-    create: season,
-  });
-
-  for (const [index, name] of courseNames.entries()) {
-    await prisma.course.upsert({
-      where: { name },
-      update: { status: "ACTIVE" },
-      create: { id: `a1000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`, name },
-    });
-  }
-
-  for (const [index, name] of levelNames.entries()) {
-    await prisma.courseLevel.upsert({
-      where: { name },
-      update: { order: index + 1, status: "ACTIVE" },
-      create: { id: `a2000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`, name, order: index + 1 },
-    });
-  }
-
-  const seededCourses = await prisma.course.findMany({ where: { name: { in: [...courseNames] } } });
-  const seededLevels = await prisma.courseLevel.findMany({ where: { name: { in: [...levelNames] } } });
-  for (const course of seededCourses) {
-    for (const level of seededLevels) {
-      await prisma.coursePricing.upsert({
-        where: { courseId_levelId_seasonId: { courseId: course.id, levelId: level.id, seasonId: season.id } },
-        update: { priceCents: level.order >= 4 ? 60000 : 45000, status: "ACTIVE" },
-        create: { courseId: course.id, levelId: level.id, seasonId: season.id, priceCents: level.order >= 4 ? 60000 : 45000 },
-      });
-    }
-  }
-
-
-  for (const [id, fullName, email, phone, hourlyRateCents] of teachers) {
-    await prisma.teacher.upsert({
-      where: { id },
-      update: { fullName, email, phone, hourlyRateCents, status: "ACTIVE" },
-      create: { id, fullName, email, phone, hourlyRateCents },
-    });
-  }
-
-  const enrollmentSeeds = students.map(([studentId], index) => ({
-    id: `30000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`,
-    studentId,
-    seasonId: season.id,
-    teacherId: teachers[index % teachers.length][0],
-    courseName: ["Piano", "Guitar", "Violin", "Voice", "Drums"][index % 5],
-    feeCents: index % 3 === 0 ? 60000 : 45000,
-    discountCents: 0,
-    finalFeeCents: index % 3 === 0 ? 60000 : 45000,
-    paidCents: 0,
-    remainingCents: index % 3 === 0 ? 60000 : 45000,
-    enrollmentStartDate: season.startDate,
-    enrollmentEndDate: season.endDate,
-  }));
-
-  enrollmentSeeds.push({
-    id: "30000000-0000-0000-0000-000000000011",
-    studentId: students[0][0],
-    seasonId: season.id,
-    teacherId: teachers[1][0],
-    courseName: "Advanced Piano",
-    feeCents: 60000,
-    discountCents: 0,
-    finalFeeCents: 60000,
-    paidCents: 0,
-    remainingCents: 60000,
-    enrollmentStartDate: season.startDate,
-    enrollmentEndDate: season.endDate,
-  });
-
-  for (const enrollment of enrollmentSeeds) {
-    await prisma.enrollment.upsert({
-      where: { id: enrollment.id },
-      update: enrollment,
-      create: enrollment,
-    });
-  }
-
-
-  const scheduleSessions = enrollmentSeeds.slice(0, 6).map((enrollment, index) => ({
-    id: `90000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`,
-    studentId: enrollment.studentId,
-    teacherId: enrollment.teacherId ?? teachers[0][0],
-    enrollmentId: enrollment.id,
-    seasonId: season.id,
-    title: `${enrollment.courseName} lesson`,
-    sessionDate: new Date(`2026-06-${String(15 + index).padStart(2, "0")}`),
-    startTime: `${String(10 + (index % 4)).padStart(2, "0")}:00`,
-    endTime: `${String(11 + (index % 4)).padStart(2, "0")}:00`,
-    status: "SCHEDULED" as const,
-    notes: "Seeded sample scheduled session",
-  }));
-
-  for (const scheduleSession of scheduleSessions) {
-    await prisma.scheduleSession.upsert({
-      where: { id: scheduleSession.id },
-      update: scheduleSession,
-      create: scheduleSession,
-    });
-  }
-
-  const payments = [
-    ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03", "RCPT-2026-000001"],
-    ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15", "RCPT-2026-000002"],
-    ["60000000-0000-0000-0000-000000000003", families[1][0], 36000, "ach", "2026-06-04", "RCPT-2026-000003"],
-    ["60000000-0000-0000-0000-000000000004", families[3][0], 15000, "card", "2026-06-05", "RCPT-2026-000004"],
-    ["60000000-0000-0000-0000-000000000005", families[3][0], 15000, "card", "2026-06-20", "RCPT-2026-000005"],
-    ["60000000-0000-0000-0000-000000000006", families[4][0], 36000, "check", "2026-06-02", "RCPT-2026-000006"],
-  ] as const;
-
-  for (const [id, familyId, totalAmountCents, paymentMethod, paymentDate, receiptNumber] of payments) {
-    await prisma.payment.upsert({
-      where: { id },
-      update: {
-        familyId,
-        totalAmountCents,
-        paymentMethod,
-        paymentDate: new Date(paymentDate),
-        receiptNumber,
-      },
-      create: {
-        id,
-        familyId,
-        totalAmountCents,
-        paymentMethod,
-        paymentDate: new Date(paymentDate),
-        receiptNumber,
-      },
-    });
-  }
-
-  const paymentItems = [
-    ["50000000-0000-0000-0000-000000000001", payments[0][0], "30000000-0000-0000-0000-000000000001", 20000],
-    ["50000000-0000-0000-0000-000000000002", payments[1][0], "30000000-0000-0000-0000-000000000002", 10000],
-    ["50000000-0000-0000-0000-000000000003", payments[2][0], "30000000-0000-0000-0000-000000000003", 36000],
-    ["50000000-0000-0000-0000-000000000004", payments[3][0], "30000000-0000-0000-0000-000000000007", 15000],
-    ["50000000-0000-0000-0000-000000000005", payments[4][0], "30000000-0000-0000-0000-000000000008", 15000],
-    ["50000000-0000-0000-0000-000000000006", payments[5][0], "30000000-0000-0000-0000-000000000009", 36000],
-  ] as const;
-
-  for (const [id, paymentId, enrollmentId, amountCents] of paymentItems) {
-    await prisma.paymentItem.upsert({
-      where: { id },
-      update: { paymentId, enrollmentId, amountCents },
-      create: { id, paymentId, enrollmentId, amountCents },
-    });
-  }
-
-  for (const [id, , , , , receiptNumber] of payments) {
-    await prisma.receipt.upsert({
-      where: { paymentId: id },
-      update: { receiptNumber, pdfPath: `/api/receipts/${id}` },
-      create: { paymentId: id, receiptNumber, pdfPath: `/api/receipts/${id}` },
-    });
-  }
-
-  for (const enrollment of enrollmentSeeds) {
-    const items = paymentItems.filter(([, , enrollmentId]) => enrollmentId === enrollment.id);
-    const paidCents = items.reduce((sum, [, , , amountCents]) => sum + amountCents, 0);
-    await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: { paidCents, remainingCents: enrollment.finalFeeCents - paidCents },
-    });
-  }
-
-  const expenses = [
-    [
-      "40000000-0000-0000-0000-000000000001",
-      "Operations",
-      "Studio supplies",
-      2500,
-      "2026-06-01",
-    ],
-    [
-      "40000000-0000-0000-0000-000000000002",
-      "Rent",
-      "June studio rent",
-      220000,
-      "2026-06-01",
-    ],
-    [
-      "40000000-0000-0000-0000-000000000003",
-      "Payroll",
-      "Guest accompanist",
-      7500,
-      "2026-06-12",
-    ],
-    [
-      "40000000-0000-0000-0000-000000000004",
-      "Marketing",
-      "Summer recital flyers",
-      1800,
-      "2026-06-18",
-    ],
-  ] as const;
-
-  for (const [id, category, description, amountCents, expenseDate] of expenses) {
-    await prisma.expense.upsert({
-      where: { id },
-      update: {
-        category,
-        description,
-        amountCents,
-        incurredAt: new Date(expenseDate),
-        expenseDate: new Date(expenseDate),
-        paymentMethod: "cash",
-      },
-      create: {
-        id,
-        category,
-        description,
-        amountCents,
-        incurredAt: new Date(expenseDate),
-        expenseDate: new Date(expenseDate),
-        paymentMethod: "cash",
-      },
-    });
-  }
+  console.info(
+    "Production seed complete. No demo families, students, teachers, seasons, enrollments, " +
+      "sessions, payments, receipts, expenses, courses, levels, or pricing were created.",
+  );
 }
 
 main()
