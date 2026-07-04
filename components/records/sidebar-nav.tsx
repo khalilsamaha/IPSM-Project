@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookOpen, CalendarDays, CreditCard, GraduationCap, Home, Receipt, Settings, SlidersHorizontal, Tags, UserPlus, UserRoundCog, Users, WalletCards } from "lucide-react";
+import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, Settings, SlidersHorizontal, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards } from "lucide-react";
 import { canViewNavigationItem } from "@/lib/auth/navigation";
 
 type NavItem = {
@@ -17,10 +17,19 @@ type NavSection = {
   items: NavItem[];
 };
 
-const navSections: NavSection[] = [
+export const navSections: NavSection[] = [
   { items: [{ label: "Dashboard", href: "/dashboard", icon: Home }] },
   {
-    label: "Administration",
+    label: "Daily Operations",
+    items: [
+      { label: "Register Student", href: "/register-student", icon: UserPlus },
+      { label: "Payments", href: "/payments", icon: CreditCard },
+      { label: "Lessons / Schedule", href: "/schedule", icon: CalendarDays },
+      { label: "Expenses", href: "/expenses", icon: Receipt },
+    ],
+  },
+  {
+    label: "People",
     items: [
       { label: "Families", href: "/families", icon: Users },
       { label: "Students", href: "/students", icon: GraduationCap },
@@ -31,10 +40,16 @@ const navSections: NavSection[] = [
     label: "Academic",
     items: [
       { label: "Seasons", href: "/seasons", icon: BookOpen },
-      { label: "Academic Pricing", href: "/admin/academic-pricing", icon: Tags },
-      { label: "Register Student", href: "/register-student", icon: UserPlus },
       { label: "Enrollments", href: "/enrollments", icon: WalletCards },
-      { label: "Lessons / Calendar", href: "/schedule", icon: CalendarDays },
+      { label: "Courses & Pricing", href: "/admin/academic-pricing", icon: Tags },
+    ],
+  },
+  {
+    label: "Scheduling",
+    items: [
+      { label: "Lessons / Schedule", href: "/schedule", icon: CalendarDays },
+      { label: "Rooms", href: "/rooms", icon: Building2 },
+      { label: "Teacher Availability", href: "/teacher-availability", icon: UserCog },
     ],
   },
   {
@@ -46,17 +61,20 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: "System",
+    label: "System / Admin",
     items: [
-      { label: "School Configuration", href: "/settings", icon: SlidersHorizontal },
       { label: "Users", href: "/users", icon: Settings },
+      { label: "School Profile", href: "/settings#school-profile", icon: SlidersHorizontal },
+      { label: "Receipt Settings", href: "/settings#receipt-settings", icon: Receipt },
+      { label: "Advanced Settings", href: "/settings#advanced-settings", icon: Settings },
     ],
   },
 ];
 
 function isActivePath(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const [path] = href.split("#");
+  if (path === "/dashboard") return pathname === path;
+  return pathname === path || pathname.startsWith(`${path}/`);
 }
 
 export function SidebarNav({ role }: { role?: "ADMIN" | "RECEPTION" }) {
@@ -83,7 +101,7 @@ export function SidebarNav({ role }: { role?: "ADMIN" | "RECEPTION" }) {
                         : "text-slate-200 hover:bg-white/10 hover:text-white"
                     }`}
                     href={href}
-                    key={href}
+                    key={`${section.label ?? "primary"}-${label}-${href}`}
                   >
                     <Icon className={`size-4 shrink-0 ${active ? "text-blue-600" : "text-blue-200 group-hover:text-white"}`} />
                     <span className="truncate">{label}</span>

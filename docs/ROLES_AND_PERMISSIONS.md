@@ -69,24 +69,24 @@ Finance permissions are unchanged: family-based payments, receipt generation, al
 - **Reception** can choose active rooms and use availability-aware booking from the Lessons / Calendar workflow, but Phase 8 removes direct access to Rooms and Teacher Availability configuration pages.
 - Existing booking permissions still apply: schedule session creation and updates continue to use the records workflow permissions, while rooms and teacher availability maintenance are restricted to Admin.
 
-## Phase 8 School Configuration Permissions
+## Phase 8 navigation and configuration permissions
 
-Phase 8 centralizes Admin-only setup into **School Configuration** (`/settings`). The configuration landing page groups setup links into Academic Setup, Scheduling Setup, Finance Setup, School Profile, and Users & Roles.
+Phase 8 configuration links are distributed to the sidebar category they belong to instead of being overloaded under one **School Configuration** menu.
 
 - **Admin**
-  - Can open `/settings` and all linked configuration areas.
-  - Can manage academic setup: Seasons, Courses, Course Levels, and Course Pricing Matrix.
-  - Can manage scheduling setup: Rooms and Teacher Availability.
-  - Can manage Users and role assignments.
-  - Can see finance and school-profile configuration placeholders where the underlying metadata module has not been implemented yet.
+  - Can manage academic setup from **Academic**: Seasons, Enrollments, and Courses & Pricing.
+  - Can manage scheduling setup from **Scheduling**: Lessons / Schedule, Rooms, and Teacher Availability.
+  - Can manage finance review tools from **Finance**: Payments, Expenses, Reports, and future Payment Methods or Expense Categories pages when implemented.
+  - Can manage sensitive system tools from **System / Admin**: Users, School Profile, Receipt Settings, and Advanced Settings.
+  - Can open `/settings` for school-profile, receipt, and advanced admin placeholders.
 
 - **Reception**
-  - Cannot see School Configuration, Users, course pricing management, Rooms management, Teacher Availability management, or Seasons management in the sidebar.
+  - Sees daily operational workflows such as Dashboard, Register Student, Families, Students, Teachers, Enrollments, Lessons / Schedule, Payments, Expenses, receipts, and reports where enabled.
+  - Cannot see Users, Advanced Settings, course/pricing management, Rooms management, Teacher Availability management, Seasons management, or sensitive system configuration in the sidebar.
   - Cannot manually open Admin configuration URLs; protected pages redirect safely or show a Not Authorized state instead of crashing.
-  - Keeps access to daily operational workflows such as families, students, registration, enrollments, lessons/calendar booking, payments, receipts, expenses, and reports where enabled.
   - Cannot activate, close, archive, restore, or otherwise perform season lifecycle actions.
 
-Payment creation, receipt generation, payment allocation, voiding rules, and payment service logic are unchanged by Phase 8.
+Payment creation, receipt generation, payment allocation, voiding rules, and payment service logic are unchanged by this navigation hotfix.
 
 ## Phase 10 route access matrix
 
