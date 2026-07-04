@@ -102,3 +102,11 @@ Independent students remain supported through the existing safe behavior: paymen
 The Payments index adds operational filters for Family / Group, Student, Student ID, receipt number, season, payment method, status, and date range. Table columns now emphasize receipt number, payer group, covered students and seasons, allocation count/amount, total, status, and receipt actions while preserving admin-only void access.
 
 Family and Student profile/list surfaces expose current-season balance, previous unpaid balance, and total outstanding so staff can understand balances before entering the payment workflow.
+
+## Phase 5: Season lifecycle architecture
+
+Season status now drives workflow access without deleting historical records. `PLANNED` and `ACTIVE` seasons remain selectable for registration and lesson booking. `CLOSED` seasons stay visible in lists and reports, but server-side validation blocks normal creation of new enrollments and new schedule sessions for that season. Payments and payment allocation are intentionally unchanged so previous unpaid balances from closed seasons remain payable and existing receipts/reversals remain valid.
+
+Season lifecycle transitions are Admin-only actions on the Seasons page: activate, close, archive, and reopen. Closing a season does not mutate existing enrollments, sessions, payments, or expenses; it only changes the season status and writes an audit log.
+
+The season closing report is generated from current normalized records: enrollments provide student/family/course/outstanding totals, non-voided payment items provide received revenue for the season, expenses are date-filtered to the season range, and schedule sessions provide completed/cancelled/missed and teacher summaries. CSV export uses the same report source as the page.

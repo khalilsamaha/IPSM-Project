@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ScheduleSessionStatus } from "@prisma/client";
+import { ScheduleSessionStatus, SeasonStatus } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
@@ -16,6 +16,13 @@ import { createStudentWithCode } from "@/lib/students";
 async function requireRecordsWrite() {
   const session = await requireSession();
   if (!hasPermission(session.role, "records:write")) throw new Error("Not authorized");
+  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
+  return { session, createdById: user?.id };
+}
+
+async function requireAdminAction() {
+  const session = await requireSession();
+  if (session.role !== "ADMIN") throw new Error("Not authorized");
   const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
   return { session, createdById: user?.id };
 }
@@ -98,31 +105,32 @@ export async function restoreTeacher(formData: FormData) {
 
 const seasonSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), startDate: z.string().min(1).transform((v) => new Date(v)), endDate: z.string().min(1).transform((v) => new Date(v)), status: z.enum(["PLANNED", "ACTIVE", "CLOSED", "ARCHIVED"]) }).refine((v) => v.endDate >= v.startDate, "End date must be after start date");
 export async function saveSeason(formData: FormData) {
-  await requireRecordsWrite();
+  const { session, createdById } = await requireAdminAction();
   const data = seasonSchema.parse(Object.fromEntries(formData));
   const row = data.id ? await prisma.season.update({ where: { id: data.id }, data }) : await prisma.season.create({ data });
-  await audit(data.id ? "update" : "create", "Season", row.id, data);
+  await prisma.auditLog.create({ data: { action: data.id ? "update" : "create", entity: "Season", entityId: row.id, createdById, actorId: session.userId, metadata: data } });
   revalidatePath("/seasons");
 }
-export async function archiveSeason(formData: FormData) {
-  await requireRecordsWrite();
-  const row = await prisma.season.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
-  await audit("archive", "Season", row.id);
+async function setSeasonLifecycleStatus(formData: FormData, status: SeasonStatus, action: string) {
+  const { session, createdById } = await requireAdminAction();
+  const seasonId = id.parse(formData.get("id"));
+  const row = await prisma.season.update({ where: { id: seasonId }, data: { status, archivedAt: status === "ARCHIVED" ? new Date() : null } });
+  await prisma.auditLog.create({ data: { action, entity: "Season", entityId: row.id, createdById, actorId: session.userId, metadata: { status } } });
   revalidatePath("/seasons");
+  revalidatePath(`/seasons/${row.id}/closing-report`);
 }
-export async function restoreSeason(formData: FormData) {
-  await requireRecordsWrite();
-  const row = await prisma.season.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
-  await audit("restore", "Season", row.id);
-  revalidatePath("/seasons");
-}
+export async function activateSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "ACTIVE", "activate"); }
+export async function closeSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "CLOSED", "close"); }
+export async function archiveSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "ARCHIVED", "archive"); }
+export async function restoreSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "ACTIVE", "restore"); }
 
 const enrollmentSchema = z.object({ id: id.optional(), studentId: id, seasonId: id, teacherId: id.or(z.literal("")).transform((v) => v || null), courseName: z.string().trim().min(1), courseId: id.or(z.literal("")).optional().transform((v) => v || null), levelId: id.or(z.literal("")).optional().transform((v) => v || null), enrollmentStartDate: z.string().optional(), enrollmentEndDate: z.string().optional(), fee: z.string().default("0"), discount: z.string().default("0"), status: z.enum(["ACTIVE", "PAUSED", "ENDED", "CANCELLED"]) });
 export async function saveEnrollment(formData: FormData) {
   await requireRecordsWrite();
   const parsed = enrollmentSchema.parse(Object.fromEntries(formData));
-  const season = await prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true } });
+  const season = await prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true, status: true } });
   if (!season) throw new Error("Choose a valid season.");
+  if (!parsed.id && season.status === "CLOSED") throw new Error("Closed seasons do not accept new enrollments. Ask an admin to reopen/override before enrolling.");
   const enrollmentStartDate = parsed.enrollmentStartDate ? new Date(parsed.enrollmentStartDate) : season.startDate;
   const enrollmentEndDate = parsed.enrollmentEndDate ? new Date(parsed.enrollmentEndDate) : season.endDate;
   if (enrollmentStartDate < season.startDate || enrollmentEndDate > season.endDate || enrollmentEndDate < enrollmentStartDate) throw new Error("Enrollment dates must stay inside the selected season.");
@@ -211,7 +219,8 @@ const blockingStatuses: ScheduleSessionStatus[] = ["SCHEDULED", "COMPLETED", "MI
 async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSessionSchema>) {
   const seasonId = data.seasonId;
   if (seasonId) {
-    const season = await prisma.season.findUnique({ where: { id: seasonId }, select: { startDate: true, endDate: true } });
+    const season = await prisma.season.findUnique({ where: { id: seasonId }, select: { startDate: true, endDate: true, status: true } });
+    if (season?.status === "CLOSED" && !data.id) throw new Error("Closed seasons do not accept new lesson bookings.");
     if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session date must be inside the selected season date range.");
   }
   const where = { sessionDate: data.sessionDate, archivedAt: null, status: { in: blockingStatuses }, ...(data.id ? { NOT: { id: data.id } } : {}) };
@@ -345,9 +354,10 @@ export async function registerStudentWorkflow(formData: FormData) {
   } catch (error) {
     registrationErrorRedirect(error instanceof z.ZodError ? error.issues[0]?.message ?? "Please check the registration form." : "Please check the registration form.");
   }
-  const [course, season] = await Promise.all([prisma.course.findUnique({ where: { id: parsed.courseId }, select: { name: true } }), prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true } })]);
+  const [course, season] = await Promise.all([prisma.course.findUnique({ where: { id: parsed.courseId }, select: { name: true } }), prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true, status: true } })]);
   if (!course) registrationErrorRedirect("Choose a valid course.");
   if (!season) registrationErrorRedirect("Choose a valid season.");
+  if (season.status === "CLOSED") registrationErrorRedirect("Closed seasons do not accept new registrations. Payments toward existing balances are still allowed from Payments.");
   const courseName = course.name;
   const enrollmentStartDate = parsed.enrollmentStartDate ? new Date(parsed.enrollmentStartDate) : season.startDate;
   const enrollmentEndDate = parsed.enrollmentEndDate ? new Date(parsed.enrollmentEndDate) : season.endDate;
