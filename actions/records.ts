@@ -246,6 +246,21 @@ export async function restoreRoom(formData: FormData) {
   revalidatePath("/schedule");
 }
 
+export async function deleteRoom(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const roomId = id.parse(formData.get("id"));
+  const sessions = await prisma.scheduleSession.count({ where: { roomId } });
+  if (sessions > 0) {
+    await prisma.auditLog.create({ data: { action: "delete_blocked", entity: "Room", entityId: roomId, createdById, actorId: session.userId, metadata: { sessions } } });
+    redirect(`/rooms?status=archived&error=${encodeURIComponent("This room is already used by scheduled lessons. Archive it instead.")}`);
+  }
+  await prisma.room.delete({ where: { id: roomId } });
+  await prisma.auditLog.create({ data: { action: "delete", entity: "Room", entityId: roomId, createdById, actorId: session.userId } });
+  revalidatePath("/rooms");
+  revalidatePath("/schedule");
+  redirect(`/rooms?status=archived&success=${encodeURIComponent("Room deleted.")}`);
+}
+
 export async function saveTeacherAvailability(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const data = teacherAvailabilitySchema.parse(Object.fromEntries(formData));
@@ -324,19 +339,19 @@ export async function generateMissingReceiptNumber(formData: FormData) {
 const blockingStatuses: ScheduleSessionStatus[] = ["SCHEDULED", "COMPLETED", "MISSED"];
 
 async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSessionSchema>) {
-  const [season, enrollment] = await Promise.all([
-    data.seasonId ? prisma.season.findUnique({ where: { id: data.seasonId }, select: { startDate: true, endDate: true, status: true } }) : Promise.resolve(null),
-    data.enrollmentId ? prisma.enrollment.findUnique({ where: { id: data.enrollmentId }, select: { studentId: true, teacherId: true, seasonId: true, enrollmentStartDate: true, enrollmentEndDate: true } }) : Promise.resolve(null),
-  ]);
+  const enrollment = data.enrollmentId ? await prisma.enrollment.findUnique({ where: { id: data.enrollmentId }, select: { studentId: true, teacherId: true, seasonId: true, enrollmentStartDate: true, enrollmentEndDate: true } }) : null;
+  const effectiveSeasonId = data.seasonId ?? enrollment?.seasonId ?? null;
+  const season = effectiveSeasonId ? await prisma.season.findUnique({ where: { id: effectiveSeasonId }, select: { startDate: true, endDate: true, status: true } }) : null;
   if (season?.status === "CLOSED" && !data.id) throw new Error("Closed seasons do not accept new lesson bookings.");
   if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session is outside season dates.");
   if (enrollment) {
     if (enrollment.studentId !== data.studentId) throw new Error("Selected enrollment does not belong to this student.");
+    if (data.seasonId && enrollment.seasonId !== data.seasonId) throw new Error("Selected enrollment does not belong to this season.");
     if (enrollment.teacherId && enrollment.teacherId !== data.teacherId) throw new Error("Selected teacher does not match the enrollment teacher.");
     if (data.sessionDate < enrollment.enrollmentStartDate || data.sessionDate > enrollment.enrollmentEndDate) throw new Error("Session is outside enrollment dates.");
   }
   const where = { sessionDate: data.sessionDate, archivedAt: null, status: { in: blockingStatuses }, ...(data.id ? { NOT: { id: data.id } } : {}) };
-  const availabilitySeasonId = data.seasonId ?? enrollment?.seasonId;
+  const availabilitySeasonId = effectiveSeasonId;
   const [teacherSessions, studentSessions, roomSessions, availabilityRows] = await Promise.all([
     prisma.scheduleSession.findMany({ where: { ...where, teacherId: data.teacherId }, select: { startTime: true, endTime: true } }),
     prisma.scheduleSession.findMany({ where: { ...where, studentId: data.studentId }, select: { startTime: true, endTime: true } }),
