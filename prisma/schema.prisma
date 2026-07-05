@@ -187,6 +187,7 @@ model Teacher {
   enrollments      Enrollment[]
   scheduleSessions ScheduleSession[]
   availability     TeacherAvailability[]
+  courses          TeacherCourse[]
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime              @updatedAt @map("updated_at")
   archivedAt       DateTime?             @map("archived_at")
@@ -202,6 +203,7 @@ model Course {
   description String?
   status      AcademicConfigStatus @default(ACTIVE)
   enrollments Enrollment[]
+  teacherCourses TeacherCourse[]
   pricings    CoursePricing[]
   createdAt   DateTime             @default(now()) @map("created_at")
   updatedAt   DateTime             @updatedAt @map("updated_at")
@@ -217,6 +219,7 @@ model CourseLevel {
   order       Int                  @default(0)
   status      AcademicConfigStatus @default(ACTIVE)
   enrollments Enrollment[]
+  teacherCourses TeacherCourse[]
   pricings    CoursePricing[]
   createdAt   DateTime             @default(now()) @map("created_at")
   updatedAt   DateTime             @updatedAt @map("updated_at")
@@ -224,6 +227,27 @@ model CourseLevel {
 
   @@index([status, order])
   @@map("course_levels")
+}
+
+model TeacherCourse {
+  id         String               @id @default(uuid()) @db.Uuid
+  teacherId  String               @map("teacher_id") @db.Uuid
+  teacher    Teacher              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  courseId   String               @map("course_id") @db.Uuid
+  course     Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  levelId    String?              @map("level_id") @db.Uuid
+  level      CourseLevel?         @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  status     AcademicConfigStatus @default(ACTIVE)
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+  archivedAt DateTime?            @map("archived_at")
+
+  @@unique([teacherId, courseId, levelId])
+  @@index([teacherId])
+  @@index([courseId])
+  @@index([levelId])
+  @@index([status])
+  @@map("teacher_courses")
 }
 
 model CoursePricing {

@@ -474,3 +474,10 @@ The final stabilized workflow keeps daily Reception work on Dashboard, Register 
 - Existing records can be edited from **Students → View/Edit** (`/students/[id]`) and **Families / Groups → View/Edit** (`/families/[id]`). Register Student remains the creation and registration workflow.
 - Permanent deletes are intentionally restricted. Unused seasons can be deleted only when they have no enrollments, schedules, prices, or payments. Archived academic configuration records can be restored or deleted only when dependency checks allow it.
 - Archived students show a deletion-impact preview and require typing `DELETE`; permanent deletion removes the student’s enrollments, sessions, payment allocations, and orphaned payment/receipt records only when those payments no longer have allocations for anyone else.
+
+## Hotfix: enrollment-driven scheduling and teacher profiles
+
+- Edit an enrollment from **Enrollments → Edit**. The edit page allows safe updates to season, course, level, teacher, dates, fee, discount, and status. Paid payment history is never rewritten; remaining balance is recalculated from final fee minus paid amount.
+- Book lessons from an enrollment. Choose a student, then choose one of that student’s active enrollments. The season and teacher are read-only and come from the enrollment. If no teacher is assigned, edit the enrollment first.
+- Manage teacher profiles from **Teachers → View/Edit**. The profile contains personal details, courses/instruments taught, availability rules, and a summary of booked and remaining hours.
+- During Register Student, the optional first lesson date must fall inside both the selected season and the enrollment start/end dates. The first lesson uses the enrollment teacher.

@@ -136,3 +136,11 @@ Before production handoff, Admin should run Data Integrity Diagnostics from Sett
 Payments now support exactly one payer: either `familyId` for Family / Group payments or `studentId` for independent-student payments. Payment allocations remain enrollment-based, so receipt generation, allocation reporting, and void/reversal logic continue to operate through `PaymentItem -> Enrollment`.
 
 Safe delete flows are server-action guarded. Season, course, level, and pricing deletes run dependency checks and redirect with friendly errors. Archived student deletion runs in a transaction, removes schedule sessions, payment items, orphan receipts/payments, enrollments, then the student, and writes an audit log with counts.
+
+## Hotfix: enrollment-teacher-schedule flow
+
+Lesson booking is enrollment-driven. Schedule creation loads the selected enrollment server-side, verifies it belongs to the submitted student, derives `seasonId` and `teacherId` from the enrollment, blocks enrollments without teachers, and validates lesson dates against both season and enrollment ranges before existing double-booking and availability checks run.
+
+Enrollment edits preserve finance history. Existing payment items are not modified; paid cents remain intact and remaining cents are recalculated as `max(0, finalFeeCents - paidCents)`. Enrollment date edits are blocked when any existing scheduled lesson would fall outside the new range.
+
+Teacher profile management centralizes teacher details, `TeacherCourse` course/level assignments, availability rules, and schedule summary so booking can continue to use teacher availability without requiring users to jump between separate screens.

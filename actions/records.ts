@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ScheduleSessionStatus, SeasonStatus } from "@prisma/client";
+import { Prisma, ScheduleSessionStatus, SeasonStatus } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
@@ -144,6 +144,29 @@ export async function restoreTeacher(formData: FormData) {
   revalidatePath("/teachers");
 }
 
+const teacherCourseSchema = z.object({ id: id.optional(), teacherId: id, courseId: id, levelId: id.or(z.literal("")).optional().transform((v) => v || null), status: z.enum(["ACTIVE", "ARCHIVED"]) });
+export async function saveTeacherCourse(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const data = teacherCourseSchema.parse(Object.fromEntries(formData));
+  const duplicate = await prisma.teacherCourse.findFirst({ where: { teacherId: data.teacherId, courseId: data.courseId, levelId: data.levelId, ...(data.id ? { NOT: { id: data.id } } : {}) } });
+  if (duplicate) redirect(`/teachers/${data.teacherId}/edit?error=${encodeURIComponent("This teacher already has that course and level assignment.")}`);
+  const row = data.id ? await prisma.teacherCourse.update({ where: { id: data.id }, data }) : await prisma.teacherCourse.create({ data });
+  await prisma.auditLog.create({ data: { action: data.id ? "update" : "create", entity: "TeacherCourse", entityId: row.id, createdById, actorId: session.userId, metadata: data } });
+  revalidatePath(`/teachers/${data.teacherId}/edit`);
+}
+export async function archiveTeacherCourse(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const row = await prisma.teacherCourse.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+  await prisma.auditLog.create({ data: { action: "archive", entity: "TeacherCourse", entityId: row.id, createdById, actorId: session.userId } });
+  revalidatePath(`/teachers/${row.teacherId}/edit`);
+}
+export async function restoreTeacherCourse(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const row = await prisma.teacherCourse.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await prisma.auditLog.create({ data: { action: "restore", entity: "TeacherCourse", entityId: row.id, createdById, actorId: session.userId } });
+  revalidatePath(`/teachers/${row.teacherId}/edit`);
+}
+
 const seasonSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), startDate: z.string().min(1).transform((v) => new Date(v)), endDate: z.string().min(1).transform((v) => new Date(v)), status: z.enum(["PLANNED", "ACTIVE", "CLOSED", "ARCHIVED"]) }).refine((v) => v.endDate >= v.startDate, "End date must be after start date");
 export async function saveSeason(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
@@ -204,10 +227,24 @@ export async function saveEnrollment(formData: FormData) {
   const feeCents = dollarsToCents(parsed.fee);
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
-  const data = { id: parsed.id, studentId: parsed.studentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, courseId: parsed.courseId, levelId: parsed.levelId, enrollmentStartDate, enrollmentEndDate, status: parsed.status, feeCents, discountCents, finalFeeCents, remainingCents: finalFeeCents };
-  const row = data.id ? await prisma.enrollment.update({ where: { id: data.id }, data }) : await prisma.enrollment.create({ data });
-  await audit(data.id ? "update" : "create", "Enrollment", row.id, data);
+  const existing = parsed.id ? await prisma.enrollment.findUnique({ where: { id: parsed.id }, include: { paymentItems: true, scheduleSessions: { where: { archivedAt: null }, select: { sessionDate: true } } } }) : null;
+  if (parsed.id && !existing) throw new Error("Enrollment not found.");
+  const duplicate = await prisma.enrollment.findFirst({ where: { studentId: parsed.studentId, seasonId: parsed.seasonId, courseId: parsed.courseId, levelId: parsed.levelId, archivedAt: null, ...(parsed.id ? { NOT: { id: parsed.id } } : {}) } });
+  if (duplicate) throw new Error("This student is already enrolled in that course and level for the selected season.");
+  if (existing?.scheduleSessions.some((session) => session.sessionDate < enrollmentStartDate || session.sessionDate > enrollmentEndDate)) throw new Error("Enrollment dates must include all already scheduled lessons.");
+  const paidCents = existing?.paidCents ?? 0;
+  const data = { studentId: parsed.studentId, seasonId: parsed.seasonId, teacherId: parsed.teacherId, courseName: parsed.courseName, courseId: parsed.courseId, levelId: parsed.levelId, enrollmentStartDate, enrollmentEndDate, status: parsed.status, feeCents, discountCents, finalFeeCents, paidCents, remainingCents: Math.max(0, finalFeeCents - paidCents) };
+  let row;
+  try {
+    row = parsed.id ? await prisma.enrollment.update({ where: { id: parsed.id }, data }) : await prisma.enrollment.create({ data });
+  } catch (error) {
+    logServerError("enrollment.save", error, { enrollmentId: parsed.id });
+    redirect(`${parsed.id ? `/enrollments/${parsed.id}/edit` : "/enrollments"}?error=${encodeURIComponent("Unable to save enrollment. Please check the form and try again.")}`);
+  }
+  await audit(parsed.id ? "update" : "create", "Enrollment", row.id, data);
   revalidatePath("/enrollments");
+  revalidatePath(`/enrollments/${row.id}/edit`);
+  if (parsed.id) redirect(`/enrollments/${row.id}/edit?success=${encodeURIComponent("Enrollment updated safely.")}`);
 }
 export async function archiveEnrollment(formData: FormData) {
   await requireRecordsWrite();
@@ -264,7 +301,8 @@ export async function deleteRoom(formData: FormData) {
 export async function saveTeacherAvailability(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const data = teacherAvailabilitySchema.parse(Object.fromEntries(formData));
-  const row = data.id ? await prisma.teacherAvailability.update({ where: { id: data.id }, data }) : await prisma.teacherAvailability.create({ data });
+  const availabilityData = data as Prisma.TeacherAvailabilityUncheckedCreateInput & Prisma.TeacherAvailabilityUncheckedUpdateInput;
+  const row = data.id ? await prisma.teacherAvailability.update({ where: { id: data.id }, data: availabilityData }) : await prisma.teacherAvailability.create({ data: availabilityData as Prisma.TeacherAvailabilityUncheckedCreateInput });
   await prisma.auditLog.create({ data: { action: data.id ? "update" : "create", entity: "TeacherAvailability", entityId: row.id, createdById, actorId: session.userId, metadata: data } });
   revalidatePath("/teacher-availability");
   revalidatePath("/schedule");
@@ -340,16 +378,19 @@ const blockingStatuses: ScheduleSessionStatus[] = ["SCHEDULED", "COMPLETED", "MI
 
 async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSessionSchema>) {
   const enrollment = data.enrollmentId ? await prisma.enrollment.findUnique({ where: { id: data.enrollmentId }, select: { studentId: true, teacherId: true, seasonId: true, enrollmentStartDate: true, enrollmentEndDate: true } }) : null;
-  const effectiveSeasonId = data.seasonId ?? enrollment?.seasonId ?? null;
-  const season = effectiveSeasonId ? await prisma.season.findUnique({ where: { id: effectiveSeasonId }, select: { startDate: true, endDate: true, status: true } }) : null;
+  if (data.enrollmentId && !enrollment) throw new Error("Choose a valid enrollment.");
+  if (!enrollment) throw new Error("Select an enrollment before booking a lesson.");
+  if (enrollment.studentId !== data.studentId) throw new Error("Selected enrollment does not belong to this student.");
+  if (!enrollment.teacherId) throw new Error("This enrollment has no teacher assigned. Edit the enrollment before booking.");
+  if (data.seasonId && enrollment.seasonId !== data.seasonId) throw new Error("Season must come from the selected enrollment.");
+  if (data.teacherId && enrollment.teacherId !== data.teacherId) throw new Error("Teacher must come from the selected enrollment.");
+  data.seasonId = enrollment.seasonId;
+  data.teacherId = enrollment.teacherId;
+  const effectiveSeasonId = enrollment.seasonId;
+  const season = await prisma.season.findUnique({ where: { id: effectiveSeasonId }, select: { startDate: true, endDate: true, status: true } });
   if (season?.status === "CLOSED" && !data.id) throw new Error("Closed seasons do not accept new lesson bookings.");
-  if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Session is outside season dates.");
-  if (enrollment) {
-    if (enrollment.studentId !== data.studentId) throw new Error("Selected enrollment does not belong to this student.");
-    if (data.seasonId && enrollment.seasonId !== data.seasonId) throw new Error("Selected enrollment does not belong to this season.");
-    if (enrollment.teacherId && enrollment.teacherId !== data.teacherId) throw new Error("Selected teacher does not match the enrollment teacher.");
-    if (data.sessionDate < enrollment.enrollmentStartDate || data.sessionDate > enrollment.enrollmentEndDate) throw new Error("Session is outside enrollment dates.");
-  }
+  if (season && (data.sessionDate < season.startDate || data.sessionDate > season.endDate)) throw new Error("Lesson date must be inside the season date range.");
+  if (data.sessionDate < enrollment.enrollmentStartDate || data.sessionDate > enrollment.enrollmentEndDate) throw new Error("Lesson date must be inside the enrollment date range.");
   const where = { sessionDate: data.sessionDate, archivedAt: null, status: { in: blockingStatuses }, ...(data.id ? { NOT: { id: data.id } } : {}) };
   const availabilitySeasonId = effectiveSeasonId;
   const [teacherSessions, studentSessions, roomSessions, availabilityRows] = await Promise.all([
@@ -360,8 +401,8 @@ async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSession
   ]);
   const matchingAvailability = availabilityRows.filter((row) => (!row.effectiveFrom || data.sessionDate >= row.effectiveFrom) && (!row.effectiveTo || data.sessionDate <= row.effectiveTo));
   if (!matchingAvailability.some((row) => minutesFromTime(row.startTime) <= minutesFromTime(data.startTime) && minutesFromTime(data.endTime) <= minutesFromTime(row.endTime))) throw new Error("Teacher is not available.");
-  if (teacherSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Teacher already has a session.");
-  if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student already has another session.");
+  if (teacherSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Teacher is already booked.");
+  if (studentSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Student is already booked.");
   if (roomSessions.some((session) => timeWindowsOverlap(session, data))) throw new Error("Room is already booked.");
 }
 
@@ -387,7 +428,8 @@ export async function saveScheduleSession(formData: FormData) {
     if (error instanceof Error) scheduleErrorRedirect(formData, error.message);
     scheduleErrorRedirect(formData, "Please check the required schedule fields.");
   }
-  const row = data.id ? await prisma.scheduleSession.update({ where: { id: data.id }, data }) : await prisma.scheduleSession.create({ data });
+  const writeData = data as Prisma.ScheduleSessionUncheckedCreateInput & Prisma.ScheduleSessionUncheckedUpdateInput;
+  const row = data.id ? await prisma.scheduleSession.update({ where: { id: data.id }, data: writeData }) : await prisma.scheduleSession.create({ data: writeData as Prisma.ScheduleSessionUncheckedCreateInput });
   await audit(data.id ? "update" : "create", "ScheduleSession", row.id, data);
   revalidatePath("/schedule");
 }
@@ -499,6 +541,13 @@ export async function registerStudentWorkflow(formData: FormData) {
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
   const initialPaymentCents = dollarsToCents(parsed.initialPayment);
+  if (parsed.bookFirstSession) {
+    if (!parsed.teacherId) registrationErrorRedirect("Choose a teacher before booking the first lesson.");
+    if (!parsed.sessionDate) registrationErrorRedirect("First lesson date is required when booking the first lesson.");
+    const firstLessonDate = new Date(parsed.sessionDate);
+    if (firstLessonDate < enrollmentStartDate || firstLessonDate > enrollmentEndDate) registrationErrorRedirect("First lesson date must be inside the enrollment date range.");
+    if (firstLessonDate < season.startDate || firstLessonDate > season.endDate) registrationErrorRedirect("First lesson date must be inside the enrollment date range.");
+  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -553,7 +602,7 @@ export async function registerStudentWorkflow(formData: FormData) {
         if (!parsed.sessionDate || !parsed.startTime || !parsed.endTime) throw new Error("Date, start time, and end time are required to book the first lesson.");
         const sessionData = scheduleSessionSchema.parse({ studentId: primaryStudentId, teacherId: parsed.teacherId, enrollmentId: enrollment.id, seasonId: parsed.seasonId, sessionDate: parsed.sessionDate, startTime: parsed.startTime, endTime: parsed.endTime, status: "SCHEDULED", title: courseName });
         await assertScheduleSessionIsValid(sessionData);
-        sessionRow = await tx.scheduleSession.create({ data: sessionData });
+        sessionRow = await tx.scheduleSession.create({ data: sessionData as Prisma.ScheduleSessionUncheckedCreateInput });
         await tx.auditLog.create({ data: { action: "create", entity: "ScheduleSession", entityId: sessionRow.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow" } } });
       }
 
