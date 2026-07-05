@@ -8,7 +8,8 @@ type ReceiptPayment = {
   paymentDate: Date;
   paymentMethod: string;
   totalAmountCents: number;
-  family: { name: string; email: string | null; phone: string | null; fatherPhone?: string | null; motherPhone?: string | null; fatherEmail?: string | null; motherEmail?: string | null };
+  family: { name: string; email: string | null; phone: string | null; fatherPhone?: string | null; motherPhone?: string | null; fatherEmail?: string | null; motherEmail?: string | null } | null;
+  student?: { studentCode: string; firstName: string; lastName: string; email: string | null; phone: string | null } | null;
   createdBy?: { name?: string | null; email: string } | null;
   items: {
     amountCents: number;
@@ -74,7 +75,8 @@ export function buildReceiptPdf(payment: ReceiptPayment) {
   const seasons = unique(payment.items.map((item) => item.enrollment.season.name));
   const courses = unique(payment.items.map((item) => `${item.enrollment.course?.name ?? item.enrollment.courseName}${item.enrollment.level?.name ? ` / ${item.enrollment.level.name}` : ""}`));
   const remainingBalance = payment.items.reduce((sum, item) => sum + item.enrollment.remainingCents, 0);
-  const parentContact = unique([payment.family.phone, payment.family.email, payment.family.fatherPhone, payment.family.motherPhone, payment.family.fatherEmail, payment.family.motherEmail]).join(" / ") || "Not available";
+  const payerName = payment.family?.name ?? (payment.student ? `${payment.student.studentCode} — ${payment.student.firstName} ${payment.student.lastName}` : "Independent Student");
+  const parentContact = payment.family ? unique([payment.family.phone, payment.family.email, payment.family.fatherPhone, payment.family.motherPhone, payment.family.fatherEmail, payment.family.motherEmail]).join(" / ") || "Not available" : unique([payment.student?.phone, payment.student?.email]).join(" / ") || "Not available";
   const receivedBy = payment.createdBy?.name ?? payment.createdBy?.email ?? "IPSM Staff";
   const commands = ["0.20 w", "0 0 0 RG"];
 
@@ -85,7 +87,7 @@ export function buildReceiptPdf(payment: ReceiptPayment) {
   addText(commands, 420, 740, `Year: ${receiptYear}`, { size: 10 });
   addLine(commands, 48, 724, 564, 724);
 
-  const left = [["Payment date", formatDate(payment.paymentDate)], ["Student ID", studentIds.join(", ") || "-"], ["Student full name", students.join(", ") || "-"], ["Family / Group", payment.family.name]];
+  const left = [["Payment date", formatDate(payment.paymentDate)], ["Student ID", studentIds.join(", ") || "-"], ["Student full name", students.join(", ") || "-"], [payment.family ? "Family / Group" : "Independent Student", payerName]];
   const right = [["Parent contact", parentContact], ["Season", seasons.join(", ") || "-"], ["Course(s) / Level(s)", courses.join(", ") || "-"], ["Payment method", titleCase(payment.paymentMethod)]];
   left.forEach(([label, value], index) => { const y = 698 - index * 20; addText(commands, 54, y, `${label}:`, { font: "bold" }); addText(commands, 150, y, truncate(value, 40)); });
   right.forEach(([label, value], index) => { const y = 698 - index * 20; addText(commands, 318, y, `${label}:`, { font: "bold" }); addText(commands, 420, y, truncate(value, 32)); });

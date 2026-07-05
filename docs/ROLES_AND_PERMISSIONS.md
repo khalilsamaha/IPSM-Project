@@ -32,3 +32,9 @@ All application pages and API routes require authentication. `/users` is availab
 ## Operational note
 
 Admin users should be considered operational administrators, not system owners. Use `SUPER_ADMIN` for unrestricted ownership-level access and future permissions that should bypass normal Admin limits.
+
+## Hotfix permissions
+
+- Admin and SUPER_ADMIN may permanently delete unused seasons, unused/archived academic configuration records, and archived students after explicit confirmation.
+- Reception keeps daily record editing and payment creation access, including Family / Group and independent-student payments, but cannot perform permanent deletes or payment voids.
+- All destructive workflows require confirmation and should return friendly errors instead of raw database failures.

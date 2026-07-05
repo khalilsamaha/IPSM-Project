@@ -65,7 +65,7 @@ function matchingItemWhere(filters: ReportFilters) {
 export async function getRevenueReport(filters: ReportFilters) {
   const rows = await prisma.payment.findMany({
     where: { AND: [dateRange("paymentDate", filters), { voidedAt: null }, filters.familyId ? { familyId: filters.familyId } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}, { items: { some: matchingItemWhere(filters) } }] },
-    include: { family: true, items: { where: matchingItemWhere(filters), include: { enrollment: { include: { season: true, student: true, course: true, level: true, teacher: true } } } } },
+    include: { family: true, student: true, items: { where: matchingItemWhere(filters), include: { enrollment: { include: { season: true, student: true, course: true, level: true, teacher: true } } } } },
     orderBy: { paymentDate: "desc" },
   });
   const totalCents = rows.reduce((sum, payment) => sum + payment.items.reduce((itemSum, item) => itemSum + item.amountCents, 0), 0);
@@ -115,7 +115,7 @@ export async function getSeasonClosingReport(seasonId: string) {
   const [enrollments, previousUnpaid, payments, expenses, sessions] = await Promise.all([
     prisma.enrollment.findMany({ where: { seasonId }, include: { student: { include: { family: true } }, season: true, course: true, level: true, teacher: true } }),
     prisma.enrollment.findMany({ where: { season: { startDate: { lt: season.startDate } }, remainingCents: { gt: 0 } }, include: { student: { include: { family: true } }, season: true, course: true } }),
-    prisma.payment.findMany({ where: { voidedAt: null, items: { some: { enrollment: { seasonId } } } }, include: { family: true, items: { where: { enrollment: { seasonId } }, include: { enrollment: { include: { student: { include: { family: true } }, season: true } } } } } }),
+    prisma.payment.findMany({ where: { voidedAt: null, items: { some: { enrollment: { seasonId } } } }, include: { family: true, student: true, items: { where: { enrollment: { seasonId } }, include: { enrollment: { include: { student: { include: { family: true } }, season: true } } } } } }),
     prisma.expense.findMany({ where: { archivedAt: null, expenseDate: { gte: season.startDate, lte: season.endDate } } }),
     prisma.scheduleSession.findMany({ where: { seasonId, archivedAt: null }, include: { teacher: true, room: true } }),
   ]);

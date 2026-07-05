@@ -466,3 +466,11 @@ Reception users see daily operational links, but do not see Users, Advanced Sett
 ## Phase 10 stabilization notes
 
 The final stabilized workflow keeps daily Reception work on Dashboard, Register Student, Families, Students, Teachers, Enrollments, Schedule, Payments, Expenses, and Reports. Admin-only configuration is distributed to the matching sidebar categories: Academic for seasons and courses/pricing, Scheduling for rooms and teacher availability, Finance for reports and future finance metadata, and System / Admin for users, school profile, receipt settings, and advanced diagnostics.
+
+## Hotfix: safe deletes, edit pages, and independent payments
+
+- Independent students are students without a Family / Group assignment. They can now pay as the direct payer during registration or from **Payments → Create payment** by choosing **Independent Student**; this does not create or attach a compatibility family.
+- Family / Group payments continue to use the Family / Group payer and may allocate payments across the family’s students.
+- Existing records can be edited from **Students → View/Edit** (`/students/[id]`) and **Families / Groups → View/Edit** (`/families/[id]`). Register Student remains the creation and registration workflow.
+- Permanent deletes are intentionally restricted. Unused seasons can be deleted only when they have no enrollments, schedules, prices, or payments. Archived academic configuration records can be restored or deleted only when dependency checks allow it.
+- Archived students show a deletion-impact preview and require typing `DELETE`; permanent deletion removes the student’s enrollments, sessions, payment allocations, and orphaned payment/receipt records only when those payments no longer have allocations for anyone else.

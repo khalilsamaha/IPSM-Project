@@ -147,3 +147,13 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - Verify there is no body-level horizontal scroll on desktop or mobile widths.
 - Verify the sidebar remains full height on desktop and does not cut off the sign-out control.
 - Verify crowded tables scroll inside the DataTable container rather than expanding the body.
+
+## Hotfix QA checklist
+
+- Confirm unused season delete succeeds and used season delete is blocked with the archive/close message.
+- Confirm archived course, level, and pricing records can be restored; used course/level deletes are blocked.
+- Confirm `/students/[id]` and `/families/[id]` can edit existing details and list pages link to them.
+- Confirm archived student permanent delete requires typing `DELETE`, does not delete the family, and only deletes orphan payments/receipts.
+- Confirm independent-student registration with initial payment leaves `familyId` null and creates a `studentId` payment.
+- Confirm later independent-student payments, receipts, and void/reversal update enrollment balances correctly.
+- Confirm existing Family / Group payments and receipts still work.

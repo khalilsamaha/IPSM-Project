@@ -1,5 +1,5 @@
-export type PaymentLike = { totalAmountCents: number; voidedAt: Date | null; paymentDate?: Date; paymentMethod?: string; familyId?: string };
-export type EnrollmentLike = { remainingCents: number; familyId?: string; studentId?: string; seasonId?: string; teacherId?: string | null };
+export type PaymentLike = { totalAmountCents: number; voidedAt: Date | null; paymentDate?: Date; paymentMethod?: string; familyId?: string | null; studentId?: string | null };
+export type EnrollmentLike = { remainingCents: number; familyId?: string | null; studentId?: string | null; seasonId?: string; teacherId?: string | null };
 export type ExpenseLike = { amountCents: number; archivedAt: Date | null; expenseDate?: Date; category?: string; paymentMethod?: string };
 
 export function sumRevenueCents(payments: PaymentLike[]) {

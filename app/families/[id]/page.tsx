@@ -1,0 +1,16 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { archiveFamily, restoreFamily, saveFamily } from "@/actions/records";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { AppShell, StatusBadge } from "@/components/records/shell";
+import { requireSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
+
+const fields = ["fatherFirstName", "fatherLastName", "fatherJob", "fatherPhone", "fatherEmail", "motherFirstName", "motherLastName", "motherJob", "motherPhone", "motherEmail", "address", "emergencyContactName", "emergencyContactPhone"] as const;
+const labels: Record<(typeof fields)[number], string> = { fatherFirstName: "Father first name", fatherLastName: "Father last name", fatherJob: "Father job", fatherPhone: "Father phone", fatherEmail: "Father email", motherFirstName: "Mother first name", motherLastName: "Mother last name", motherJob: "Mother job", motherPhone: "Mother phone", motherEmail: "Mother email", address: "Address", emergencyContactName: "Emergency contact name", emergencyContactPhone: "Emergency contact phone" };
+export default async function FamilyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await requireSession(); const { id } = await params;
+  const family = await prisma.family.findUnique({ where: { id }, include: { students: true } });
+  if (!family) notFound();
+  return <AppShell session={session}><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-bold">{family.name}</h2><StatusBadge status={family.status}/></div><Link className="rounded border px-4 py-2" href="/families">Back to families</Link></div><form action={saveFamily} className="grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-2"><input type="hidden" name="id" value={family.id}/><label>Name<input className="mt-1 w-full rounded border p-2" name="name" required defaultValue={family.name}/></label><label>Email<input className="mt-1 w-full rounded border p-2" type="email" name="email" defaultValue={family.email ?? ""}/></label><label>Phone<input className="mt-1 w-full rounded border p-2" name="phone" defaultValue={family.phone ?? ""}/></label><label>Status<select className="mt-1 w-full rounded border p-2" name="status" defaultValue={family.status}><option>ACTIVE</option><option>INACTIVE</option></select></label>{fields.map((field) => <label key={field}>{labels[field]}<input className="mt-1 w-full rounded border p-2" name={field} type={field.endsWith("Email") ? "email" : "text"} defaultValue={family[field] ?? ""}/></label>)}<label className="md:col-span-2">Notes<textarea className="mt-1 w-full rounded border p-2" name="notes" defaultValue={family.notes ?? ""}/></label><button className="rounded bg-primary px-4 py-2 text-white md:col-span-2">Save family</button></form><div className="mt-4">{family.status === "INACTIVE" ? <form action={restoreFamily}><input type="hidden" name="id" value={family.id}/><ConfirmSubmitButton className="text-primary" message="Restore this family?">Restore</ConfirmSubmitButton></form> : <form action={archiveFamily}><input type="hidden" name="id" value={family.id}/><ConfirmSubmitButton className="text-primary" message="Archive this family?">Archive</ConfirmSubmitButton></form>}</div></AppShell>;
+}
