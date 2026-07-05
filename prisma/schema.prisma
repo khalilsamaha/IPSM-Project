@@ -147,6 +147,7 @@ model Student {
   status           StudentStatus     @default(ACTIVE)
   enrollments      Enrollment[]
   scheduleSessions ScheduleSession[]
+  payments         Payment[]
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   archivedAt       DateTime?         @map("archived_at")
@@ -353,8 +354,10 @@ model TeacherAvailability {
 
 model Payment {
   id               String        @id @default(uuid()) @db.Uuid
-  familyId         String        @map("family_id") @db.Uuid
-  family           Family        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  familyId         String?       @map("family_id") @db.Uuid
+  family           Family?       @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  studentId        String?       @map("student_id") @db.Uuid
+  student          Student?      @relation(fields: [studentId], references: [id], onDelete: Restrict)
   paymentDate      DateTime      @default(now()) @map("payment_date") @db.Date
   paymentMethod    String        @map("payment_method")
   totalAmountCents Int           @map("total_amount_cents")
@@ -369,6 +372,7 @@ model Payment {
   updatedAt        DateTime      @updatedAt @map("updated_at")
 
   @@index([familyId])
+  @@index([studentId])
   @@index([createdById])
   @@index([paymentDate])
   @@map("payments")

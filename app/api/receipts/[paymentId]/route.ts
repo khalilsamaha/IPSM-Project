@@ -10,7 +10,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ paymentId:
   const existing = await prisma.payment.findUnique({ where: { id: paymentId }, select: { id: true } });
   if (!existing) return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
   await ensurePaymentReceiptWithRetry(prisma, paymentId);
-  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, include: { family: true, createdBy: true, items: { include: { enrollment: { include: { student: true, season: true, course: true, level: true } } } } } });
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, include: { family: true, student: true, createdBy: true, items: { include: { enrollment: { include: { student: true, season: true, course: true, level: true } } } } } });
   if (!payment?.receiptNumber) return NextResponse.json({ error: "Receipt metadata unavailable" }, { status: 500 });
   await prisma.auditLog.create({ data: { action: "download", entity: "Receipt", entityId: payment.id, actorId: session.userId, metadata: { receiptNumber: payment.receiptNumber } } });
   const pdf = buildReceiptPdf(payment);

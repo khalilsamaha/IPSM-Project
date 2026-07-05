@@ -13,7 +13,7 @@ import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
 import { minutesFromTime, roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
-import { buildPaymentCompatibilityFamilyData, buildStudentCreateData, shouldCreatePaymentCompatibilityFamily } from "@/lib/registration/independent-student";
+import { buildStudentCreateData } from "@/lib/registration/independent-student";
 import { academicPricingUrl, isUniqueConstraintError, normalizeName } from "@/lib/academic-pricing";
 
 async function requireRecordsWrite() {
@@ -88,6 +88,39 @@ export async function restoreStudent(formData: FormData) {
   revalidatePath("/students");
 }
 
+export async function deleteArchivedStudentCascade(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const studentId = id.parse(formData.get("id"));
+  const confirmation = String(formData.get("confirm") ?? "");
+  const redirectTo = `/students/${studentId}`;
+  if (confirmation !== "DELETE") redirect(`${redirectTo}?error=${encodeURIComponent("Type DELETE to confirm permanent student deletion.")}`);
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const student = await tx.student.findUnique({ where: { id: studentId }, include: { enrollments: { select: { id: true } } } });
+      if (!student) throw new Error("Student not found.");
+      if (student.status !== "INACTIVE" && !student.archivedAt) throw new Error("Archive the student before permanent deletion.");
+      const enrollmentIds = student.enrollments.map((e) => e.id);
+      const paymentIds = enrollmentIds.length ? Array.from(new Set((await tx.paymentItem.findMany({ where: { enrollmentId: { in: enrollmentIds } }, select: { paymentId: true } })).map((i) => i.paymentId))) : [];
+      const deletedSessions = await tx.scheduleSession.deleteMany({ where: { studentId } });
+      const deletedPaymentItems = enrollmentIds.length ? await tx.paymentItem.deleteMany({ where: { enrollmentId: { in: enrollmentIds } } }) : { count: 0 };
+      const orphanPayments = paymentIds.length ? await tx.payment.findMany({ where: { id: { in: paymentIds }, items: { none: {} } }, select: { id: true } }) : [];
+      const orphanPaymentIds = orphanPayments.map((p) => p.id);
+      const deletedReceipts = orphanPaymentIds.length ? await tx.receipt.deleteMany({ where: { paymentId: { in: orphanPaymentIds } } }) : { count: 0 };
+      const deletedPayments = orphanPaymentIds.length ? await tx.payment.deleteMany({ where: { id: { in: orphanPaymentIds } } }) : { count: 0 };
+      const deletedEnrollments = enrollmentIds.length ? await tx.enrollment.deleteMany({ where: { id: { in: enrollmentIds } } }) : { count: 0 };
+      await tx.student.delete({ where: { id: studentId } });
+      const metadata = { studentId, studentCode: student.studentCode, name: `${student.firstName} ${student.lastName}`, deletedEnrollmentCount: deletedEnrollments.count, deletedSessionCount: deletedSessions.count, deletedPaymentItemCount: deletedPaymentItems.count, deletedOrphanPaymentCount: deletedPayments.count, deletedReceiptCount: deletedReceipts.count };
+      await tx.auditLog.create({ data: { action: "delete", entity: "Student", entityId: studentId, createdById, actorId: session.userId, metadata } });
+      return metadata;
+    });
+    revalidatePath("/students");
+    redirect(`/students?status=archived&success=${encodeURIComponent(`Student permanently deleted. Removed ${result.deletedEnrollmentCount} enrollment(s), ${result.deletedSessionCount} session(s), and ${result.deletedOrphanPaymentCount} orphan payment(s).`)}`);
+  } catch (error) {
+    logServerError("student.deleteCascade", error, { studentId });
+    redirect(`${redirectTo}?error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to delete student safely.")}`);
+  }
+}
+
 const teacherSchema = z.object({ id: id.optional(), fullName: z.string().trim().min(1), email: optionalEmail, phone: optionalString, hourlyRate: z.string().default("0"), status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]), notes: optionalString });
 export async function saveTeacher(formData: FormData) {
   await requireRecordsWrite();
@@ -142,12 +175,16 @@ export async function restoreSeason(formData: FormData) { await setSeasonLifecyc
 export async function deleteSeason(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const seasonId = id.parse(formData.get("id"));
-  const [enrollments, sessions, pricings] = await Promise.all([
+  const [enrollments, sessions, pricings, paymentItems] = await Promise.all([
     prisma.enrollment.count({ where: { seasonId } }),
     prisma.scheduleSession.count({ where: { OR: [{ seasonId }, { enrollment: { seasonId } }] } }),
     prisma.coursePricing.count({ where: { seasonId } }),
+    prisma.paymentItem.count({ where: { enrollment: { seasonId } } }),
   ]);
-  if (enrollments || sessions || pricings) redirect(`/seasons?error=${encodeURIComponent("This season is already used by enrollments, schedules, prices, or payments. Archive or close it instead.")}`);
+  if (enrollments || sessions || pricings || paymentItems) {
+    await prisma.auditLog.create({ data: { action: "delete_blocked", entity: "Season", entityId: seasonId, createdById, actorId: session.userId, metadata: { enrollments, sessions, pricings, paymentItems } } });
+    redirect(`/seasons?error=${encodeURIComponent("This season is already used by enrollments, schedules, prices, or payments. Archive or close it instead.")}`);
+  }
   await prisma.season.delete({ where: { id: seasonId } });
   await prisma.auditLog.create({ data: { action: "delete", entity: "Season", entityId: seasonId, createdById, actorId: session.userId } });
   revalidatePath("/seasons");
@@ -225,7 +262,7 @@ export async function archiveTeacherAvailability(formData: FormData) {
   revalidatePath("/schedule");
 }
 
-const paymentSchema = z.object({ familyId: id, paymentDate: z.string().min(1).transform((v) => new Date(v)), paymentMethod: z.string().trim().min(1), notes: optionalString });
+const paymentSchema = z.object({ familyId: id.or(z.literal("")).optional().transform((v) => v || null), studentId: id.or(z.literal("")).optional().transform((v) => v || null), paymentDate: z.string().min(1).transform((v) => new Date(v)), paymentMethod: z.string().trim().min(1), notes: optionalString });
 
 export async function createPayment(formData: FormData) {
   const { createdById, session } = await requireRecordsWrite();
@@ -240,7 +277,7 @@ export async function createPayment(formData: FormData) {
     payment = await createPaymentWithAllocations(prisma, { ...parsed, createdById, actorId: session.userId, allocations });
   } catch (error) {
     logServerError("payment.create", error, { familyId: parsed.familyId });
-    redirect(`/payments/new?familyId=${parsed.familyId}&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to create payment. Please check allocations and try again.")}`);
+    redirect(`/payments/new?${parsed.studentId ? `payerType=student&studentId=${parsed.studentId}` : `familyId=${parsed.familyId ?? ""}`}&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to create payment. Please check allocations and try again.")}`);
   }
   revalidatePath("/payments");
   revalidatePath("/payments/allocation");
@@ -510,17 +547,10 @@ export async function registerStudentWorkflow(formData: FormData) {
 
     let paymentId: string | null = null;
     if (result.needsPayment) {
-      let familyId = result.familyId;
-      if (shouldCreatePaymentCompatibilityFamily(familyId, initialPaymentCents)) {
-        const student = await prisma.student.findUniqueOrThrow({ where: { id: result.studentId } });
-        const family = await prisma.family.create({ data: buildPaymentCompatibilityFamilyData(student) });
-        await prisma.student.update({ where: { id: result.studentId }, data: { familyId: family.id } });
-        await prisma.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", paymentCompatibility: true } } });
-        familyId = family.id;
-      }
-      if (!familyId) throw new Error("A Family / Group payer is required before recording an initial payment.");
+      const familyId = result.familyId;
+      const studentId = familyId ? null : result.studentId;
       const { createPaymentWithAllocations } = await import("@/lib/payments/payment-service");
-      const payment = await createPaymentWithAllocations(prisma, { familyId, paymentDate: new Date(), paymentMethod: parsed.paymentMethod, notes: "Initial payment from registration workflow", createdById, actorId: session.userId, allocations: [{ enrollmentId: result.enrollmentId, amountCents: initialPaymentCents }] });
+      const payment = await createPaymentWithAllocations(prisma, { familyId, studentId, paymentDate: new Date(), paymentMethod: parsed.paymentMethod, notes: "Initial payment from registration workflow", createdById, actorId: session.userId, allocations: [{ enrollmentId: result.enrollmentId, amountCents: initialPaymentCents }] });
       paymentId = payment.id;
       await prisma.auditLog.create({ data: { action: "create", entity: "Payment", entityId: payment.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", enrollmentId: result.enrollmentId, amountCents: initialPaymentCents } } });
     }
@@ -569,8 +599,8 @@ export async function restoreCourse(formData: FormData) {
 }
 export async function deleteCourse(formData: FormData) {
   await requireAdminConfig(); const courseId = id.parse(formData.get("id"));
-  const [enrollments, pricings] = await Promise.all([prisma.enrollment.count({ where: { courseId } }), prisma.coursePricing.count({ where: { courseId } })]);
-  if (enrollments || pricings) redirect(academicPricingUrl("error", "This course is already used and cannot be deleted. Archive it instead."));
+  const [enrollments, pricings, sessions] = await Promise.all([prisma.enrollment.count({ where: { courseId } }), prisma.coursePricing.count({ where: { courseId } }), prisma.scheduleSession.count({ where: { enrollment: { courseId } } })]);
+  if (enrollments || pricings || sessions) redirect(academicPricingUrl("error", "This course is already used and cannot be deleted. Archive it instead."));
   await prisma.course.delete({ where: { id: courseId } }); await audit("delete", "Course", courseId); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Unused course deleted."));
 }
 

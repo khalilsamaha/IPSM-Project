@@ -9,10 +9,11 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/records/format";
 
 const methodLabels: Record<string, string> = { cash: "Cash", card: "Card", check: "Check", ach: "Bank Transfer" };
-function receiptMailto(payment: { receiptNumber: string | null; paymentDate: Date; totalAmountCents: number; family: { name: string; email: string | null } }) {
+function receiptMailto(payment: { receiptNumber: string | null; paymentDate: Date; totalAmountCents: number; family: { name: string; email: string | null } | null; student: { firstName: string; lastName: string; email: string | null } | null }) {
+  const payerName = payment.family?.name ?? `${payment.student?.firstName ?? ""} ${payment.student?.lastName ?? ""}`.trim();
   const subject = `Receipt ${payment.receiptNumber ?? "Pending"} - IPSM Music School`;
-  const body = [`Hello ${payment.family.name},`, "", `Receipt number: ${payment.receiptNumber ?? "Missing receipt number"}`, `Payment date: ${formatDate(payment.paymentDate)}`, `Amount: ${formatCurrency(payment.totalAmountCents)}`, "", "Thank you,", "IPSM Music School"].join("\n");
-  return `mailto:${encodeURIComponent(payment.family.email ?? "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const body = [`Hello ${payerName || "there"},`, "", `Receipt number: ${payment.receiptNumber ?? "Missing receipt number"}`, `Payment date: ${formatDate(payment.paymentDate)}`, `Amount: ${formatCurrency(payment.totalAmountCents)}`, "", "Thank you,", "IPSM Music School"].join("\n");
+  return `mailto:${encodeURIComponent(payment.family?.email ?? payment.student?.email ?? "") }?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export default async function PaymentDetailPage({
@@ -28,6 +29,7 @@ export default async function PaymentDetailPage({
     where: { id },
     include: {
       family: true,
+      student: true,
       receipt: true,
       createdBy: true,
       items: { include: { enrollment: { include: { student: true, season: true } } } },
@@ -45,15 +47,15 @@ export default async function PaymentDetailPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="rounded border px-4 py-2" href="/payments">Back to payments</Link>
-          <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}`}>Download receipt PDF</a>{payment.family.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No family email on file</span>}
+          <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}`}>Download receipt PDF</a>{payment.family?.email || payment.student?.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No payer email on file</span>}
         </div>
       </div>
 
       <section className="mb-6 rounded-xl border bg-white p-4">
         <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div><dt className="text-sm text-muted-foreground">Receipt number</dt><dd className="font-medium">{payment.receiptNumber ?? "Missing receipt number"}</dd></div>
-          <div><dt className="text-sm text-muted-foreground">Family name</dt><dd className="font-medium">{payment.family.name}</dd></div>
-          <div><dt className="text-sm text-muted-foreground">Family email</dt><dd>{payment.family.email ?? "—"}</dd></div>
+          <div><dt className="text-sm text-muted-foreground">Payer type</dt><dd className="font-medium">{payment.family ? "Family / Group" : "Independent Student"}</dd></div>
+          <div><dt className="text-sm text-muted-foreground">Payer</dt><dd className="font-medium">{payment.family?.name ?? (payment.student ? `${payment.student.studentCode} — ${payment.student.firstName} ${payment.student.lastName}` : "—")}</dd></div>
           <div><dt className="text-sm text-muted-foreground">Payment date</dt><dd>{formatDate(payment.paymentDate)}</dd></div>
           <div><dt className="text-sm text-muted-foreground">Payment method</dt><dd>{methodLabels[payment.paymentMethod] ?? payment.paymentMethod}</dd></div>
           <div><dt className="text-sm text-muted-foreground">Total amount</dt><dd>{formatCurrency(payment.totalAmountCents)}</dd></div>

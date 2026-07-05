@@ -130,3 +130,9 @@ This phase intentionally keeps the schedule UI familiar: rooms are an optional b
 ## Phase 10 production readiness flow
 
 Before production handoff, Admin should run Data Integrity Diagnostics from Settings and resolve non-zero findings. Reception workflows continue to use friendly validation messages for registration, enrollment, payment allocation, and schedule conflicts so raw validation errors are not exposed during normal operation.
+
+## Hotfix architecture notes
+
+Payments now support exactly one payer: either `familyId` for Family / Group payments or `studentId` for independent-student payments. Payment allocations remain enrollment-based, so receipt generation, allocation reporting, and void/reversal logic continue to operate through `PaymentItem -> Enrollment`.
+
+Safe delete flows are server-action guarded. Season, course, level, and pricing deletes run dependency checks and redirect with friendly errors. Archived student deletion runs in a transaction, removes schedule sessions, payment items, orphan receipts/payments, enrollments, then the student, and writes an audit log with counts.
