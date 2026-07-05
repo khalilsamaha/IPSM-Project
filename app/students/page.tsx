@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/records/format";
 import { getPagination } from "@/lib/records/pagination";
 
-type Params = { q?: string; page?: string; status?: string; error?: string };
+type Params = { q?: string; page?: string; status?: string; error?: string; studentId?: string };
 const hrefFor = (p: number, q?: string, status?: string) => { const next = new URLSearchParams(); if (q) next.set("q", q); if (status && status !== "active") next.set("status", status); if (p > 1) next.set("page", String(p)); return next.toString() ? `/students?${next}` : "/students"; };
 
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<Params> }) {
@@ -15,7 +15,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   const session = await requireSession();
   const { q, page, skip, take } = getPagination(params);
   const status = getStatusFilter(params.status);
-  const where = { AND: [status === "archived" ? { status: "INACTIVE" as const } : status === "active" ? { status: "ACTIVE" as const } : {}, q ? { OR: [{ studentCode: { contains: q, mode: "insensitive" as const } }, { firstName: { contains: q, mode: "insensitive" as const } }, { lastName: { contains: q, mode: "insensitive" as const } }, { family: { name: { contains: q, mode: "insensitive" as const } } }] } : {}] };
+  const where = { AND: [status === "archived" ? { status: "INACTIVE" as const } : status === "active" ? { status: "ACTIVE" as const } : {}, params.studentId ? { id: params.studentId } : {}, q ? { OR: [{ studentCode: { contains: q, mode: "insensitive" as const } }, { firstName: { contains: q, mode: "insensitive" as const } }, { lastName: { contains: q, mode: "insensitive" as const } }, { family: { name: { contains: q, mode: "insensitive" as const } } }] } : {}] };
   const [rows, total] = await Promise.all([
     prisma.student.findMany({ where, include: { family: true, enrollments: { include: { season: true }, orderBy: { season: { startDate: "desc" } } } }, orderBy: { updatedAt: "desc" }, skip, take }),
     prisma.student.count({ where }),

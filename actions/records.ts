@@ -14,6 +14,7 @@ import { minutesFromTime, roomSchema, scheduleSessionSchema, teacherAvailability
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
 import { buildPaymentCompatibilityFamilyData, buildStudentCreateData, shouldCreatePaymentCompatibilityFamily } from "@/lib/registration/independent-student";
+import { academicPricingUrl, isUniqueConstraintError, normalizeName } from "@/lib/academic-pricing";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -114,7 +115,15 @@ const seasonSchema = z.object({ id: id.optional(), name: z.string().trim().min(1
 export async function saveSeason(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const data = seasonSchema.parse(Object.fromEntries(formData));
-  const row = data.id ? await prisma.season.update({ where: { id: data.id }, data }) : await prisma.season.create({ data });
+  const duplicate = await prisma.season.findFirst({ where: { name: { equals: data.name, mode: "insensitive" }, ...(data.id ? { NOT: { id: data.id } } : {}) } });
+  if (duplicate) redirect(`/seasons?error=${encodeURIComponent("A season with this name already exists.")}`);
+  let row;
+  try {
+    row = data.id ? await prisma.season.update({ where: { id: data.id }, data }) : await prisma.season.create({ data });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) redirect(`/seasons?error=${encodeURIComponent("A season with this name already exists.")}`);
+    throw error;
+  }
   await prisma.auditLog.create({ data: { action: data.id ? "update" : "create", entity: "Season", entityId: row.id, createdById, actorId: session.userId, metadata: data } });
   revalidatePath("/seasons");
 }
@@ -130,6 +139,20 @@ export async function activateSeason(formData: FormData) { await setSeasonLifecy
 export async function closeSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "CLOSED", "close"); }
 export async function archiveSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "ARCHIVED", "archive"); }
 export async function restoreSeason(formData: FormData) { await setSeasonLifecycleStatus(formData, "ACTIVE", "restore"); }
+export async function deleteSeason(formData: FormData) {
+  const { session, createdById } = await requireAdminAction();
+  const seasonId = id.parse(formData.get("id"));
+  const [enrollments, sessions, pricings] = await Promise.all([
+    prisma.enrollment.count({ where: { seasonId } }),
+    prisma.scheduleSession.count({ where: { OR: [{ seasonId }, { enrollment: { seasonId } }] } }),
+    prisma.coursePricing.count({ where: { seasonId } }),
+  ]);
+  if (enrollments || sessions || pricings) redirect(`/seasons?error=${encodeURIComponent("This season is already used by enrollments, schedules, prices, or payments. Archive or close it instead.")}`);
+  await prisma.season.delete({ where: { id: seasonId } });
+  await prisma.auditLog.create({ data: { action: "delete", entity: "Season", entityId: seasonId, createdById, actorId: session.userId } });
+  revalidatePath("/seasons");
+  redirect(`/seasons?success=${encodeURIComponent("Season deleted.")}`);
+}
 
 const enrollmentSchema = z.object({ id: id.optional(), studentId: id, seasonId: id, teacherId: id.or(z.literal("")).transform((v) => v || null), courseName: z.string().trim().min(1), courseId: id.or(z.literal("")).optional().transform((v) => v || null), levelId: id.or(z.literal("")).optional().transform((v) => v || null), enrollmentStartDate: z.string().optional(), enrollmentEndDate: z.string().optional(), fee: z.string().default("0"), discount: z.string().default("0"), status: z.enum(["ACTIVE", "PAUSED", "ENDED", "CANCELLED"]) });
 export async function saveEnrollment(formData: FormData) {
@@ -137,7 +160,7 @@ export async function saveEnrollment(formData: FormData) {
   const parsed = enrollmentSchema.parse(Object.fromEntries(formData));
   const season = await prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true, status: true } });
   if (!season) throw new Error("Choose a valid season.");
-  if (!parsed.id && season.status === "CLOSED") throw new Error("Closed seasons do not accept new enrollments. Ask an admin to reopen/override before enrolling.");
+  if (!parsed.id && !["PLANNED", "ACTIVE"].includes(season.status)) throw new Error("Only planned or active seasons accept new enrollments. Payments toward existing balances are still allowed from Payments.");
   const enrollmentStartDate = parsed.enrollmentStartDate ? new Date(parsed.enrollmentStartDate) : season.startDate;
   const enrollmentEndDate = parsed.enrollmentEndDate ? new Date(parsed.enrollmentEndDate) : season.endDate;
   if (enrollmentStartDate < season.startDate || enrollmentEndDate > season.endDate || enrollmentEndDate < enrollmentStartDate) throw new Error("Enrollment dates must stay inside the selected season.");
@@ -415,7 +438,7 @@ export async function registerStudentWorkflow(formData: FormData) {
   const [course, season] = await Promise.all([prisma.course.findUnique({ where: { id: parsed.courseId }, select: { name: true } }), prisma.season.findUnique({ where: { id: parsed.seasonId }, select: { startDate: true, endDate: true, status: true } })]);
   if (!course) registrationErrorRedirect("Choose a valid course.");
   if (!season) registrationErrorRedirect("Choose a valid season.");
-  if (season.status === "CLOSED") registrationErrorRedirect("Closed seasons do not accept new registrations. Payments toward existing balances are still allowed from Payments.");
+  if (!["PLANNED", "ACTIVE"].includes(season.status)) registrationErrorRedirect("Only planned or active seasons accept new registrations. Payments toward existing balances are still allowed from Payments.");
   const courseName = course.name;
   const enrollmentStartDate = parsed.enrollmentStartDate ? new Date(parsed.enrollmentStartDate) : season.startDate;
   const enrollmentEndDate = parsed.enrollmentEndDate ? new Date(parsed.enrollmentEndDate) : season.endDate;
@@ -522,54 +545,66 @@ async function requireAdminConfig() {
   return { session, createdById: user?.id };
 }
 
-const courseSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), category: optionalString, description: optionalString, status: z.enum(["ACTIVE", "ARCHIVED"]) });
+const courseSchema = z.object({ id: id.optional(), name: z.string().trim().min(1).transform(normalizeName), category: optionalString, description: optionalString, status: z.enum(["ACTIVE", "ARCHIVED"]) });
 export async function saveCourse(formData: FormData) {
   await requireAdminConfig();
   const data = courseSchema.parse(Object.fromEntries(formData));
-  const row = data.id ? await prisma.course.update({ where: { id: data.id }, data }) : await prisma.course.create({ data });
-  await audit(data.id ? "update" : "create", "Course", row.id, data);
-  revalidatePath("/admin/courses");
-  revalidatePath("/admin/academic-pricing");
+  const duplicate = await prisma.course.findFirst({ where: { name: { equals: data.name, mode: "insensitive" }, ...(data.id ? { NOT: { id: data.id } } : {}) } });
+  if (duplicate) redirect(academicPricingUrl("error", duplicate.status === "ARCHIVED" ? "This course already exists but is archived. Restore it instead." : "Course already exists."));
+  try {
+    const row = data.id ? await prisma.course.update({ where: { id: data.id }, data }) : await prisma.course.create({ data });
+    await audit(data.id ? "update" : "create", "Course", row.id, data);
+  } catch (error) { if (isUniqueConstraintError(error)) redirect(academicPricingUrl("error", "Course already exists.")); throw error; }
+  revalidatePath("/admin/courses"); revalidatePath("/admin/academic-pricing");
 }
 export async function archiveCourse(formData: FormData) {
   await requireAdminConfig();
   const row = await prisma.course.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
-  await audit("archive", "Course", row.id);
-  revalidatePath("/admin/courses");
-  revalidatePath("/admin/academic-pricing");
+  await audit("archive", "Course", row.id); revalidatePath("/admin/courses"); revalidatePath("/admin/academic-pricing");
+}
+export async function restoreCourse(formData: FormData) {
+  await requireAdminConfig();
+  const row = await prisma.course.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } });
+  await audit("restore", "Course", row.id); revalidatePath("/admin/courses"); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Course restored."));
+}
+export async function deleteCourse(formData: FormData) {
+  await requireAdminConfig(); const courseId = id.parse(formData.get("id"));
+  const [enrollments, pricings] = await Promise.all([prisma.enrollment.count({ where: { courseId } }), prisma.coursePricing.count({ where: { courseId } })]);
+  if (enrollments || pricings) redirect(academicPricingUrl("error", "This course is already used and cannot be deleted. Archive it instead."));
+  await prisma.course.delete({ where: { id: courseId } }); await audit("delete", "Course", courseId); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Unused course deleted."));
 }
 
-const courseLevelSchema = z.object({ id: id.optional(), name: z.string().trim().min(1), order: z.coerce.number().int().default(0), status: z.enum(["ACTIVE", "ARCHIVED"]) });
+const courseLevelSchema = z.object({ id: id.optional(), name: z.string().trim().min(1).transform(normalizeName), order: z.coerce.number().int().default(0), status: z.enum(["ACTIVE", "ARCHIVED"]) });
 export async function saveCourseLevel(formData: FormData) {
-  await requireAdminConfig();
-  const data = courseLevelSchema.parse(Object.fromEntries(formData));
-  const row = data.id ? await prisma.courseLevel.update({ where: { id: data.id }, data }) : await prisma.courseLevel.create({ data });
-  await audit(data.id ? "update" : "create", "CourseLevel", row.id, data);
-  revalidatePath("/admin/course-levels");
-  revalidatePath("/admin/academic-pricing");
+  await requireAdminConfig(); const data = courseLevelSchema.parse(Object.fromEntries(formData));
+  const duplicate = await prisma.courseLevel.findFirst({ where: { name: { equals: data.name, mode: "insensitive" }, ...(data.id ? { NOT: { id: data.id } } : {}) } });
+  if (duplicate) redirect(academicPricingUrl("error", duplicate.status === "ARCHIVED" ? "This level already exists but is archived. Restore it instead." : "Level already exists."));
+  try { const row = data.id ? await prisma.courseLevel.update({ where: { id: data.id }, data }) : await prisma.courseLevel.create({ data }); await audit(data.id ? "update" : "create", "CourseLevel", row.id, data); }
+  catch (error) { if (isUniqueConstraintError(error)) redirect(academicPricingUrl("error", "Level already exists.")); throw error; }
+  revalidatePath("/admin/course-levels"); revalidatePath("/admin/academic-pricing");
 }
-export async function archiveCourseLevel(formData: FormData) {
-  await requireAdminConfig();
-  const row = await prisma.courseLevel.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } });
-  await audit("archive", "CourseLevel", row.id);
-  revalidatePath("/admin/course-levels");
-  revalidatePath("/admin/academic-pricing");
-}
+export async function archiveCourseLevel(formData: FormData) { await requireAdminConfig(); const row = await prisma.courseLevel.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED", archivedAt: new Date() } }); await audit("archive", "CourseLevel", row.id); revalidatePath("/admin/course-levels"); revalidatePath("/admin/academic-pricing"); }
+export async function restoreCourseLevel(formData: FormData) { await requireAdminConfig(); const row = await prisma.courseLevel.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE", archivedAt: null } }); await audit("restore", "CourseLevel", row.id); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Level restored.")); }
+export async function deleteCourseLevel(formData: FormData) { await requireAdminConfig(); const levelId = id.parse(formData.get("id")); const [enrollments, pricings] = await Promise.all([prisma.enrollment.count({ where: { levelId } }), prisma.coursePricing.count({ where: { levelId } })]); if (enrollments || pricings) redirect(academicPricingUrl("error", "This level is already used and cannot be deleted. Archive it instead.")); await prisma.courseLevel.delete({ where: { id: levelId } }); await audit("delete", "CourseLevel", levelId); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Unused level deleted.")); }
 
 const coursePricingSchema = z.object({ id: id.optional(), courseId: id, levelId: id, seasonId: id.or(z.literal("")).optional().transform((v) => v || null), price: z.string().default("0"), status: z.enum(["ACTIVE", "ARCHIVED"]) });
 export async function saveCoursePricing(formData: FormData) {
-  await requireAdminConfig();
-  const parsed = coursePricingSchema.parse(Object.fromEntries(formData));
+  await requireAdminConfig(); const parsed = coursePricingSchema.parse(Object.fromEntries(formData));
   const data = { id: parsed.id, courseId: parsed.courseId, levelId: parsed.levelId, seasonId: parsed.seasonId, priceCents: dollarsToCents(parsed.price), status: parsed.status };
-  const row = data.id ? await prisma.coursePricing.update({ where: { id: data.id }, data }) : await prisma.coursePricing.create({ data });
-  await audit(data.id ? "update" : "create", "CoursePricing", row.id, data);
-  revalidatePath("/admin/course-pricing");
-  revalidatePath("/admin/academic-pricing");
+  const duplicate = await prisma.coursePricing.findFirst({ where: { courseId: data.courseId, levelId: data.levelId, seasonId: data.seasonId, ...(data.id ? { NOT: { id: data.id } } : {}) } });
+  if (duplicate) {
+    if (duplicate.status === "ARCHIVED") { const row = await prisma.coursePricing.update({ where: { id: duplicate.id }, data: { priceCents: data.priceCents, status: "ACTIVE" } }); await audit("restore", "CoursePricing", row.id, data); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Archived price restored and updated.")); }
+    redirect(academicPricingUrl("error", "A price already exists for this course, level, and season. Edit it instead."));
+  }
+  try { const row = data.id ? await prisma.coursePricing.update({ where: { id: data.id }, data }) : await prisma.coursePricing.create({ data }); await audit(data.id ? "update" : "create", "CoursePricing", row.id, data); }
+  catch (error) { if (isUniqueConstraintError(error)) redirect(academicPricingUrl("error", "A price already exists for this course, level, and season. Edit it instead.")); throw error; }
+  revalidatePath("/admin/course-pricing"); revalidatePath("/admin/academic-pricing");
 }
 export async function archiveCoursePricing(formData: FormData) {
   await requireAdminConfig();
   const row = await prisma.coursePricing.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ARCHIVED" } });
   await audit("archive", "CoursePricing", row.id);
-  revalidatePath("/admin/course-pricing");
-  revalidatePath("/admin/academic-pricing");
+  revalidatePath("/admin/course-pricing"); revalidatePath("/admin/academic-pricing");
 }
+export async function restoreCoursePricing(formData: FormData) { await requireAdminConfig(); const row = await prisma.coursePricing.update({ where: { id: id.parse(formData.get("id")) }, data: { status: "ACTIVE" } }); await audit("restore", "CoursePricing", row.id); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Price restored.")); }
+export async function deleteCoursePricing(formData: FormData) { await requireAdminConfig(); const pricingId = id.parse(formData.get("id")); await prisma.coursePricing.delete({ where: { id: pricingId } }); await audit("delete", "CoursePricing", pricingId); revalidatePath("/admin/academic-pricing"); redirect(academicPricingUrl("success", "Unused price deleted.")); }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { registerStudentWorkflow } from "@/actions/records";
+import { findApplicableCoursePrice } from "@/lib/registration/pricing";
 
 type Option = { id: string; title: string; description: string; behavior: string };
 type StudentOption = { id: string; label: string };
@@ -37,7 +38,7 @@ export function RegisterStudentWorkflowForm({ students, families, seasons, teach
   const [initialPayment, setInitialPayment] = useState("");
   const selectedOption = options.find((option) => option.id === registrationType) ?? options[0];
   const selectedSeason = seasons.find((season) => season.id === seasonId);
-  const suggestedPrice = useMemo(() => pricings.find((p) => p.courseId === courseId && p.levelId === levelId && p.seasonId === seasonId)?.price ?? pricings.find((p) => p.courseId === courseId && p.levelId === levelId && !p.seasonId)?.price, [courseId, levelId, seasonId, pricings]);
+  const suggestedPrice = useMemo(() => findApplicableCoursePrice(pricings, courseId, levelId, seasonId)?.price, [courseId, levelId, seasonId, pricings]);
   const activeStartDate = enrollmentStartDate || selectedSeason?.startDate || "";
   const activeEndDate = enrollmentEndDate || selectedSeason?.endDate || "";
   const proratedPrice = useMemo(() => {
