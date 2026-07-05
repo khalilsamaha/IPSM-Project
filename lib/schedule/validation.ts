@@ -20,7 +20,7 @@ export function timeWindowsOverlap(a: TimeWindow, b: TimeWindow) {
 export const scheduleSessionSchema = z.object({
   id: z.string().uuid().optional(),
   studentId: z.string().uuid({ message: "Student is required" }),
-  teacherId: z.string().uuid({ message: "Teacher is required" }),
+  teacherId: z.string().uuid().or(z.literal("")).optional().transform((value) => value || undefined),
   roomId: z.string().uuid().or(z.literal("")).optional().transform((value) => value || null),
   enrollmentId: z.string().uuid().or(z.literal("")).transform((value) => value || null),
   seasonId: z.string().uuid().or(z.literal("")).transform((value) => value || null),
@@ -71,7 +71,7 @@ export const roomSchema = z.object({
 
 export const teacherAvailabilitySchema = z.object({
   id: z.string().uuid().optional(),
-  teacherId: z.string().uuid({ message: "Teacher is required" }),
+  teacherId: z.string().uuid().or(z.literal("")).optional().transform((value) => value || undefined),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time is required"),
   endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time is required"),

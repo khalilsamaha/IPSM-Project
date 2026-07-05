@@ -38,3 +38,9 @@ Admin users should be considered operational administrators, not system owners. 
 - Admin and SUPER_ADMIN may permanently delete unused seasons, unused/archived academic configuration records, and archived students after explicit confirmation.
 - Reception keeps daily record editing and payment creation access, including Family / Group and independent-student payments, but cannot perform permanent deletes or payment voids.
 - All destructive workflows require confirmation and should return friendly errors instead of raw database failures.
+
+## Hotfix permissions notes
+
+- SUPER_ADMIN and ADMIN can edit enrollments, manage teacher profiles, manage teacher courses/instruments, and manage teacher availability.
+- RECEPTION keeps operational records access and can book lessons using enrollment-derived teacher/season data. Existing RBAC remains in force for restricted admin configuration.
+- Booking does not accept a manually different teacher or season when an enrollment is selected; server validation derives those values from the enrollment.

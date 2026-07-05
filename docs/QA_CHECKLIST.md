@@ -157,3 +157,12 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - Confirm independent-student registration with initial payment leaves `familyId` null and creates a `studentId` payment.
 - Confirm later independent-student payments, receipts, and void/reversal update enrollment balances correctly.
 - Confirm existing Family / Group payments and receipts still work.
+
+## Hotfix QA: enrollment, teachers, schedule
+
+- Verify an enrollment with no payments can be edited and duplicate season/course/level enrollment combinations are blocked.
+- Verify an enrollment with payment items keeps paid amounts unchanged and recalculates remaining balance safely after fee/discount edits.
+- Verify enrollment date edits are blocked when existing lessons would fall outside the new enrollment date range.
+- Verify lesson booking filters enrollments by selected student, displays read-only season/teacher, blocks enrollments without teachers, derives teacher/season server-side, and blocks manipulated submissions outside season or enrollment dates.
+- Verify teacher profile can save multiple course/instrument assignments and availability rules, and duplicate teacher-course-level assignments are blocked.
+- Verify Register Student first lesson date min/max follows the intersection of season and enrollment dates and server validation blocks invalid first lesson dates.
