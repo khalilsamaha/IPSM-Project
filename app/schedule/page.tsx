@@ -16,6 +16,7 @@ import {
   saveScheduleSession,
 } from "@/actions/records";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { SessionBookingForm } from "./session-booking-form";
 import {
   AppShell,
   DataTable,
@@ -211,7 +212,7 @@ export default async function SchedulePage({
     }),
     prisma.enrollment.findMany({
       where: { status: "ACTIVE" },
-      include: { student: true, season: true, teacher: true },
+      include: { student: true, season: true, teacher: true, level: true, course: true },
       orderBy: { courseName: "asc" },
     }),
     prisma.room.findMany({
@@ -361,7 +362,7 @@ export default async function SchedulePage({
               studentSelected={Boolean(params.studentId)}
             />
           ) : null}
-          <SessionForm
+          <SessionBookingForm
             editSession={editSession}
             students={students}
             teachers={teachers}
