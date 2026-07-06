@@ -166,3 +166,16 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - Verify lesson booking filters enrollments by selected student, displays read-only season/teacher, blocks enrollments without teachers, derives teacher/season server-side, and blocks manipulated submissions outside season or enrollment dates.
 - Verify teacher profile can save multiple course/instrument assignments and availability rules, and duplicate teacher-course-level assignments are blocked.
 - Verify Register Student first lesson date min/max follows the intersection of season and enrollment dates and server validation blocks invalid first lesson dates.
+
+## Lessons Schedule revamp QA
+
+- Verify `/schedule` displays the title “Lessons Schedule,” the description, and the tabs Instrument View, Student Lessons, Season Schedule, and Book Lesson.
+- In Instrument View, choose a season and instrument and confirm lessons are grouped by teacher with date, time, student, room, level, and status columns.
+- In Student Lessons, search by student ID/name/family, select a student, and confirm all of that student’s lessons and action shortcuts appear.
+- In Season Schedule, select a season and confirm lessons appear without requiring any other filter. Test Group by Date, Teacher, Room, and Instrument.
+- In Book Lesson, select a student and confirm only that student’s enrollments are listed.
+- Confirm the selected enrollment derives season and teacher, and users cannot manually choose a different season or teacher.
+- Confirm an enrollment without a teacher shows the “no teacher assigned” message and disables booking.
+- Confirm date limits match the overlap of season dates and enrollment dates.
+- Attempt teacher, student, and room double-booking and confirm each is blocked with a friendly error.
+- Edit an existing lesson and confirm the existing schedule record remains visible and editable.

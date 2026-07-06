@@ -144,3 +144,14 @@ Lesson booking is enrollment-driven. Schedule creation loads the selected enroll
 Enrollment edits preserve finance history. Existing payment items are not modified; paid cents remain intact and remaining cents are recalculated as `max(0, finalFeeCents - paidCents)`. Enrollment date edits are blocked when any existing scheduled lesson would fall outside the new range.
 
 Teacher profile management centralizes teacher details, `TeacherCourse` course/level assignments, availability rules, and schedule summary so booking can continue to use teacher availability without requiring users to jump between separate screens.
+
+## Lessons Schedule workflow architecture
+
+The Schedule module keeps `/schedule` as the route but organizes daily scheduling into Instrument View, Student Lessons, Season Schedule, and Book Lesson.
+
+- **Instrument View** reads schedule sessions through enrollment course data and groups matching lessons by teacher so multiple teachers can teach the same instrument without hiding student, time, room, level, or status details.
+- **Student Lessons** starts from student search and then shows all lesson records for the selected student with related enrollment, teacher, room, and season context.
+- **Season Schedule** starts from the active/current season and fetches all season lessons without requiring additional filters. Simple grouping toggles change only presentation, not the underlying schedule records.
+- **Book Lesson** is enrollment-driven. After student selection, the enrollment list is filtered to that student. The server derives student, season, teacher, instrument/course, and level from the enrollment and validates dates, teacher availability, and teacher/student/room conflicts before writing.
+
+Teacher assignment belongs on the enrollment because that is where the school confirms who is responsible for the student’s lessons during the season. Blocking enrollment-without-teacher bookings prevents accidental lessons with incomplete operating and payroll context.
