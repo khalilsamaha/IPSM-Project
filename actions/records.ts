@@ -409,7 +409,7 @@ async function assertScheduleSessionIsValid(data: z.infer<typeof scheduleSession
 function scheduleErrorRedirect(formData: FormData, message: string): never {
   const query = new URLSearchParams();
   query.set("error", message);
-  query.set("view", "calendar");
+  query.set("view", "book");
   for (const key of ["studentId", "teacherId", "roomId", "enrollmentId", "seasonId", "title", "sessionDate", "startTime", "endTime", "status", "notes"] as const) {
     const value = formData.get(key);
     if (typeof value === "string" && value) query.set(key === "sessionDate" ? "date" : `form_${key}`, value);

@@ -481,3 +481,14 @@ The final stabilized workflow keeps daily Reception work on Dashboard, Register 
 - Book lessons from an enrollment. Choose a student, then choose one of that student’s active enrollments. The season and teacher are read-only and come from the enrollment. If no teacher is assigned, edit the enrollment first.
 - Manage teacher profiles from **Teachers → View/Edit**. The profile contains personal details, courses/instruments taught, availability rules, and a summary of booked and remaining hours.
 - During Register Student, the optional first lesson date must fall inside both the selected season and the enrollment start/end dates. The first lesson uses the enrollment teacher.
+
+## Lessons Schedule revamp
+
+The `/schedule` tab is now a school-operations lesson schedule with four simple tabs:
+
+- **Instrument View**: choose a season and instrument to see lessons for that instrument, grouped by teacher with student IDs, names, rooms, levels, enrollment status, and lesson status.
+- **Student Lessons**: search a student by student ID, first name, last name, or family/group, then view all lessons, current teachers, instruments, and shortcuts to profile, enrollment, booking, and payments.
+- **Season Schedule**: choose a season and immediately see the full schedule. It defaults to a date-grouped agenda and can also group by teacher, room, or instrument.
+- **Book Lesson**: select a student, then select one of that student’s active enrollments. The lesson uses the enrollment as the source of truth for season, instrument, level, and teacher.
+
+Lesson booking depends on enrollment because enrollment is the approved academic and billing record. A lesson cannot be booked from a mismatched season or a different teacher than the enrollment teacher. If an enrollment has no teacher assigned, the user must edit the enrollment and assign a teacher before booking lessons.
