@@ -14,7 +14,7 @@ describe("admin-only navigation and route access", () => {
     expect(labelsForSection("Academic")).toEqual(["Seasons", "Enrollments", "Courses & Pricing"]);
     expect(labelsForSection("Scheduling")).toEqual(["Lessons / Schedule", "Rooms", "Teacher Availability"]);
     expect(labelsForSection("Finance")).toEqual(["Payments", "Expenses", "Reports"]);
-    expect(labelsForSection("System / Admin")).toEqual(["Users", "School Profile", "Receipt Settings", "Advanced Settings"]);
+    expect(labelsForSection("System / Admin")).toEqual(["Users", "School Profile", "Receipt Settings", "Advanced Settings", "Production Reset"]);
     expect(navSections.flatMap((section) => section.items.map((item) => item.label))).not.toContain("School Configuration");
   });
 
@@ -42,8 +42,10 @@ describe("admin-only navigation and route access", () => {
     expect(canViewNavigationItem("ADMIN", "/users")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/admin/academic-pricing")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/rooms")).toBe(true);
+    expect(canViewNavigationItem("ADMIN", "/settings/production-reset")).toBe(false);
     expect(canViewNavigationItem("SUPER_ADMIN", "/users")).toBe(true);
     expect(canViewNavigationItem("SUPER_ADMIN", "/admin/diagnostics")).toBe(true);
+    expect(canViewNavigationItem("SUPER_ADMIN", "/settings/production-reset")).toBe(true);
   });
 
   it("blocks reception users from protected admin routes", () => {
@@ -65,5 +67,7 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/settings")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/users")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/admin/courses")).toBe(true);
+    expect(canAccessProtectedRoute("SUPER_ADMIN", "/settings/production-reset")).toBe(true);
+    expect(canAccessProtectedRoute("ADMIN", "/settings/production-reset")).toBe(false);
   });
 });

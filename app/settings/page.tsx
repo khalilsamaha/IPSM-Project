@@ -60,6 +60,7 @@ const cards: ConfigCard[] = [
       { label: "User management", href: "/users" },
       { label: "Roles", href: "/users" },
       { label: "Data diagnostics", href: "/admin/diagnostics" },
+      { label: "Production Reset", href: "/settings/production-reset" },
     ],
   },
 ];
