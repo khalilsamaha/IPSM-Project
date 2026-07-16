@@ -189,3 +189,14 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - Confirm new payments, registration initial payments, and expenses only offer Cash and Whish while historical methods display with readable labels.
 - Check application tables use `dd/mm/yy`; receipts use `dd/mm/yyyy`; HTML date inputs remain `YYYY-MM-DD`.
 - Filter `/payments`, use Today/Yesterday/This week/This month shortcuts, and verify posted totals exclude voided payments while voided total is separate.
+
+## Phase 2 receipts and safe deletion
+
+- [ ] Download `/api/receipts/[paymentId]?layout=a5` and confirm the PDF MediaBox is A5 (`420 × 595`).
+- [ ] Print or preview a receipt with long family and student names; verify text wraps inside boxes.
+- [ ] Create a payment with many allocations; verify continuation pages are generated and no allocation is omitted.
+- [ ] Download `/api/receipts/[paymentId]?layout=a4-two-copies`; verify Customer Copy and School Copy share the same receipt number.
+- [ ] Archive an expense, restore it, then archive again and permanently delete it as an admin using the exact confirmation phrase.
+- [ ] Attempt permanent deletion of an active expense and verify it is blocked with a friendly error.
+- [ ] Verify payments cannot be deleted and must use void/reversal.
+- [ ] Verify used enrollments and used room/season/course/level records block permanent deletion and suggest archive/end instead.

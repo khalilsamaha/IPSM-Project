@@ -506,3 +506,9 @@ New payments and expenses only offer **Cash** and **Whish**. Older historical me
 
 ### Dates and daily totals
 Application tables display dates as `dd/mm/yy`, for example `16/07/26`. Formal documents and receipts display dates as `dd/mm/yyyy`, for example `16/07/2026`. Payment daily totals exclude voided payments; voided totals are shown separately.
+
+## Receipt printing and safe deletion
+
+Payment detail pages download receipt PDFs from the receipt API. Use the default A5 layout for email-friendly one-receipt-per-page printing, or add `?layout=a4-two-copies` to print a Customer Copy and School Copy with the same receipt number on one A4 sheet.
+
+Permanent deletion is intentionally limited. Financial records such as payments and receipts are not normally deleted; payments are voided/reversed and receipts are regenerated from the payment. Expenses must be archived before an admin can permanently delete them with the required confirmation phrase.
