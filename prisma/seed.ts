@@ -155,11 +155,12 @@ async function main() {
     },
   });
 
-  for (const [id, name, email, phone] of families) {
+  for (const [index, [id, name, email, phone]] of families.entries()) {
+    const familyCode = `FAM-2026-${String(index + 1).padStart(6, "0")}`;
     await prisma.family.upsert({
       where: { id },
       update: { name, email, phone, status: "ACTIVE" },
-      create: { id, name, email, phone },
+      create: { id, familyCode, name, email, phone },
     });
   }
 

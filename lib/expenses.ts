@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { dollarsToCents, formatCurrency, formatCurrencyInput } from "@/lib/records/format";
+import { formatPaymentMethod } from "@/lib/payment-methods";
 
-export const expensePaymentMethods = ["cash", "card", "check", "ach", "bank_transfer", "other"] as const;
+export const expensePaymentMethods = ["cash", "whish"] as const;
 
 export const expenseSchema = z.object({
   id: z.string().uuid().optional(),

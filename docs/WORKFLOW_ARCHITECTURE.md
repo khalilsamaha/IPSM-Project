@@ -155,3 +155,11 @@ The Schedule module keeps `/schedule` as the route but organizes daily schedulin
 - **Book Lesson** is enrollment-driven. After student selection, the enrollment list is filtered to that student. The server derives student, season, teacher, instrument/course, and level from the enrollment and validates dates, teacher availability, and teacher/student/room conflicts before writing.
 
 Teacher assignment belongs on the enrollment because that is where the school confirms who is responsible for the student’s lessons during the season. Blocking enrollment-without-teacher bookings prevents accidental lessons with incomplete operating and payroll context.
+
+## Phase 1 delivery architecture notes
+
+- Family codes are stored on `Family.familyCode` (`family_code`) with a unique constraint. New codes are generated transactionally with an advisory lock and yearly sequence format `FAM-YYYY-000001`; existing rows are backfilled by migration in creation order.
+- Student activities remain enrollment-scoped. Registration creates students and one enrollment for the selected primary/existing student, so a student can hold multiple activities through multiple enrollments.
+- New transaction payment methods are centralized in `lib/payment-methods.ts` and limited to `cash` and `whish`; display helpers continue to label historical methods.
+- Date display helpers are centralized in `lib/records/format.ts`: tables use `formatDate` (`dd/mm/yy`) and receipts/formal documents use `formatFormalDate` (`dd/mm/yyyy`). HTML date inputs continue to use ISO values.
+- Payments summary cards and daily breakdown are computed from the current filters and exclude voided payments from posted/net totals.

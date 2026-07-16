@@ -7,6 +7,7 @@ import { hasPermission } from "@/lib/auth/roles";
 import { createPaymentWithAllocations } from "@/lib/payments/payment-service";
 import { dollarsToCents } from "@/lib/records/format";
 import { logServerError } from "@/lib/server-log";
+import { isNewPaymentMethod } from "@/lib/payment-methods";
 
 function paymentErrorRedirect(payerType: string, payerId: string | null, message: string): never {
   const params = new URLSearchParams();
@@ -31,6 +32,7 @@ export async function createPayment(formData: FormData) {
   const studentId = payerType === "student" ? String(formData.get("studentId") ?? "") : "";
   const payerId = payerType === "student" ? studentId : familyId;
   const paymentMethod = String(formData.get("paymentMethod") ?? "cash");
+  if (!isNewPaymentMethod(paymentMethod)) paymentErrorRedirect(payerType, payerId || null, "Choose Cash or Whish for new payments.");
   const notes = String(formData.get("notes") ?? "").trim() || null;
   if (!payerId) paymentErrorRedirect(payerType, null, payerType === "student" ? "Select an independent student before creating a payment." : "Select a family before creating a payment.");
 

@@ -179,3 +179,13 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - Confirm date limits match the overlap of season dates and enrollment dates.
 - Attempt teacher, student, and room double-booking and confirm each is blocked with a friendly error.
 - Edit an existing lesson and confirm the existing schedule record remains visible and editable.
+
+## Phase 1 delivery QA checks
+
+- Confirm `npx prisma migrate deploy` applies the family code migration in an environment with `DATABASE_URL` and `DIRECT_URL` set.
+- Verify existing families receive unique `FAM-YYYY-000001` codes and new families receive the next code without reusing deleted or archived records.
+- Search families/payments/reports by family code, family name, parent, student name, student code, phone, and email.
+- Register a new family with multiple students and confirm only the primary student receives the initial enrollment while all students remain related to the family.
+- Confirm new payments, registration initial payments, and expenses only offer Cash and Whish while historical methods display with readable labels.
+- Check application tables use `dd/mm/yy`; receipts use `dd/mm/yyyy`; HTML date inputs remain `YYYY-MM-DD`.
+- Filter `/payments`, use Today/Yesterday/This week/This month shortcuts, and verify posted totals exclude voided payments while voided total is separate.

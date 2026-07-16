@@ -8,8 +8,8 @@ describe("expense validation", () => {
       description: "Studio rent",
       amount: "123.45",
       expenseDate: "2026-06-15",
-      paymentMethod: "ach",
-    })).toMatchObject({ category: "Rent", description: "Studio rent", amountCents: 12345, paymentMethod: "ach" });
+      paymentMethod: "whish",
+    })).toMatchObject({ category: "Rent", description: "Studio rent", amountCents: 12345, paymentMethod: "whish" });
   });
 
   it("rejects zero and negative amounts", () => {

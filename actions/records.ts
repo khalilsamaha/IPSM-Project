@@ -13,6 +13,8 @@ import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
 import { minutesFromTime, roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
+import { createFamilyWithCode } from "@/lib/families";
+import { isNewPaymentMethod } from "@/lib/payment-methods";
 import { buildStudentCreateData } from "@/lib/registration/independent-student";
 import { academicPricingUrl, isUniqueConstraintError, normalizeName } from "@/lib/academic-pricing";
 
@@ -43,7 +45,7 @@ const familySchema = z.object({ id: id.optional(), name: z.string().trim().min(1
 export async function saveFamily(formData: FormData) {
   await requireRecordsWrite();
   const data = familySchema.parse(Object.fromEntries(formData));
-  const row = data.id ? await prisma.family.update({ where: { id: data.id }, data }) : await prisma.family.create({ data });
+  const row = data.id ? await prisma.family.update({ where: { id: data.id }, data }) : await prisma.$transaction((tx) => createFamilyWithCode(tx, data));
   await audit(data.id ? "update" : "create", "Family", row.id, data);
   revalidatePath("/families");
 }
@@ -315,7 +317,7 @@ export async function archiveTeacherAvailability(formData: FormData) {
   revalidatePath("/schedule");
 }
 
-const paymentSchema = z.object({ familyId: id.or(z.literal("")).optional().transform((v) => v || null), studentId: id.or(z.literal("")).optional().transform((v) => v || null), paymentDate: z.string().min(1).transform((v) => new Date(v)), paymentMethod: z.string().trim().min(1), notes: optionalString });
+const paymentSchema = z.object({ familyId: id.or(z.literal("")).optional().transform((v) => v || null), studentId: id.or(z.literal("")).optional().transform((v) => v || null), paymentDate: z.string().min(1).transform((v) => new Date(v)), paymentMethod: z.string().trim().min(1).refine(isNewPaymentMethod, "Choose Cash or Whish."), notes: optionalString });
 
 export async function createPayment(formData: FormData) {
   const { createdById, session } = await requireRecordsWrite();
@@ -499,7 +501,7 @@ const registrationSchema = z.object({
   fee: z.string().default("0"),
   discount: z.string().default("0"),
   initialPayment: z.string().default("0"),
-  paymentMethod: z.string().default("cash"),
+  paymentMethod: z.string().default("cash").refine(isNewPaymentMethod, "Choose Cash or Whish."),
   bookFirstSession: z.string().optional(),
   sessionDate: z.string().optional(),
   startTime: z.string().optional(),
@@ -560,7 +562,7 @@ export async function registerStudentWorkflow(formData: FormData) {
       if (normalizedRegistrationType === "existing_family_group" && !familyId) throw new Error("Choose an existing Family / Group or switch registration type.");
       if (normalizedRegistrationType === "new_family_group") {
         if (!parsed.familyName) throw new Error("Family / Group name is required for a new family registration.");
-        const family = await tx.family.create({ data: { name: parsed.familyName, email: parsed.familyEmail, phone: parsed.familyPhone, notes: parsed.familyNotes, fatherFirstName: parsed.fatherFirstName, fatherLastName: parsed.fatherLastName, fatherJob: parsed.fatherJob, fatherPhone: parsed.fatherPhone, fatherEmail: parsed.fatherEmail, motherFirstName: parsed.motherFirstName, motherLastName: parsed.motherLastName, motherJob: parsed.motherJob, motherPhone: parsed.motherPhone, motherEmail: parsed.motherEmail, address: parsed.address, emergencyContactName: parsed.emergencyContactName, emergencyContactPhone: parsed.emergencyContactPhone } });
+        const family = await createFamilyWithCode(tx, { name: parsed.familyName, email: parsed.familyEmail, phone: parsed.familyPhone, notes: parsed.familyNotes, fatherFirstName: parsed.fatherFirstName, fatherLastName: parsed.fatherLastName, fatherJob: parsed.fatherJob, fatherPhone: parsed.fatherPhone, fatherEmail: parsed.fatherEmail, motherFirstName: parsed.motherFirstName, motherLastName: parsed.motherLastName, motherJob: parsed.motherJob, motherPhone: parsed.motherPhone, motherEmail: parsed.motherEmail, address: parsed.address, emergencyContactName: parsed.emergencyContactName, emergencyContactPhone: parsed.emergencyContactPhone });
         familyId = family.id;
         await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", explicitFamilyFields: true } } });
       }
@@ -572,7 +574,7 @@ export async function registerStudentWorkflow(formData: FormData) {
       if (normalizedRegistrationType === "existing_student" && studentRows.length > 0) throw new Error("Existing student registration creates a new enrollment only. Edit student profiles from the Students page.");
 
       if (!familyId && parsed.createFamilyFromStudent && studentRows[0]) {
-        const family = await tx.family.create({ data: { name: `${studentRows[0].lastName} Family / Group`, email: studentRows[0].email, phone: studentRows[0].phone } });
+        const family = await createFamilyWithCode(tx, { name: `${studentRows[0].lastName} Family / Group`, email: studentRows[0].email, phone: studentRows[0].phone });
         familyId = family.id;
         await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", legacyCreateFamilyFromStudent: true } } });
       }

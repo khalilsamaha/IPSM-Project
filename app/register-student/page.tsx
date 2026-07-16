@@ -23,7 +23,7 @@ export default async function RegisterStudentPage({ searchParams }: { searchPara
     {params.success ? <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><p className="font-black">Registration complete.</p><p>Students created: {params.students ?? "0"}</p><p>Enrollment: {params.enrollmentId}</p>{params.paymentId ? <p>Initial Payment receipt: <Link className="font-bold underline" href={`/payments/${params.paymentId}`}>open receipt</Link></p> : null}{params.sessionId ? <p>First lesson confirmation: {params.sessionId}</p> : null}</div> : null}
     <RegisterStudentWorkflowForm
       students={students.map((student) => ({ id: student.id, label: `${student.studentCode} — ${student.firstName} ${student.lastName} (${student.family?.name ?? "Independent"})` }))}
-      families={families.map((family) => ({ id: family.id, name: family.name }))}
+      families={families.map((family) => ({ id: family.id, familyCode: family.familyCode, name: family.name }))}
       seasons={seasons.map((season) => ({ id: season.id, name: season.name, startDate: season.startDate.toISOString().slice(0, 10), endDate: season.endDate.toISOString().slice(0, 10) }))}
       teachers={teachers.map((teacher) => ({ id: teacher.id, fullName: teacher.fullName }))}
       courses={courses.map((course) => ({ id: course.id, name: course.name }))}

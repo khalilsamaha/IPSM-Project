@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { formatDate } from "@/lib/records/format";
+import { formatPaymentMethod } from "@/lib/payment-methods";
 import { getCourseEnrollmentReport, getExpenseReport, getOutstandingReport, getProfitLossReport, getRevenueReport, getRoomUtilizationReport, getSeasonClosingReport, getTeacherScheduleAvailabilityReport, type ReportFilters } from "@/lib/reports/data";
 
 const headers: Record<string, string[]> = {
@@ -27,13 +28,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   let rows: unknown[][] = [];
   if (report === "revenue") {
     const data = await getRevenueReport(filters);
-    rows = data.rows.map((row) => [formatDate(row.paymentDate), row.family?.name ?? (row.student ? `${row.student.studentCode} — ${row.student.firstName} ${row.student.lastName}` : "Independent Student"), row.paymentMethod, row.receiptNumber ?? "", Array.from(new Set(row.items.map((item) => item.enrollment.season.name))).join("; "), Array.from(new Set(row.items.map((item) => item.enrollment.course?.name ?? item.enrollment.courseName))).join("; "), row.reportAmountCents]);
+    rows = data.rows.map((row) => [formatDate(row.paymentDate), row.family ? `${row.family.familyCode} — ${row.family.name}` : (row.student ? `${row.student.studentCode} — ${row.student.firstName} ${row.student.lastName}` : "Independent Student"), formatPaymentMethod(row.paymentMethod), row.receiptNumber ?? "", Array.from(new Set(row.items.map((item) => item.enrollment.season.name))).join("; "), Array.from(new Set(row.items.map((item) => item.enrollment.course?.name ?? item.enrollment.courseName))).join("; "), row.reportAmountCents]);
   } else if (report === "outstanding") {
     const data = await getOutstandingReport(filters);
-    rows = data.rows.map((row) => [row.student.family?.name ?? "Independent", row.student.studentCode, `${row.student.firstName} ${row.student.lastName}`, row.season.name, row.course?.name ?? row.courseName, row.level?.name ?? "", row.teacher?.fullName ?? "", row.remainingCents]);
+    rows = data.rows.map((row) => [row.student.family ? `${row.student.family.familyCode} — ${row.student.family.name}` : "Independent", row.student.studentCode, `${row.student.firstName} ${row.student.lastName}`, row.season.name, row.course?.name ?? row.courseName, row.level?.name ?? "", row.teacher?.fullName ?? "", row.remainingCents]);
   } else if (report === "expenses") {
     const data = await getExpenseReport(filters);
-    rows = data.rows.map((row) => [formatDate(row.expenseDate), row.category, row.description, row.paymentMethod, row.amountCents, row.archivedAt ? "Archived" : "Active"]);
+    rows = data.rows.map((row) => [formatDate(row.expenseDate), row.category, row.description, formatPaymentMethod(row.paymentMethod), row.amountCents, row.archivedAt ? "Archived" : "Active"]);
   } else if (report === "profit-loss") {
     const data = await getProfitLossReport(filters); rows = [[data.revenueCents, data.expenseCents, data.netCents]];
   } else if (report === "season-closing") {

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type Family = { id: string; name: string; email?: string | null; phone?: string | null; students: { firstName: string; lastName: string; studentCode: string }[] };
+type Family = { id: string; familyCode: string; name: string; email?: string | null; phone?: string | null; students: { firstName: string; lastName: string; studentCode: string }[] };
 type Student = { id: string; studentCode: string; firstName: string; lastName: string; email?: string | null; phone?: string | null };
 
 export function PaymentPayerSelector({ families, students, initialPayerType, initialFamilyId, initialStudentId }: { families: Family[]; students: Student[]; initialPayerType: string; initialFamilyId: string; initialStudentId: string }) {
@@ -26,8 +26,8 @@ export function PaymentPayerSelector({ families, students, initialPayerType, ini
       <label className="mb-2 block text-sm font-medium" htmlFor="familySearch">Search Family / Group</label>
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]"><input className="h-10 rounded-md border border-border bg-white px-3 text-sm" id="familySearch" list="family-options" name="familyId" required value={familyId} onChange={(event) => setFamilyId(event.target.value)} placeholder="Search by family, parent, phone/email, student name, or Student ID"/><button className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white" type="submit">Show outstanding balances</button></div>
       <input type="hidden" name="payerType" value="family" />
-      <p className="mt-2 text-xs text-muted-foreground">Select a suggestion to fill the internal family value. Selected: {selectedFamily?.name ?? "none"}</p>
-      <datalist id="family-options">{families.map((family) => <option key={family.id} value={family.id} label={[family.name, family.email, family.phone, family.students.map((student) => `${student.firstName} ${student.lastName} (${student.studentCode})`).join(", ")].filter(Boolean).join(" — ")}/>)}</datalist>
+      <p className="mt-2 text-xs text-muted-foreground">Select a suggestion to fill the internal family value. Selected: {selectedFamily ? `${selectedFamily.familyCode} — ${selectedFamily.name}` : "none"}</p>
+      <datalist id="family-options">{families.map((family) => <option key={family.id} value={family.id} label={[family.familyCode, family.name, family.email, family.phone, family.students.map((student) => `${student.firstName} ${student.lastName} (${student.studentCode})`).join(", ")].filter(Boolean).join(" — ")}/>)}</datalist>
     </>}
   </form>;
 }
