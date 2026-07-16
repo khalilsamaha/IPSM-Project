@@ -71,6 +71,12 @@ enum TeacherAvailabilityStatus {
   ARCHIVED
 }
 
+enum ShiftStatus {
+  OPEN
+  CLOSED
+  REOPENED
+}
+
 model UserProfile {
   id               String     @id @default(uuid()) @db.Uuid
   authId           String     @unique @map("auth_id") @db.Uuid
@@ -80,6 +86,9 @@ model UserProfile {
   status           UserStatus @default(ACTIVE)
   paymentsCreated  Payment[]  @relation("PaymentCreatedBy")
   expensesCreated  Expense[]  @relation("ExpenseCreatedBy")
+  shiftsOpened     CashierShift[] @relation("ShiftOpenedBy")
+  shiftsClosed     CashierShift[] @relation("ShiftClosedBy")
+  shiftsReopened   CashierShift[] @relation("ShiftReopenedBy")
   auditLogsCreated AuditLog[] @relation("AuditLogCreatedBy")
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
@@ -390,6 +399,8 @@ model Payment {
   createdById      String?       @map("created_by_id") @db.Uuid
   createdBy        UserProfile?  @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   receiptNumber    String?       @unique @map("receipt_number")
+  shiftId          String?       @map("shift_id") @db.Uuid
+  shift            CashierShift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   voidedAt         DateTime?     @map("voided_at")
   items            PaymentItem[]
   receipt          Receipt?
@@ -399,6 +410,7 @@ model Payment {
   @@index([familyId])
   @@index([studentId])
   @@index([createdById])
+  @@index([shiftId])
   @@index([paymentDate])
   @@map("payments")
 }
@@ -444,10 +456,42 @@ model Expense {
   incurredAt    DateTime     @default(now()) @map("incurred_at") @db.Date
   expenseDate   DateTime     @default(now()) @map("expense_date") @db.Date
   paymentMethod String       @default("cash") @map("payment_method")
+  shiftId       String?      @map("shift_id") @db.Uuid
+  shift         CashierShift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   createdAt     DateTime     @default(now()) @map("created_at")
   archivedAt    DateTime?    @map("archived_at")
 
   @@index([createdById])
+  @@index([shiftId])
   @@index([expenseDate])
   @@map("expenses")
+}
+
+
+model CashierShift {
+  id                String       @id @default(uuid()) @db.Uuid
+  userId            String       @map("user_id") @db.Uuid
+  user              UserProfile  @relation("ShiftOpenedBy", fields: [userId], references: [id], onDelete: Restrict)
+  businessDate      DateTime     @map("business_date") @db.Date
+  openedAt          DateTime     @default(now()) @map("opened_at")
+  closedAt          DateTime?    @map("closed_at")
+  openingCashCents  Int          @map("opening_cash_cents")
+  expectedCashCents Int          @default(0) @map("expected_cash_cents")
+  declaredCashCents Int?         @map("declared_cash_cents")
+  differenceCents   Int?         @map("difference_cents")
+  status            ShiftStatus  @default(OPEN)
+  notes             String?
+  closedById        String?      @map("closed_by_id") @db.Uuid
+  closedBy          UserProfile? @relation("ShiftClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  reopenedById      String?      @map("reopened_by_id") @db.Uuid
+  reopenedBy        UserProfile? @relation("ShiftReopenedBy", fields: [reopenedById], references: [id], onDelete: SetNull)
+  reopenReason      String?      @map("reopen_reason")
+  payments          Payment[]
+  expenses          Expense[]
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([businessDate])
+  @@map("cashier_shifts")
 }

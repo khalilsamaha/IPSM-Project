@@ -15,6 +15,7 @@ import { logServerError } from "@/lib/server-log";
 import { createStudentWithCode } from "@/lib/students";
 import { createFamilyWithCode } from "@/lib/families";
 import { isNewPaymentMethod } from "@/lib/payment-methods";
+import { requireCurrentOpenShift } from "@/lib/shifts/service";
 import { buildStudentCreateData } from "@/lib/registration/independent-student";
 import { academicPricingUrl, isUniqueConstraintError, normalizeName } from "@/lib/academic-pricing";
 
@@ -329,7 +330,9 @@ export async function createPayment(formData: FormData) {
 
   let payment;
   try {
-    payment = await createPaymentWithAllocations(prisma, { ...parsed, createdById, actorId: session.userId, allocations });
+    if (!createdById) throw new Error("User profile not found.");
+    const shift = await requireCurrentOpenShift(prisma, createdById);
+    payment = await createPaymentWithAllocations(prisma, { ...parsed, createdById, actorId: session.userId, shiftId: shift.id, allocations });
   } catch (error) {
     logServerError("payment.create", error, { familyId: parsed.familyId });
     redirect(`/payments/new?${parsed.studentId ? `payerType=student&studentId=${parsed.studentId}` : `familyId=${parsed.familyId ?? ""}`}&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to create payment. Please check allocations and try again.")}`);
