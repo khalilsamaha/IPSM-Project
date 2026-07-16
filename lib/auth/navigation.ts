@@ -7,6 +7,7 @@ const adminOnlyRoutes = [
   "/seasons",
   "/rooms",
   "/teacher-availability",
+  "/payroll",
 ] as const;
 
 const adminOnlyNavigationRoutes = [...adminOnlyRoutes] as const;

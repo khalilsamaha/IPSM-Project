@@ -77,22 +77,30 @@ enum ShiftStatus {
   REOPENED
 }
 
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
 model UserProfile {
-  id               String     @id @default(uuid()) @db.Uuid
-  authId           String     @unique @map("auth_id") @db.Uuid
+  id               String           @id @default(uuid()) @db.Uuid
+  authId           String           @unique @map("auth_id") @db.Uuid
   name             String
-  email            String     @unique
-  role             Role       @default(RECEPTION)
-  status           UserStatus @default(ACTIVE)
-  paymentsCreated  Payment[]  @relation("PaymentCreatedBy")
-  expensesCreated  Expense[]  @relation("ExpenseCreatedBy")
-  shiftsOpened     CashierShift[] @relation("ShiftOpenedBy")
-  shiftsClosed     CashierShift[] @relation("ShiftClosedBy")
-  shiftsReopened   CashierShift[] @relation("ShiftReopenedBy")
-  auditLogsCreated AuditLog[] @relation("AuditLogCreatedBy")
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
-  archivedAt       DateTime?  @map("archived_at")
+  email            String           @unique
+  role             Role             @default(RECEPTION)
+  status           UserStatus       @default(ACTIVE)
+  paymentsCreated  Payment[]        @relation("PaymentCreatedBy")
+  expensesCreated  Expense[]        @relation("ExpenseCreatedBy")
+  shiftsOpened     CashierShift[]   @relation("ShiftOpenedBy")
+  shiftsClosed     CashierShift[]   @relation("ShiftClosedBy")
+  shiftsReopened   CashierShift[]   @relation("ShiftReopenedBy")
+  auditLogsCreated AuditLog[]       @relation("AuditLogCreatedBy")
+  approvedPayrolls TeacherPayroll[] @relation("PayrollApprovedBy")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  archivedAt       DateTime?        @map("archived_at")
 
   @@map("users")
 }
@@ -198,6 +206,7 @@ model Teacher {
   scheduleSessions ScheduleSession[]
   availability     TeacherAvailability[]
   courses          TeacherCourse[]
+  payrolls         TeacherPayroll[]
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime              @updatedAt @map("updated_at")
   archivedAt       DateTime?             @map("archived_at")
@@ -207,33 +216,33 @@ model Teacher {
 }
 
 model Course {
-  id          String               @id @default(uuid()) @db.Uuid
-  name        String               @unique
-  category    String?
-  description String?
-  status      AcademicConfigStatus @default(ACTIVE)
-  enrollments Enrollment[]
+  id             String               @id @default(uuid()) @db.Uuid
+  name           String               @unique
+  category       String?
+  description    String?
+  status         AcademicConfigStatus @default(ACTIVE)
+  enrollments    Enrollment[]
   teacherCourses TeacherCourse[]
-  pricings    CoursePricing[]
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
-  archivedAt  DateTime?            @map("archived_at")
+  pricings       CoursePricing[]
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  archivedAt     DateTime?            @map("archived_at")
 
   @@index([status])
   @@map("courses")
 }
 
 model CourseLevel {
-  id          String               @id @default(uuid()) @db.Uuid
-  name        String               @unique
-  order       Int                  @default(0)
-  status      AcademicConfigStatus @default(ACTIVE)
-  enrollments Enrollment[]
+  id             String               @id @default(uuid()) @db.Uuid
+  name           String               @unique
+  order          Int                  @default(0)
+  status         AcademicConfigStatus @default(ACTIVE)
+  enrollments    Enrollment[]
   teacherCourses TeacherCourse[]
-  pricings    CoursePricing[]
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
-  archivedAt  DateTime?            @map("archived_at")
+  pricings       CoursePricing[]
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  archivedAt     DateTime?            @map("archived_at")
 
   @@index([status, order])
   @@map("course_levels")
@@ -339,6 +348,7 @@ model ScheduleSession {
   createdAt    DateTime              @default(now()) @map("created_at")
   updatedAt    DateTime              @updatedAt @map("updated_at")
   archivedAt   DateTime?             @map("archived_at")
+  payrollItems TeacherPayrollItem[]
 
   @@index([studentId, sessionDate])
   @@index([teacherId, sessionDate])
@@ -384,6 +394,53 @@ model TeacherAvailability {
   @@index([teacherId, dayOfWeek, status])
   @@index([seasonId])
   @@map("teacher_availability")
+}
+
+model TeacherPayroll {
+  id                      String               @id @default(uuid()) @db.Uuid
+  teacherId               String               @map("teacher_id") @db.Uuid
+  teacher                 Teacher              @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  periodStart             DateTime             @map("period_start") @db.Date
+  periodEnd               DateTime             @map("period_end") @db.Date
+  hourlyRateSnapshotCents Int                  @map("hourly_rate_snapshot_cents")
+  completedMinutes        Int                  @default(0) @map("completed_minutes")
+  missedPayableMinutes    Int                  @default(0) @map("missed_payable_minutes")
+  adjustmentCents         Int                  @default(0) @map("adjustment_cents")
+  grossAmountCents        Int                  @default(0) @map("gross_amount_cents")
+  status                  PayrollStatus        @default(DRAFT)
+  approvedById            String?              @map("approved_by_id") @db.Uuid
+  approvedBy              UserProfile?         @relation("PayrollApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt              DateTime?            @map("approved_at")
+  paidAt                  DateTime?            @map("paid_at")
+  notes                   String?
+  items                   TeacherPayrollItem[]
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+
+  @@index([teacherId, periodStart, periodEnd])
+  @@index([status])
+  @@map("teacher_payrolls")
+}
+
+model TeacherPayrollItem {
+  id                String           @id @default(uuid()) @db.Uuid
+  payrollId         String           @map("payroll_id") @db.Uuid
+  payroll           TeacherPayroll   @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  scheduleSessionId String?          @map("schedule_session_id") @db.Uuid
+  scheduleSession   ScheduleSession? @relation(fields: [scheduleSessionId], references: [id], onDelete: Restrict)
+  sessionDate       DateTime         @map("session_date") @db.Date
+  startTime         String           @map("start_time")
+  endTime           String           @map("end_time")
+  minutes           Int
+  rateSnapshotCents Int              @map("rate_snapshot_cents")
+  amountCents       Int              @map("amount_cents")
+  itemType          String           @map("item_type")
+  notes             String?
+
+  @@unique([scheduleSessionId])
+  @@index([payrollId])
+  @@index([sessionDate])
+  @@map("teacher_payroll_items")
 }
 
 model Payment {
@@ -447,26 +504,25 @@ model Receipt {
 }
 
 model Expense {
-  id            String       @id @default(uuid()) @db.Uuid
-  createdById   String?      @map("created_by_id") @db.Uuid
-  createdBy     UserProfile? @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  id            String        @id @default(uuid()) @db.Uuid
+  createdById   String?       @map("created_by_id") @db.Uuid
+  createdBy     UserProfile?  @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   category      String
   description   String
-  amountCents   Int          @map("amount_cents")
-  incurredAt    DateTime     @default(now()) @map("incurred_at") @db.Date
-  expenseDate   DateTime     @default(now()) @map("expense_date") @db.Date
-  paymentMethod String       @default("cash") @map("payment_method")
-  shiftId       String?      @map("shift_id") @db.Uuid
+  amountCents   Int           @map("amount_cents")
+  incurredAt    DateTime      @default(now()) @map("incurred_at") @db.Date
+  expenseDate   DateTime      @default(now()) @map("expense_date") @db.Date
+  paymentMethod String        @default("cash") @map("payment_method")
+  shiftId       String?       @map("shift_id") @db.Uuid
   shift         CashierShift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
-  createdAt     DateTime     @default(now()) @map("created_at")
-  archivedAt    DateTime?    @map("archived_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  archivedAt    DateTime?     @map("archived_at")
 
   @@index([createdById])
   @@index([shiftId])
   @@index([expenseDate])
   @@map("expenses")
 }
-
 
 model CashierShift {
   id                String       @id @default(uuid()) @db.Uuid

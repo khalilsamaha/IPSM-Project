@@ -211,3 +211,13 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - [ ] Admin reopen requires a reason and creates an audit log entry.
 - [ ] Reclosing recalculates expected cash, declared cash, and difference.
 - [ ] Legacy `shiftId = null` payments/expenses remain visible.
+
+
+## Teacher payroll QA
+
+- Verify completed lessons are payable by default.
+- Verify scheduled and cancelled lessons are excluded.
+- Verify missed lessons require policy/manual approval.
+- Verify duplicate paid sessions are blocked.
+- Verify historical rate snapshots do not change after teacher profile rate edits.
+- Verify approved and paid payroll records are locked and lifecycle actions are audited.

@@ -520,3 +520,8 @@ Use **Daily Operations → Shift** at the start of each receptionist day. Enter 
 At closing, review opening cash, posted cash payments, Whish payments, cash expenses, Whish expenses, expected closing cash, payment count, expense count, voided payments, and the transaction list. Enter declared cash and confirm the close action. Closed-shift transactions are locked and can no longer be changed by Reception.
 
 Admins can reopen a closed shift only with a reason. The reopen is audited, corrections can be made according to permissions, and closing again recalculates the report totals. Historical transactions without a shift remain valid and are shown as **Legacy / No Shift**.
+
+
+## Admin: Teacher Payroll
+
+Admins can use `/payroll` to generate teacher payroll from payable lessons only. Select a teacher and period, review eligible completed lessons, manually approve missed lessons when appropriate, add adjustments, then generate a draft. Approve the draft before marking it paid. Reception users do not have payroll access.

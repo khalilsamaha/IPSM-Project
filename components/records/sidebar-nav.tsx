@@ -5,7 +5,7 @@ import type { Role } from "@/lib/auth/roles";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, RotateCcw, Clock, Settings, SlidersHorizontal, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards } from "lucide-react";
+import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, RotateCcw, Clock, Settings, SlidersHorizontal, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards, HandCoins } from "lucide-react";
 import { canViewNavigationItem } from "@/lib/auth/navigation";
 
 type NavItem = {
@@ -60,6 +60,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: "Payments", href: "/payments", icon: CreditCard },
       { label: "Expenses", href: "/expenses", icon: Receipt },
+      { label: "Payroll", href: "/payroll", icon: HandCoins },
       { label: "Reports", href: "/reports", icon: BarChart3 },
     ],
   },

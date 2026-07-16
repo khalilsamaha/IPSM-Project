@@ -13,7 +13,7 @@ describe("admin-only navigation and route access", () => {
     expect(labelsForSection("People")).toEqual(["Families", "Students", "Teachers"]);
     expect(labelsForSection("Academic")).toEqual(["Seasons", "Enrollments", "Courses & Pricing"]);
     expect(labelsForSection("Scheduling")).toEqual(["Lessons / Schedule", "Rooms", "Teacher Availability"]);
-    expect(labelsForSection("Finance")).toEqual(["Payments", "Expenses", "Reports"]);
+    expect(labelsForSection("Finance")).toEqual(["Payments", "Expenses", "Payroll", "Reports"]);
     expect(labelsForSection("System / Admin")).toEqual(["Users", "School Profile", "Receipt Settings", "Advanced Settings", "Production Reset"]);
     expect(navSections.flatMap((section) => section.items.map((item) => item.label))).not.toContain("School Configuration");
   });
@@ -27,6 +27,7 @@ describe("admin-only navigation and route access", () => {
     expect(canViewNavigationItem("RECEPTION", "/admin/diagnostics")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/rooms")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/teacher-availability")).toBe(false);
+    expect(canViewNavigationItem("RECEPTION", "/payroll")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/seasons")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/dashboard")).toBe(true);
     expect(canViewNavigationItem("RECEPTION", "/register-student")).toBe(true);
@@ -55,6 +56,7 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("RECEPTION", "/admin/diagnostics")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/rooms")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/teacher-availability")).toBe(false);
+    expect(canAccessProtectedRoute("RECEPTION", "/payroll")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/seasons")).toBe(false);
   });
 
@@ -64,6 +66,7 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("ADMIN", "/admin/courses")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/admin/diagnostics")).toBe(true);
     expect(canAccessProtectedRoute("ADMIN", "/rooms")).toBe(true);
+    expect(canAccessProtectedRoute("ADMIN", "/payroll")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/settings")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/users")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/admin/courses")).toBe(true);
