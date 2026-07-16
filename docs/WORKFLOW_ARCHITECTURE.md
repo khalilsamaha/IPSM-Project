@@ -163,3 +163,8 @@ Teacher assignment belongs on the enrollment because that is where the school co
 - New transaction payment methods are centralized in `lib/payment-methods.ts` and limited to `cash` and `whish`; display helpers continue to label historical methods.
 - Date display helpers are centralized in `lib/records/format.ts`: tables use `formatDate` (`dd/mm/yy`) and receipts/formal documents use `formatFormalDate` (`dd/mm/yyyy`). HTML date inputs continue to use ISO values.
 - Payments summary cards and daily breakdown are computed from the current filters and exclude voided payments from posted/net totals.
+
+
+## Teacher payroll workflow
+
+Payroll generation flows from teacher/period selection to payable lesson review, draft creation with rate snapshots, approval, payment, and audited cancellation. The system queries only unpaid payable lessons and persists payroll items to protect historical rates and prevent duplicate payment.

@@ -50,3 +50,8 @@ Admin users should be considered operational administrators, not system owners. 
 - **Reception**: may open and close their own shift and create payments/expenses only while a shift is open.
 - **Admin / Super Admin**: may review all shifts and reopen a closed shift with a required reason. Reopen actions are audited and are never silent unlocks.
 - Closed-shift transaction locks are enforced by server actions, not only by UI controls.
+
+
+## Payroll permissions
+
+Reception users have no payroll access. Admin and Super Admin users can generate teacher payroll drafts, approve payroll, mark approved payroll as paid, and cancel non-paid payroll with an audit trail.
