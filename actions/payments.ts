@@ -8,6 +8,7 @@ import { createPaymentWithAllocations } from "@/lib/payments/payment-service";
 import { dollarsToCents } from "@/lib/records/format";
 import { logServerError } from "@/lib/server-log";
 import { isNewPaymentMethod } from "@/lib/payment-methods";
+import { requireCurrentOpenShift } from "@/lib/shifts/service";
 
 function paymentErrorRedirect(payerType: string, payerId: string | null, message: string): never {
   const params = new URLSearchParams();
@@ -38,7 +39,9 @@ export async function createPayment(formData: FormData) {
 
   const allocations = Array.from(formData.entries()).filter(([key]) => key.startsWith("allocation:")).map(([key, amount]) => ({ enrollmentId: key.replace("allocation:", ""), amountCents: dollarsToCents(String(amount)) })).filter((a) => a.amountCents > 0);
   try {
-    const payment = await createPaymentWithAllocations(prisma, { familyId: familyId || null, studentId: studentId || null, paymentDate: new Date(), paymentMethod, notes, createdById, actorId: session.userId, allocations });
+    if (!createdById) throw new Error("User profile not found.");
+    const shift = await requireCurrentOpenShift(prisma, createdById);
+    const payment = await createPaymentWithAllocations(prisma, { familyId: familyId || null, studentId: studentId || null, paymentDate: new Date(), paymentMethod, notes, createdById, actorId: session.userId, shiftId: shift.id, allocations });
     redirect(`/payments/${payment.id}?success=created`);
   } catch (error) {
     logServerError("payment.create", error, { familyId, studentId });

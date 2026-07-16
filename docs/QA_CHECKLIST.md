@@ -200,3 +200,14 @@ Admins should review `/admin/diagnostics` before production closeout. The page c
 - [ ] Attempt permanent deletion of an active expense and verify it is blocked with a friendly error.
 - [ ] Verify payments cannot be deleted and must use void/reversal.
 - [ ] Verify used enrollments and used room/season/course/level records block permanent deletion and suggest archive/end instead.
+
+## Shift management QA
+
+- [ ] Reception can open only one shift at a time.
+- [ ] Payments and expenses created during an open shift show on `/shifts/[id]`.
+- [ ] Reception without an open shift sees “Open your shift before recording payments or expenses.”
+- [ ] Closing report uses `dd/mm/yyyy` dates and is printable.
+- [ ] Closed-shift payments cannot be voided and closed-shift expenses cannot be edited, archived, restored, or deleted.
+- [ ] Admin reopen requires a reason and creates an audit log entry.
+- [ ] Reclosing recalculates expected cash, declared cash, and difference.
+- [ ] Legacy `shiftId = null` payments/expenses remain visible.

@@ -3,7 +3,7 @@ import { applyPaymentBalance, reversePaymentBalance, validatePaymentAllocations 
 import { ensurePaymentReceipt, isUniqueReceiptConflict } from "@/lib/payments/receipt-repair";
 
 export type RequestedPaymentAllocation = { enrollmentId: string; amountCents: number };
-export type CreatePaymentInput = { familyId?: string | null; studentId?: string | null; paymentDate: Date; paymentMethod: string; notes: string | null; createdById?: string | null; actorId?: string; allocations: RequestedPaymentAllocation[] };
+export type CreatePaymentInput = { familyId?: string | null; studentId?: string | null; paymentDate: Date; paymentMethod: string; notes: string | null; createdById?: string | null; actorId?: string; shiftId?: string | null; allocations: RequestedPaymentAllocation[] };
 export type VoidPaymentInput = { paymentId: string; createdById?: string | null; actorId?: string };
 
 export async function createPaymentWithAllocations(prisma: PrismaClient, input: CreatePaymentInput) {
@@ -34,6 +34,7 @@ export async function createPaymentWithAllocations(prisma: PrismaClient, input: 
             notes: input.notes,
             totalAmountCents,
             createdById: input.createdById,
+            shiftId: input.shiftId ?? null,
             items: { create: requested.map((item) => ({ enrollmentId: item.enrollmentId, amountCents: item.amountCents })) },
           },
         });
@@ -52,8 +53,9 @@ export async function createPaymentWithAllocations(prisma: PrismaClient, input: 
 
 export async function voidPaymentWithReversal(prisma: PrismaClient, input: VoidPaymentInput) {
   await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.findUnique({ where: { id: input.paymentId }, include: { items: { include: { enrollment: true } } } });
+    const payment = await tx.payment.findUnique({ where: { id: input.paymentId }, include: { shift: true, items: { include: { enrollment: true } } } });
     if (!payment) throw new Error("Payment not found");
+    if (payment.shift?.status === "CLOSED") throw new Error("This transaction belongs to a closed shift and can no longer be modified.");
     if (payment.voidedAt) return;
     for (const item of payment.items) await tx.enrollment.update({ where: { id: item.enrollmentId }, data: reversePaymentBalance(item.enrollment, item.amountCents) });
     await tx.payment.update({ where: { id: input.paymentId }, data: { voidedAt: new Date() } });

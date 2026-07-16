@@ -44,3 +44,9 @@ Admin users should be considered operational administrators, not system owners. 
 - SUPER_ADMIN and ADMIN can edit enrollments, manage teacher profiles, manage teacher courses/instruments, and manage teacher availability.
 - RECEPTION keeps operational records access and can book lessons using enrollment-derived teacher/season data. Existing RBAC remains in force for restricted admin configuration.
 - Booking does not accept a manually different teacher or season when an enrollment is selected; server validation derives those values from the enrollment.
+
+## Shift management permissions
+
+- **Reception**: may open and close their own shift and create payments/expenses only while a shift is open.
+- **Admin / Super Admin**: may review all shifts and reopen a closed shift with a required reason. Reopen actions are audited and are never silent unlocks.
+- Closed-shift transaction locks are enforced by server actions, not only by UI controls.

@@ -512,3 +512,11 @@ Application tables display dates as `dd/mm/yy`, for example `16/07/26`. Formal d
 Payment detail pages download receipt PDFs from the receipt API. Use the default A5 layout for email-friendly one-receipt-per-page printing, or add `?layout=a4-two-copies` to print a Customer Copy and School Copy with the same receipt number on one A4 sheet.
 
 Permanent deletion is intentionally limited. Financial records such as payments and receipts are not normally deleted; payments are voided/reversed and receipts are regenerated from the payment. Expenses must be archived before an admin can permanently delete them with the required confirmation phrase.
+
+## Shift closing workflow
+
+Use **Daily Operations → Shift** at the start of each receptionist day. Enter the business date, opening cash, and optional notes. Payments and expenses can only be recorded after the shift is open, and the system attaches them to that shift automatically.
+
+At closing, review opening cash, posted cash payments, Whish payments, cash expenses, Whish expenses, expected closing cash, payment count, expense count, voided payments, and the transaction list. Enter declared cash and confirm the close action. Closed-shift transactions are locked and can no longer be changed by Reception.
+
+Admins can reopen a closed shift only with a reason. The reopen is audited, corrections can be made according to permissions, and closing again recalculates the report totals. Historical transactions without a shift remain valid and are shown as **Legacy / No Shift**.

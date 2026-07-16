@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { parseExpenseForm } from "@/lib/expenses";
 import { canPermanentlyDeleteExpense } from "@/lib/deletion-policy";
 import { logServerError } from "@/lib/server-log";
+import { requireCurrentOpenShift } from "@/lib/shifts/service";
+import { assertMutableShiftTransaction } from "@/lib/shifts/calculations";
 
 async function requireExpenseWrite() {
   const session = await requireSession();
@@ -28,9 +30,16 @@ export async function saveExpense(formData: FormData) {
   const { createdById } = await requireExpenseWrite();
   const parsed = parseExpenseForm(Object.fromEntries(formData));
   const { id, ...data } = parsed;
+  if (!createdById) throw new Error("User profile not found.");
+  if (id) {
+    const existing = await prisma.expense.findUnique({ where: { id }, include: { shift: true } });
+    if (!existing) throw new Error("Expense not found.");
+    assertMutableShiftTransaction(existing);
+  }
+  const shift = id ? null : await requireCurrentOpenShift(prisma, createdById);
   const row = id
     ? await prisma.expense.update({ where: { id }, data })
-    : await prisma.expense.create({ data: { ...data, createdById } });
+    : await prisma.expense.create({ data: { ...data, createdById, shiftId: shift!.id } });
   await auditExpense(id ? "update" : "create", row.id, { ...data, createdById });
   revalidatePath("/expenses");
   revalidatePath(`/expenses/${row.id}/edit`);
@@ -40,6 +49,9 @@ export async function saveExpense(formData: FormData) {
 export async function archiveExpense(formData: FormData) {
   await requireExpenseWrite();
   const expenseId = idSchema.parse(formData.get("id"));
+  const existing = await prisma.expense.findUnique({ where: { id: expenseId }, include: { shift: true } });
+  if (!existing) throw new Error("Expense not found.");
+  assertMutableShiftTransaction(existing);
   const row = await prisma.expense.update({ where: { id: expenseId }, data: { archivedAt: new Date() } });
   await auditExpense("archive", row.id);
   revalidatePath("/expenses");
@@ -68,6 +80,8 @@ export async function permanentlyDeleteExpense(formData: FormData) {
     await prisma.$transaction(async (tx) => {
       const expense = await tx.expense.findUnique({ where: { id: expenseId }, include: { createdBy: true } });
       if (!expense) throw new Error("Expense not found.");
+      const locked = await tx.expense.findUnique({ where: { id: expenseId }, include: { shift: true } });
+      assertMutableShiftTransaction(locked!);
       const decision = canPermanentlyDeleteExpense(expense);
       if (!decision.allowed) {
         await tx.auditLog.create({ data: { action: "delete_blocked", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata: { reason: decision.reason, amount: expense.amountCents, category: expense.category, date: expense.expenseDate, createdBy: expense.createdById, deletionActor: session.userId } } });
