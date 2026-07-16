@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/roles";
+import { hasPermission, isAdminOrHigher } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { parseExpenseForm } from "@/lib/expenses";
+import { canPermanentlyDeleteExpense } from "@/lib/deletion-policy";
+import { logServerError } from "@/lib/server-log";
 
 async function requireExpenseWrite() {
   const session = await requireSession();
@@ -50,4 +52,35 @@ export async function restoreExpense(formData: FormData) {
   const row = await prisma.expense.update({ where: { id: expenseId }, data: { archivedAt: null } });
   await auditExpense("restore", row.id);
   revalidatePath("/expenses");
+}
+
+
+export async function permanentlyDeleteExpense(formData: FormData) {
+  const session = await requireSession();
+  if (!isAdminOrHigher(session.role)) redirect(`/expenses?error=${encodeURIComponent("Only admins can permanently delete archived expenses.")}`);
+  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
+  const expenseId = idSchema.parse(formData.get("id"));
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (confirmation !== "Permanently delete this expense? This action cannot be undone.") {
+    redirect(`/expenses?status=archived&error=${encodeURIComponent("Enter the exact confirmation text before permanent deletion.")}`);
+  }
+  try {
+    await prisma.$transaction(async (tx) => {
+      const expense = await tx.expense.findUnique({ where: { id: expenseId }, include: { createdBy: true } });
+      if (!expense) throw new Error("Expense not found.");
+      const decision = canPermanentlyDeleteExpense(expense);
+      if (!decision.allowed) {
+        await tx.auditLog.create({ data: { action: "delete_blocked", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata: { reason: decision.reason, amount: expense.amountCents, category: expense.category, date: expense.expenseDate, createdBy: expense.createdById, deletionActor: session.userId } } });
+        throw new Error(decision.reason);
+      }
+      const metadata = { amount: expense.amountCents, category: expense.category, date: expense.expenseDate, createdBy: expense.createdById, deletionActor: session.userId };
+      await tx.auditLog.create({ data: { action: "delete", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata } });
+      await tx.expense.delete({ where: { id: expenseId } });
+    });
+  } catch (error) {
+    logServerError("expense.delete", error, { expenseId });
+    redirect(`/expenses?status=archived&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to delete expense safely.")}`);
+  }
+  revalidatePath("/expenses");
+  redirect(`/expenses?status=archived&success=${encodeURIComponent("Expense permanently deleted.")}`);
 }
