@@ -106,6 +106,7 @@ model AuditLog {
 
 model Family {
   id                    String       @id @default(uuid()) @db.Uuid
+  familyCode            String       @unique @map("family_code")
   name                  String
   email                 String?
   phone                 String?

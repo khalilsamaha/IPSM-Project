@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import { formatCurrency, formatDate } from "@/lib/records/format";
+import { formatCurrency, formatFormalDate } from "@/lib/records/format";
+import { formatPaymentMethod } from "@/lib/payment-methods";
 import { generateUniqueReceiptNumber } from "@/lib/payments/receipt-repair";
 
 type PaymentStore = Pick<PrismaClient, "payment">;
@@ -87,8 +88,8 @@ export function buildReceiptPdf(payment: ReceiptPayment) {
   addText(commands, 420, 740, `Year: ${receiptYear}`, { size: 10 });
   addLine(commands, 48, 724, 564, 724);
 
-  const left = [["Payment date", formatDate(payment.paymentDate)], ["Student ID", studentIds.join(", ") || "-"], ["Student full name", students.join(", ") || "-"], [payment.family ? "Family / Group" : "Independent Student", payerName]];
-  const right = [["Parent contact", parentContact], ["Season", seasons.join(", ") || "-"], ["Course(s) / Level(s)", courses.join(", ") || "-"], ["Payment method", titleCase(payment.paymentMethod)]];
+  const left = [["Payment date", formatFormalDate(payment.paymentDate)], ["Student ID", studentIds.join(", ") || "-"], ["Student full name", students.join(", ") || "-"], [payment.family ? "Family / Group" : "Independent Student", payerName]];
+  const right = [["Parent contact", parentContact], ["Season", seasons.join(", ") || "-"], ["Course(s) / Level(s)", courses.join(", ") || "-"], ["Payment method", formatPaymentMethod(payment.paymentMethod)]];
   left.forEach(([label, value], index) => { const y = 698 - index * 20; addText(commands, 54, y, `${label}:`, { font: "bold" }); addText(commands, 150, y, truncate(value, 40)); });
   right.forEach(([label, value], index) => { const y = 698 - index * 20; addText(commands, 318, y, `${label}:`, { font: "bold" }); addText(commands, 420, y, truncate(value, 32)); });
 
