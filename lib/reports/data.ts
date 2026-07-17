@@ -44,17 +44,15 @@ const enrollmentWhere = (filters: ReportFilters, includePaymentStatus = false) =
 });
 
 export async function getReportLookups() {
-  const [families, students, seasons, teachers, courses, levels, rooms, expenseCategories, paymentMethods] = await Promise.all([
-    prisma.family.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.student.findMany({ orderBy: [{ lastName: "asc" }, { firstName: "asc" }], select: { id: true, studentCode: true, firstName: true, lastName: true } }),
-    prisma.season.findMany({ orderBy: { startDate: "desc" }, select: { id: true, name: true } }),
-    prisma.teacher.findMany({ orderBy: { fullName: "asc" }, select: { id: true, fullName: true } }),
-    prisma.course.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.courseLevel.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
-    prisma.room.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.expense.findMany({ distinct: ["category"], orderBy: { category: "asc" }, select: { category: true } }),
-    prisma.payment.findMany({ distinct: ["paymentMethod"], orderBy: { paymentMethod: "asc" }, select: { paymentMethod: true } }),
-  ]);
+  const families = await prisma.family.findMany({ orderBy: { name: "asc" }, select: { id: true, familyCode: true, name: true } });
+  const students = await prisma.student.findMany({ orderBy: [{ lastName: "asc" }, { firstName: "asc" }], select: { id: true, studentCode: true, firstName: true, lastName: true } });
+  const seasons = await prisma.season.findMany({ orderBy: { startDate: "desc" }, select: { id: true, name: true } });
+  const teachers = await prisma.teacher.findMany({ orderBy: { fullName: "asc" }, select: { id: true, fullName: true } });
+  const courses = await prisma.course.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const levels = await prisma.courseLevel.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { id: true, name: true } });
+  const rooms = await prisma.room.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const expenseCategories = await prisma.expense.findMany({ distinct: ["category"], orderBy: { category: "asc" }, select: { category: true } });
+  const paymentMethods = await prisma.payment.findMany({ distinct: ["paymentMethod"], orderBy: { paymentMethod: "asc" }, select: { paymentMethod: true } });
   return { families, students, seasons, teachers, courses, levels, rooms, expenseCategories, paymentMethods };
 }
 
@@ -95,7 +93,7 @@ export async function getTeacherSalaryReport(filters: ReportFilters) {
 export async function getCourseEnrollmentReport(filters: ReportFilters) {
   const enrollments = await prisma.enrollment.findMany({ where: enrollmentWhere(filters, true), include: { student: { include: { family: true } }, season: true, course: true, level: true, teacher: true } });
   const groups = new Map<string, any>();
-  for (const e of enrollments) { const courseName = e.course?.name ?? e.courseName; const key = `${e.seasonId}|${e.courseId ?? courseName}|${e.levelId ?? ""}`; const row = groups.get(key) ?? { id: key, season: e.season.name, course: courseName, level: e.level?.name ?? "—", enrollments: 0, students: new Set<string>(), families: new Set<string>(), paidCents: 0, outstandingCents: 0, finalFeeCents: 0 }; row.enrollments++; row.students.add(e.studentId); if (e.student.familyId) row.families.add(e.student.familyId); row.paidCents += e.paidCents; row.outstandingCents += e.remainingCents; row.finalFeeCents += e.finalFeeCents; groups.set(key, row); }
+  for (const e of enrollments) { const courseName = e.course?.name ?? e.courseName; const key = `${e.seasonId}|${e.courseId ?? courseName}|${e.levelId ?? ""}`; const row = groups.get(key) ?? { id: key, season: (e.season?.name ?? "No season"), course: courseName, level: e.level?.name ?? "—", enrollments: 0, students: new Set<string>(), families: new Set<string>(), paidCents: 0, outstandingCents: 0, finalFeeCents: 0 }; row.enrollments++; row.students.add(e.studentId); if (e.student.familyId) row.families.add(e.student.familyId); row.paidCents += e.paidCents; row.outstandingCents += e.remainingCents; row.finalFeeCents += e.finalFeeCents; groups.set(key, row); }
   return { rows: Array.from(groups.values()).map((r) => ({ ...r, students: r.students.size, families: r.families.size })).sort((a, b) => `${a.season} ${a.course}`.localeCompare(`${b.season} ${b.course}`)) };
 }
 
@@ -106,7 +104,7 @@ export async function getTeacherScheduleAvailabilityReport(filters: ReportFilter
 
 export async function getRoomUtilizationReport(filters: ReportFilters) {
   const rooms = await prisma.room.findMany({ where: filters.roomId ? { id: filters.roomId } : {}, include: { scheduleSessions: { where: { AND: [dateRange("sessionDate", filters), filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.teacherId ? { teacherId: filters.teacherId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, { archivedAt: null }] }, include: { teacher: true, season: true } } }, orderBy: { name: "asc" } });
-  return { rows: rooms.map((r) => ({ id: r.id, room: r.name, capacity: r.capacity, scheduledSessions: r.scheduleSessions.length, completedSessions: r.scheduleSessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: r.scheduleSessions.filter((s) => s.status === "CANCELLED").length, teachers: Array.from(new Set(r.scheduleSessions.map((s) => s.teacher.fullName))).join(", ") || "—" })) };
+  return { rows: rooms.map((r) => ({ id: r.id, room: r.name, capacity: r.capacity, scheduledSessions: r.scheduleSessions.length, completedSessions: r.scheduleSessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: r.scheduleSessions.filter((s) => s.status === "CANCELLED").length, teachers: Array.from(new Set(r.scheduleSessions.map((s) => s.teacher?.fullName ?? "Unassigned"))).join(", ") || "—" })) };
 }
 
 export async function getSeasonClosingReport(seasonId: string) {
@@ -126,7 +124,7 @@ export async function getSeasonClosingReport(seasonId: string) {
   for (const enrollment of enrollments) if (enrollment.teacher) { const row = teachers.get(enrollment.teacher.id) ?? { teacher: enrollment.teacher.fullName, enrollments: 0, completedSessions: 0, cancelledSessions: 0, missedSessions: 0 }; row.enrollments += 1; teachers.set(enrollment.teacher.id, row); }
   for (const session of sessions) if (session.teacher) { const row = teachers.get(session.teacher.id) ?? { teacher: session.teacher.fullName, enrollments: 0, completedSessions: 0, cancelledSessions: 0, missedSessions: 0 }; if (session.status === "COMPLETED") row.completedSessions += 1; if (session.status === "CANCELLED") row.cancelledSessions += 1; if (session.status === "MISSED") row.missedSessions += 1; teachers.set(session.teacher.id, row); }
   const unpaidEnrollments = enrollments.filter((enrollment) => enrollment.remainingCents > 0);
-  return { season, totals: { students: studentIds.size, families: familyIds.size, enrollments: enrollments.length, paymentsReceivedCents, outstandingCents, previousOutstandingCents: previousUnpaid.reduce((s, e) => s + e.remainingCents, 0), expenseCents, profitLossCents: paymentsReceivedCents - expenseCents, completedSessions: sessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: sessions.filter((s) => s.status === "CANCELLED").length, missedSessions: sessions.filter((s) => s.status === "MISSED").length }, courses: Array.from(courses.values()).map((row) => ({ ...row, students: row.students.size })).sort((a, b) => a.course.localeCompare(b.course)), teachers: Array.from(teachers.values()).sort((a, b) => a.teacher.localeCompare(b.teacher)), unpaidFamilies: Array.from(new Map(unpaidEnrollments.map((e) => [e.student.familyId ?? e.student.id, { family: e.student.family?.name ?? "Independent", outstandingCents: unpaidEnrollments.filter((row) => (row.student.familyId ?? row.student.id) === (e.student.familyId ?? e.student.id)).reduce((sum, row) => sum + row.remainingCents, 0) }])).values()), unpaidStudents: unpaidEnrollments.map((e) => ({ studentCode: e.student.studentCode, student: `${e.student.firstName} ${e.student.lastName}`, family: e.student.family?.name ?? "Independent", season: e.season?.name ?? season.name, course: e.course?.name ?? e.courseName, outstandingCents: e.remainingCents })), previousUnpaidStudents: previousUnpaid.map((e) => ({ studentCode: e.student.studentCode, student: `${e.student.firstName} ${e.student.lastName}`, family: e.student.family?.name ?? "Independent", season: e.season.name, course: e.course?.name ?? e.courseName, outstandingCents: e.remainingCents })) };
+  return { season, totals: { students: studentIds.size, families: familyIds.size, enrollments: enrollments.length, paymentsReceivedCents, outstandingCents, previousOutstandingCents: previousUnpaid.reduce((s, e) => s + e.remainingCents, 0), expenseCents, profitLossCents: paymentsReceivedCents - expenseCents, completedSessions: sessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: sessions.filter((s) => s.status === "CANCELLED").length, missedSessions: sessions.filter((s) => s.status === "MISSED").length }, courses: Array.from(courses.values()).map((row) => ({ ...row, students: row.students.size })).sort((a, b) => a.course.localeCompare(b.course)), teachers: Array.from(teachers.values()).sort((a, b) => a.teacher.localeCompare(b.teacher)), unpaidFamilies: Array.from(new Map(unpaidEnrollments.map((e) => [e.student.familyId ?? e.student.id, { family: e.student.family?.name ?? "Independent", outstandingCents: unpaidEnrollments.filter((row) => (row.student.familyId ?? row.student.id) === (e.student.familyId ?? e.student.id)).reduce((sum, row) => sum + row.remainingCents, 0) }])).values()), unpaidStudents: unpaidEnrollments.map((e) => ({ studentCode: e.student.studentCode, student: `${e.student.firstName} ${e.student.lastName}`, family: e.student.family?.name ?? "Independent", season: e.season?.name ?? season.name, course: e.course?.name ?? e.courseName, outstandingCents: e.remainingCents })), previousUnpaidStudents: previousUnpaid.map((e) => ({ studentCode: e.student.studentCode, student: `${e.student.firstName} ${e.student.lastName}`, family: e.student.family?.name ?? "Independent", season: (e.season?.name ?? "No season"), course: e.course?.name ?? e.courseName, outstandingCents: e.remainingCents })) };
 }
 
 
@@ -136,5 +134,51 @@ export async function getPayrollReport(filters: ReportFilters) {
     include: { teacher: true },
     orderBy: [{ periodEnd: "desc" }, { createdAt: "desc" }],
   });
-  return { rows: rows.map((row) => ({ id: row.id, teacher: row.teacher.fullName, periodStart: row.periodStart, periodEnd: row.periodEnd, lessonHours: (row.completedMinutes + row.missedPayableMinutes) / 60, completedHours: row.completedMinutes / 60, missedHours: row.missedPayableMinutes / 60, adjustmentCents: row.adjustmentCents, grossAmountCents: row.grossAmountCents, status: row.status })), totalCents: rows.reduce((sum, row) => sum + row.grossAmountCents, 0) };
+  return { rows: rows.map((row) => ({ id: row.id, teacher: row.teacher?.fullName ?? "Unassigned", periodStart: row.periodStart, periodEnd: row.periodEnd, lessonHours: (row.completedMinutes + row.missedPayableMinutes) / 60, completedHours: row.completedMinutes / 60, missedHours: row.missedPayableMinutes / 60, adjustmentCents: row.adjustmentCents, grossAmountCents: row.grossAmountCents, status: row.status })), totalCents: rows.reduce((sum, row) => sum + row.grossAmountCents, 0) };
+}
+
+
+export type LoadReportKind = "revenue" | "expenses" | "profit-loss" | "outstanding" | "season-closing" | "course-enrollment" | "teacher-schedule" | "room-utilization" | "payroll";
+export type ReportPagination = { skip: number; take: number };
+
+export async function getReportDashboardSummary(filters: ReportFilters) {
+  const revenueWhere = { AND: [dateRange("paymentDate", filters), { voidedAt: null }, filters.familyId ? { familyId: filters.familyId } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}, { items: { some: matchingItemWhere(filters) } }] };
+  const revenue = await prisma.payment.aggregate({ where: revenueWhere, _sum: { totalAmountCents: true } });
+  const outstanding = await prisma.enrollment.aggregate({ where: { AND: [enrollmentWhere(filters, true), { remainingCents: { gt: 0 } }] }, _sum: { remainingCents: true } });
+  const expenseWhere = { AND: [filters.includeArchived === "1" ? {} : { archivedAt: null }, dateRange("expenseDate", filters), filters.category ? { category: filters.category } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}] };
+  const expenses = await prisma.expense.aggregate({ where: expenseWhere, _sum: { amountCents: true } });
+  const payroll = await prisma.teacherPayroll.aggregate({ where: { AND: [filters.teacherId ? { teacherId: filters.teacherId } : {}, filters.dateFrom ? { periodEnd: { gte: new Date(filters.dateFrom) } } : {}, filters.dateTo ? { periodStart: { lte: new Date(filters.dateTo) } } : {}, filters.paymentStatus ? { status: filters.paymentStatus as any } : {}] }, _sum: { grossAmountCents: true } });
+  const revenueCents = revenue._sum.totalAmountCents ?? 0;
+  const expenseCents = expenses._sum.amountCents ?? 0;
+  return { revenueCents, outstandingCents: outstanding._sum.remainingCents ?? 0, expenseCents, netCents: revenueCents - expenseCents, payrollCents: payroll._sum.grossAmountCents ?? 0 };
+}
+
+function pageResult(rows: any[], totalRows: number, summary: Record<string, unknown> = {}) { return { rows, totalRows, summary }; }
+
+export async function loadReport(reportKind: LoadReportKind, filters: ReportFilters, pagination: ReportPagination) {
+  if (reportKind === "revenue") {
+    const where = { AND: [dateRange("paymentDate", filters), { voidedAt: null }, filters.familyId ? { familyId: filters.familyId } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}, { items: { some: matchingItemWhere(filters) } }] };
+    const totalRows = await prisma.payment.count({ where });
+    const total = await prisma.payment.aggregate({ where, _sum: { totalAmountCents: true } });
+    const rows = await prisma.payment.findMany({ where, select: { id: true, paymentDate: true, paymentMethod: true, receiptNumber: true, totalAmountCents: true, family: { select: { familyCode: true, name: true } }, student: { select: { studentCode: true, firstName: true, lastName: true } }, items: { where: matchingItemWhere(filters), select: { amountCents: true, enrollment: { select: { courseName: true, season: { select: { name: true } }, course: { select: { name: true } } } } } } }, orderBy: { paymentDate: "desc" }, skip: pagination.skip, take: pagination.take });
+    return pageResult(rows.map((r) => ({ ...r, reportAmountCents: r.items.reduce((sum, i) => sum + i.amountCents, 0) || r.totalAmountCents })), totalRows, { totalCents: total._sum.totalAmountCents ?? 0 });
+  }
+  if (reportKind === "outstanding") {
+    const where = { AND: [enrollmentWhere(filters, true), { remainingCents: { gt: 0 } }] };
+    const totalRows = await prisma.enrollment.count({ where });
+    const total = await prisma.enrollment.aggregate({ where, _sum: { remainingCents: true } });
+    const rows = await prisma.enrollment.findMany({ where, select: { id: true, remainingCents: true, courseName: true, student: { select: { studentCode: true, firstName: true, lastName: true, family: { select: { familyCode: true, name: true } } } }, season: { select: { name: true } }, teacher: { select: { fullName: true } }, course: { select: { name: true } }, level: { select: { name: true } } }, orderBy: [{ season: { startDate: "desc" } }, { student: { lastName: "asc" } }], skip: pagination.skip, take: pagination.take });
+    return pageResult(rows, totalRows, { totalCents: total._sum.remainingCents ?? 0 });
+  }
+  if (reportKind === "expenses") {
+    const where = { AND: [filters.includeArchived === "1" ? {} : { archivedAt: null }, dateRange("expenseDate", filters), filters.category ? { category: filters.category } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}] };
+    const totalRows = await prisma.expense.count({ where });
+    const total = await prisma.expense.aggregate({ where, _sum: { amountCents: true } });
+    const rows = await prisma.expense.findMany({ where, orderBy: { expenseDate: "desc" }, skip: pagination.skip, take: pagination.take });
+    return pageResult(rows, totalRows, { totalCents: total._sum.amountCents ?? 0 });
+  }
+  if (reportKind === "profit-loss") { const summary = await getReportDashboardSummary(filters); return pageResult([], 0, { revenueCents: summary.revenueCents, expenseCents: summary.expenseCents, netCents: summary.netCents }); }
+  if (reportKind === "season-closing") { return filters.seasonId ? pageResult([], 0, await getSeasonClosingReport(filters.seasonId)) : pageResult([], 0, {}); }
+  const full = reportKind === "course-enrollment" ? await getCourseEnrollmentReport(filters) : reportKind === "teacher-schedule" ? await getTeacherScheduleAvailabilityReport(filters) : reportKind === "room-utilization" ? await getRoomUtilizationReport(filters) : await getPayrollReport(filters);
+  return pageResult(full.rows.slice(pagination.skip, pagination.skip + pagination.take), full.rows.length, { totalCents: (full as any).totalCents ?? 0 });
 }
