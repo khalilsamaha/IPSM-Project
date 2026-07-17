@@ -38,13 +38,15 @@ export async function createPayment(formData: FormData) {
   if (!payerId) paymentErrorRedirect(payerType, null, payerType === "student" ? "Select an independent student before creating a payment." : "Select a family before creating a payment.");
 
   const allocations = Array.from(formData.entries()).filter(([key]) => key.startsWith("allocation:")).map(([key, amount]) => ({ enrollmentId: key.replace("allocation:", ""), amountCents: dollarsToCents(String(amount)) })).filter((a) => a.amountCents > 0);
+  let paymentId: string;
   try {
     if (!createdById) throw new Error("User profile not found.");
     const shift = await requireCurrentOpenShift(prisma, createdById);
     const payment = await createPaymentWithAllocations(prisma, { familyId: familyId || null, studentId: studentId || null, paymentDate: new Date(), paymentMethod, notes, createdById, actorId: session.userId, shiftId: shift.id, allocations });
-    redirect(`/payments/${payment.id}?success=created`);
+    paymentId = payment.id;
   } catch (error) {
     logServerError("payment.create", error, { familyId, studentId });
-    paymentErrorRedirect(payerType, payerId, error instanceof Error ? error.message : "Unable to create payment. Please try again.");
+    paymentErrorRedirect(payerType, payerId, "Unable to create payment. Please check the payment details and try again.");
   }
+  redirect(`/payments/${paymentId}?success=created`);
 }

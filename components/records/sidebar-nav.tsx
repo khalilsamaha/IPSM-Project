@@ -5,7 +5,7 @@ import type { Role } from "@/lib/auth/roles";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, RotateCcw, Clock, Settings, SlidersHorizontal, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards, HandCoins } from "lucide-react";
+import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, RotateCcw, Activity, Clock, Settings, SlidersHorizontal, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards, HandCoins } from "lucide-react";
 import { canViewNavigationItem } from "@/lib/auth/navigation";
 
 type NavItem = {
@@ -71,6 +71,7 @@ export const navSections: NavSection[] = [
       { label: "School Profile", href: "/settings#school-profile", icon: SlidersHorizontal },
       { label: "Receipt Settings", href: "/settings#receipt-settings", icon: Receipt },
       { label: "Advanced Settings", href: "/settings#advanced-settings", icon: Settings },
+      { label: "Activity Monitoring", href: "/admin/activity", icon: Activity },
       { label: "Production Reset", href: "/settings/production-reset", icon: RotateCcw },
     ],
   },

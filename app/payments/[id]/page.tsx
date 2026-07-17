@@ -43,11 +43,11 @@ export default async function PaymentDetailPage({
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Payment {payment.receiptNumber ?? "Missing receipt number"}</h2>
-          {success === "created" ? <p className="mt-1 text-sm text-green-700">Payment created successfully.</p> : null}
+          {success === "created" ? <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"><p className="font-bold">Payment recorded successfully. Receipt {payment.receiptNumber ?? "Pending"} is ready.</p><p>Amount: {formatCurrency(payment.totalAmountCents)}</p><div className="mt-2 flex flex-wrap gap-2"><a className="rounded bg-emerald-700 px-3 py-2 text-white" href={`/api/receipts/${payment.id}?layout=a5`}>Download Receipt</a><Link className="rounded border border-emerald-300 px-3 py-2" href="/payments/new">Record Another Payment</Link></div></div> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="rounded border px-4 py-2" href="/payments">Back to payments</Link>
-          <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}?layout=a5`}>Download A5 receipt</a><a className="rounded border px-4 py-2" href={`/api/receipts/${payment.id}?layout=a4-two-copies`}>Print two copies</a>{payment.family?.email || payment.student?.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No payer email on file</span>}
+          <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}?layout=a5`}>Download A5</a><a className="rounded border px-4 py-2" href={`/api/receipts/${payment.id}?layout=a4-two-copies`}>Print two copies</a><a className="rounded border px-4 py-2" href={`/api/receipts/${payment.id}?layout=a5&reprint=1`}>Reprint receipt</a>{payment.family?.email || payment.student?.email ? <a className="rounded border px-4 py-2" href={receiptMailto(payment)}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No payer email on file</span>}
         </div>
       </div>
 
@@ -74,7 +74,7 @@ export default async function PaymentDetailPage({
               <tr className="border-t" key={item.id}>
                 <td className="p-3">{item.enrollment.student.studentCode} — {item.enrollment.student.firstName} {item.enrollment.student.lastName}</td>
                 <td>{item.enrollment.courseName}</td>
-                <td>{item.enrollment.season.name}</td>
+                <td>{item.enrollment.season?.name ?? "No season"}</td>
                 <td>{formatCurrency(item.amountCents)}</td><td>{formatCurrency(item.enrollment.remainingCents)}</td>
               </tr>
             ))}

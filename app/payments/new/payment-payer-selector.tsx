@@ -4,30 +4,30 @@ import { useMemo, useState } from "react";
 
 type Family = { id: string; familyCode: string; name: string; email?: string | null; phone?: string | null; students: { firstName: string; lastName: string; studentCode: string }[] };
 type Student = { id: string; studentCode: string; firstName: string; lastName: string; email?: string | null; phone?: string | null };
+type Option = { id: string; label: string; detail?: string; search: string };
+
+function SearchCombobox({ name, label, placeholder, options, value, onChange }: { name: string; label: string; placeholder: string; options: Option[]; value: string; onChange: (id: string) => void }) {
+  const selected = options.find((option) => option.id === value);
+  const [query, setQuery] = useState(selected?.label ?? "");
+  const matches = options.filter((option) => option.search.toLowerCase().includes(query.toLowerCase())).slice(0, 12);
+  return <div>
+    <label className="mb-2 block text-sm font-medium" htmlFor={`${name}-combobox`}>{label}</label>
+    <input type="hidden" name={name} value={value} />
+    <div className="relative"><input aria-autocomplete="list" aria-controls={`${name}-options`} aria-expanded={matches.length > 0} className="h-10 w-full rounded-md border border-border bg-white px-3 pr-20 text-sm" id={`${name}-combobox`} role="combobox" value={query} onChange={(event) => { setQuery(event.target.value); onChange(""); }} onKeyDown={(event) => { if (event.key === "Escape") { setQuery(""); onChange(""); } }} placeholder={placeholder}/>{value ? <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded border px-2 py-1 text-xs" type="button" onClick={() => { setQuery(""); onChange(""); }}>Clear</button> : null}</div>
+    {query && !value ? <ul className="mt-2 max-h-72 overflow-auto rounded-md border bg-white shadow" id={`${name}-options`} role="listbox">{matches.map((option) => <li key={option.id}><button className="block w-full px-3 py-2 text-left text-sm hover:bg-muted focus:bg-muted" type="button" onClick={() => { onChange(option.id); setQuery(option.label); }}><span className="block font-medium">{option.label}</span>{option.detail ? <span className="block text-xs text-muted-foreground">{option.detail}</span> : null}</button></li>)}</ul> : null}
+    {selected ? <p className="mt-2 text-xs text-muted-foreground">Selected: {selected.label}{selected.detail ? ` · ${selected.detail}` : ""}</p> : null}
+  </div>;
+}
 
 export function PaymentPayerSelector({ families, students, initialPayerType, initialFamilyId, initialStudentId }: { families: Family[]; students: Student[]; initialPayerType: string; initialFamilyId: string; initialStudentId: string }) {
   const [payerType, setPayerType] = useState(initialPayerType === "student" ? "student" : "family");
   const [familyId, setFamilyId] = useState(initialPayerType === "student" ? "" : initialFamilyId);
   const [studentId, setStudentId] = useState(initialPayerType === "student" ? initialStudentId : "");
-  const selectedFamily = useMemo(() => families.find((family) => family.id === familyId), [families, familyId]);
-  const selectedStudent = useMemo(() => students.find((student) => student.id === studentId), [students, studentId]);
+  const familyOptions = useMemo(() => families.map((family) => ({ id: family.id, label: `${family.familyCode} — ${family.name}`, detail: family.students[0] ? `${family.students[0].firstName} ${family.students[0].lastName}, Student ${family.students[0].studentCode}` : undefined, search: [family.familyCode, family.name, family.email, family.phone, ...family.students.flatMap((s) => [s.firstName, s.lastName, s.studentCode])].filter(Boolean).join(" ") })), [families]);
+  const studentOptions = useMemo(() => students.map((student) => ({ id: student.id, label: `${student.studentCode} — ${student.firstName} ${student.lastName}`, search: [student.studentCode, student.firstName, student.lastName, student.email, student.phone].filter(Boolean).join(" ") })), [students]);
   return <form className="mb-6 rounded-xl border bg-white p-4" method="get">
-    <div className="mb-3 flex gap-4">
-      <label><input type="radio" checked={payerType === "family"} onChange={() => { setPayerType("family"); setStudentId(""); }} /> Family / Group</label>
-      <label><input type="radio" checked={payerType === "student"} onChange={() => { setPayerType("student"); setFamilyId(""); }} /> Independent Student</label>
-    </div>
-    {payerType === "student" ? <>
-      <label className="mb-2 block text-sm font-medium" htmlFor="studentSearch">Search Independent Student</label>
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]"><input className="h-10 rounded-md border border-border bg-white px-3 text-sm" id="studentSearch" list="student-options" name="studentId" required value={studentId} onChange={(event) => setStudentId(event.target.value)} placeholder="Search by student name or Student ID"/><button className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white" type="submit">Show outstanding balances</button></div>
-      <input type="hidden" name="payerType" value="student" />
-      <p className="mt-2 text-xs text-muted-foreground">Select a suggestion to fill the internal student value. Selected: {selectedStudent ? `${selectedStudent.studentCode} — ${selectedStudent.firstName} ${selectedStudent.lastName}` : "none"}</p>
-      <datalist id="student-options">{students.map((student) => <option key={student.id} value={student.id} label={`${student.studentCode} — ${student.firstName} ${student.lastName} ${student.email ?? ""} ${student.phone ?? ""}`}/>)}</datalist>
-    </> : <>
-      <label className="mb-2 block text-sm font-medium" htmlFor="familySearch">Search Family / Group</label>
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]"><input className="h-10 rounded-md border border-border bg-white px-3 text-sm" id="familySearch" list="family-options" name="familyId" required value={familyId} onChange={(event) => setFamilyId(event.target.value)} placeholder="Search by family, parent, phone/email, student name, or Student ID"/><button className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white" type="submit">Show outstanding balances</button></div>
-      <input type="hidden" name="payerType" value="family" />
-      <p className="mt-2 text-xs text-muted-foreground">Select a suggestion to fill the internal family value. Selected: {selectedFamily ? `${selectedFamily.familyCode} — ${selectedFamily.name}` : "none"}</p>
-      <datalist id="family-options">{families.map((family) => <option key={family.id} value={family.id} label={[family.familyCode, family.name, family.email, family.phone, family.students.map((student) => `${student.firstName} ${student.lastName} (${student.studentCode})`).join(", ")].filter(Boolean).join(" — ")}/>)}</datalist>
-    </>}
+    <div className="mb-3 flex gap-4"><label><input type="radio" checked={payerType === "family"} onChange={() => { setPayerType("family"); setStudentId(""); }} /> Family / Group</label><label><input type="radio" checked={payerType === "student"} onChange={() => { setPayerType("student"); setFamilyId(""); }} /> Independent Student</label></div>
+    <input type="hidden" name="payerType" value={payerType} />
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]">{payerType === "student" ? <SearchCombobox name="studentId" label="Search Independent Student" placeholder="Search by student name, Student ID, phone, or email" options={studentOptions} value={studentId} onChange={setStudentId} /> : <SearchCombobox name="familyId" label="Search Family / Group" placeholder="Search by family code, family, parent, phone, student name, or Student ID" options={familyOptions} value={familyId} onChange={setFamilyId} />}<button className="h-10 self-end rounded-md bg-primary px-4 py-2 text-sm font-medium text-white" type="submit" disabled={payerType === "student" ? !studentId : !familyId}>Show outstanding balances</button></div>
   </form>;
 }

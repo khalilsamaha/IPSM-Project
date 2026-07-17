@@ -14,7 +14,7 @@ describe("admin-only navigation and route access", () => {
     expect(labelsForSection("Academic")).toEqual(["Seasons", "Enrollments", "Courses & Pricing"]);
     expect(labelsForSection("Scheduling")).toEqual(["Lessons / Schedule", "Rooms", "Teacher Availability"]);
     expect(labelsForSection("Finance")).toEqual(["Payments", "Expenses", "Payroll", "Reports"]);
-    expect(labelsForSection("System / Admin")).toEqual(["Users", "School Profile", "Receipt Settings", "Advanced Settings", "Production Reset"]);
+    expect(labelsForSection("System / Admin")).toEqual(["Users", "School Profile", "Receipt Settings", "Advanced Settings", "Activity Monitoring", "Production Reset"]);
     expect(navSections.flatMap((section) => section.items.map((item) => item.label))).not.toContain("School Configuration");
   });
 
@@ -25,6 +25,7 @@ describe("admin-only navigation and route access", () => {
     expect(canViewNavigationItem("RECEPTION", "/users")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/admin/academic-pricing")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/admin/diagnostics")).toBe(false);
+    expect(canViewNavigationItem("RECEPTION", "/admin/activity")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/rooms")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/teacher-availability")).toBe(false);
     expect(canViewNavigationItem("RECEPTION", "/payroll")).toBe(false);
@@ -43,9 +44,11 @@ describe("admin-only navigation and route access", () => {
     expect(canViewNavigationItem("ADMIN", "/users")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/admin/academic-pricing")).toBe(true);
     expect(canViewNavigationItem("ADMIN", "/rooms")).toBe(true);
+    expect(canViewNavigationItem("ADMIN", "/admin/activity")).toBe(false);
     expect(canViewNavigationItem("ADMIN", "/settings/production-reset")).toBe(false);
     expect(canViewNavigationItem("SUPER_ADMIN", "/users")).toBe(true);
     expect(canViewNavigationItem("SUPER_ADMIN", "/admin/diagnostics")).toBe(true);
+    expect(canViewNavigationItem("SUPER_ADMIN", "/admin/activity")).toBe(true);
     expect(canViewNavigationItem("SUPER_ADMIN", "/settings/production-reset")).toBe(true);
   });
 
@@ -54,6 +57,7 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("RECEPTION", "/users")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/admin/courses")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/admin/diagnostics")).toBe(false);
+    expect(canAccessProtectedRoute("RECEPTION", "/admin/activity")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/rooms")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/teacher-availability")).toBe(false);
     expect(canAccessProtectedRoute("RECEPTION", "/payroll")).toBe(false);
@@ -70,7 +74,9 @@ describe("admin-only navigation and route access", () => {
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/settings")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/users")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/admin/courses")).toBe(true);
+    expect(canAccessProtectedRoute("SUPER_ADMIN", "/admin/activity")).toBe(true);
     expect(canAccessProtectedRoute("SUPER_ADMIN", "/settings/production-reset")).toBe(true);
+    expect(canAccessProtectedRoute("ADMIN", "/admin/activity")).toBe(false);
     expect(canAccessProtectedRoute("ADMIN", "/settings/production-reset")).toBe(false);
   });
 });

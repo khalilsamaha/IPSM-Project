@@ -132,7 +132,7 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
     const commands = ["0.20 w", "0 0 0 RG"];
     const margin = 24;
     addRect(commands, margin, 552, 54, 28);
-    addText(commands, margin + 10, 562, "LOGO", { size: 10, font: "bold" });
+    addText(commands, margin + 8, 562, "IPSM", { size: 10, font: "bold" });
     addText(commands, 88, 568, "IPSM Music School", { size: 15, font: "bold" });
     addText(commands, 88, 553, `Official Payment Receipt${copyLabel ? ` - ${copyLabel}` : ""}`, { size: 9 });
     addText(commands, 260, 570, `Receipt No: ${payment.receiptNumber ?? "Pending"}`, { size: 8, font: "bold" });
@@ -156,7 +156,7 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
     const tableX = margin, tableW = A5.width - margin * 2;
     const col = [tableX + 4, tableX + 154, tableX + 218, tableX + 276, tableX + 330];
     addRect(commands, tableX, y - 3, tableW, 15);
-    ["Course / student", "Due", "Discount", "Paid", "Balance"].forEach((h, i) => addText(commands, col[i], y + 2, h, { size: 6.5, font: "bold" }));
+    ["Activity / Student", "Amount due", "Discount", "Paid now", "Remaining"].forEach((h, i) => addText(commands, col[i], y + 2, h, { size: 6.5, font: "bold" }));
     y -= 10;
     while (index < payment.items.length && y > 144) {
       const item = payment.items[index];
@@ -186,7 +186,7 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
     addText(commands, 226, 72, `Remaining: ${formatCurrency(facts.remainingBalance)}`, { size: 7, font: "bold" });
     addText(commands, 226, 62, `Received by: ${facts.receivedBy}`, { size: 6.5 });
     addText(commands, margin, 42, "Reprinting reuses the same receipt number and does not create a new payment.", { size: 6 });
-    addText(commands, margin, 32, "School contact details: update school profile to print phone, email, and address here.", { size: 6 });
+    
     pages.push({ width: A5.width, height: A5.height, commands });
     pageNo++;
   } while (index < payment.items.length);
