@@ -26,6 +26,23 @@ export function formatFormalDate(date: Date | string | null | undefined) {
   return `${day}/${month}/${year}`;
 }
 
+function timeParts(date: Date | string) {
+  const value = new Date(date);
+  const hours = String(value.getUTCHours()).padStart(2, "0");
+  const minutes = String(value.getUTCMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+export function formatDateTime(date: Date | string | null | undefined) {
+  if (!date) return "—";
+  return `${formatDate(date)} ${timeParts(date)}`;
+}
+
+export function formatFormalDateTime(date: Date | string | null | undefined) {
+  if (!date) return "—";
+  return `${formatFormalDate(date)} ${timeParts(date)}`;
+}
+
 export function formatDateInput(date: Date | string | null | undefined) {
   if (!date) return "";
   return new Date(date).toISOString().slice(0, 10);
