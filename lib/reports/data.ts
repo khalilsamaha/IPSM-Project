@@ -43,7 +43,9 @@ const enrollmentWhere = (filters: ReportFilters, includePaymentStatus = false) =
   ],
 });
 
-export async function getReportLookups() {
+let lookupCache: { expires: number; value: Awaited<ReturnType<typeof loadReportLookupsUncached>> } | null = null;
+
+async function loadReportLookupsUncached() {
   const families = await prisma.family.findMany({ orderBy: { name: "asc" }, select: { id: true, familyCode: true, name: true } });
   const students = await prisma.student.findMany({ orderBy: [{ lastName: "asc" }, { firstName: "asc" }], select: { id: true, studentCode: true, firstName: true, lastName: true } });
   const seasons = await prisma.season.findMany({ orderBy: { startDate: "desc" }, select: { id: true, name: true } });
@@ -54,6 +56,13 @@ export async function getReportLookups() {
   const expenseCategories = await prisma.expense.findMany({ distinct: ["category"], orderBy: { category: "asc" }, select: { category: true } });
   const paymentMethods = await prisma.payment.findMany({ distinct: ["paymentMethod"], orderBy: { paymentMethod: "asc" }, select: { paymentMethod: true } });
   return { families, students, seasons, teachers, courses, levels, rooms, expenseCategories, paymentMethods };
+}
+
+export async function getReportLookups() {
+  if (lookupCache && lookupCache.expires > Date.now()) return lookupCache.value;
+  const value = await loadReportLookupsUncached();
+  lookupCache = { value, expires: Date.now() + 60_000 };
+  return value;
 }
 
 function matchingItemWhere(filters: ReportFilters) {
@@ -90,33 +99,37 @@ export async function getTeacherSalaryReport(filters: ReportFilters) {
   return { rows: mapped, totalCents: mapped.reduce((sum, teacher) => sum + teacher.estimatedSalaryCents, 0) };
 }
 
-export async function getCourseEnrollmentReport(filters: ReportFilters) {
-  const enrollments = await prisma.enrollment.findMany({ where: enrollmentWhere(filters, true), include: { student: { include: { family: true } }, season: true, course: true, level: true, teacher: true } });
-  const groups = new Map<string, any>();
-  for (const e of enrollments) { const courseName = e.course?.name ?? e.courseName; const key = `${e.seasonId}|${e.courseId ?? courseName}|${e.levelId ?? ""}`; const row = groups.get(key) ?? { id: key, season: (e.season?.name ?? "No season"), course: courseName, level: e.level?.name ?? "—", enrollments: 0, students: new Set<string>(), families: new Set<string>(), paidCents: 0, outstandingCents: 0, finalFeeCents: 0 }; row.enrollments++; row.students.add(e.studentId); if (e.student.familyId) row.families.add(e.student.familyId); row.paidCents += e.paidCents; row.outstandingCents += e.remainingCents; row.finalFeeCents += e.finalFeeCents; groups.set(key, row); }
-  return { rows: Array.from(groups.values()).map((r) => ({ ...r, students: r.students.size, families: r.families.size })).sort((a, b) => `${a.season} ${a.course}`.localeCompare(`${b.season} ${b.course}`)) };
+export async function getCourseEnrollmentReport(filters: ReportFilters & Partial<ReportPagination>) {
+  const where = enrollmentWhere(filters, true);
+  const totalRows = await prisma.enrollment.count({ where });
+  const totals = await prisma.enrollment.aggregate({ where, _sum: { paidCents: true, remainingCents: true, finalFeeCents: true } });
+  const enrollments = await prisma.enrollment.findMany({ where, select: { id: true, studentId: true, paidCents: true, remainingCents: true, finalFeeCents: true, student: { select: { familyId: true } }, season: { select: { name: true } }, course: { select: { name: true } }, courseName: true, level: { select: { name: true } } }, orderBy: [{ season: { startDate: "desc" } }, { courseName: "asc" }], skip: filters.skip ?? 0, take: filters.take ?? 25 });
+  const rows = enrollments.map((e) => ({ id: e.id, season: e.season?.name ?? "No season", course: e.course?.name ?? e.courseName, level: e.level?.name ?? "—", enrollments: 1, students: 1, families: e.student.familyId ? 1 : 0, paidCents: e.paidCents, outstandingCents: e.remainingCents, finalFeeCents: e.finalFeeCents }));
+  return { rows, totalRows, totalCents: totals._sum.finalFeeCents ?? 0, summary: { paidCents: totals._sum.paidCents ?? 0, outstandingCents: totals._sum.remainingCents ?? 0 } };
 }
 
-export async function getTeacherScheduleAvailabilityReport(filters: ReportFilters) {
-  const teachers = await prisma.teacher.findMany({ where: filters.teacherId ? { id: filters.teacherId } : {}, include: { availability: { where: { AND: [filters.seasonId ? { OR: [{ seasonId: filters.seasonId }, { seasonId: null }] } : {}, { archivedAt: null }, { status: "ACTIVE" }] } }, scheduleSessions: { where: { AND: [dateRange("sessionDate", filters), filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.roomId ? { roomId: filters.roomId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, { archivedAt: null }] }, include: { room: true, season: true } } }, orderBy: { fullName: "asc" } });
-  return { rows: teachers.map((t) => ({ id: t.id, teacher: t.fullName, availabilityBlocks: t.availability.length, scheduledSessions: t.scheduleSessions.length, completedSessions: t.scheduleSessions.filter((s) => s.status === "COMPLETED").length, rooms: Array.from(new Set(t.scheduleSessions.map((s) => s.room?.name).filter(Boolean))).join(", ") || "—" })) };
+export async function getTeacherScheduleAvailabilityReport(filters: ReportFilters & Partial<ReportPagination>) {
+  const where = filters.teacherId ? { id: filters.teacherId } : {};
+  const totalRows = await prisma.teacher.count({ where });
+  const teachers = await prisma.teacher.findMany({ where, select: { id: true, fullName: true, availability: { where: { AND: [filters.seasonId ? { OR: [{ seasonId: filters.seasonId }, { seasonId: null }] } : {}, { archivedAt: null }, { status: "ACTIVE" }] }, select: { id: true } }, scheduleSessions: { where: { AND: [dateRange("sessionDate", filters), filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.roomId ? { roomId: filters.roomId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, { archivedAt: null }] }, select: { status: true, room: { select: { name: true } } } } }, orderBy: { fullName: "asc" }, skip: filters.skip ?? 0, take: filters.take ?? 25 });
+  return { totalRows, rows: teachers.map((t) => ({ id: t.id, teacher: t.fullName, availabilityBlocks: t.availability.length, scheduledSessions: t.scheduleSessions.length, completedSessions: t.scheduleSessions.filter((s) => s.status === "COMPLETED").length, rooms: Array.from(new Set(t.scheduleSessions.map((s) => s.room?.name).filter(Boolean))).join(", ") || "—" })) };
 }
 
-export async function getRoomUtilizationReport(filters: ReportFilters) {
-  const rooms = await prisma.room.findMany({ where: filters.roomId ? { id: filters.roomId } : {}, include: { scheduleSessions: { where: { AND: [dateRange("sessionDate", filters), filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.teacherId ? { teacherId: filters.teacherId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, { archivedAt: null }] }, include: { teacher: true, season: true } } }, orderBy: { name: "asc" } });
-  return { rows: rooms.map((r) => ({ id: r.id, room: r.name, capacity: r.capacity, scheduledSessions: r.scheduleSessions.length, completedSessions: r.scheduleSessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: r.scheduleSessions.filter((s) => s.status === "CANCELLED").length, teachers: Array.from(new Set(r.scheduleSessions.map((s) => s.teacher?.fullName ?? "Unassigned"))).join(", ") || "—" })) };
+export async function getRoomUtilizationReport(filters: ReportFilters & Partial<ReportPagination>) {
+  const where = filters.roomId ? { id: filters.roomId } : {};
+  const totalRows = await prisma.room.count({ where });
+  const rooms = await prisma.room.findMany({ where, select: { id: true, name: true, capacity: true, scheduleSessions: { where: { AND: [dateRange("sessionDate", filters), filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.teacherId ? { teacherId: filters.teacherId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, { archivedAt: null }] }, select: { status: true, teacher: { select: { fullName: true } } } } }, orderBy: { name: "asc" }, skip: filters.skip ?? 0, take: filters.take ?? 25 });
+  return { totalRows, rows: rooms.map((r) => ({ id: r.id, room: r.name, capacity: r.capacity, scheduledSessions: r.scheduleSessions.length, completedSessions: r.scheduleSessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: r.scheduleSessions.filter((s) => s.status === "CANCELLED").length, teachers: Array.from(new Set(r.scheduleSessions.map((s) => s.teacher?.fullName ?? "Unassigned"))).join(", ") || "—" })) };
 }
 
 export async function getSeasonClosingReport(seasonId: string) {
   const season = await prisma.season.findUnique({ where: { id: seasonId } });
   if (!season) throw new Error("Season not found");
-  const [enrollments, previousUnpaid, payments, expenses, sessions] = await Promise.all([
-    prisma.enrollment.findMany({ where: { seasonId }, include: { student: { include: { family: true } }, season: true, course: true, level: true, teacher: true } }),
-    prisma.enrollment.findMany({ where: { season: { startDate: { lt: season.startDate } }, remainingCents: { gt: 0 } }, include: { student: { include: { family: true } }, season: true, course: true } }),
-    prisma.payment.findMany({ where: { voidedAt: null, items: { some: { enrollment: { seasonId } } } }, include: { family: true, student: true, items: { where: { enrollment: { seasonId } }, include: { enrollment: { include: { student: { include: { family: true } }, season: true } } } } } }),
-    prisma.expense.findMany({ where: { archivedAt: null, expenseDate: { gte: season.startDate, lte: season.endDate } } }),
-    prisma.scheduleSession.findMany({ where: { seasonId, archivedAt: null }, include: { teacher: true, room: true } }),
-  ]);
+  const enrollments = await prisma.enrollment.findMany({ where: { seasonId }, select: { id: true, studentId: true, seasonId: true, courseId: true, levelId: true, teacherId: true, courseName: true, finalFeeCents: true, paidCents: true, remainingCents: true, student: { select: { id: true, studentCode: true, firstName: true, lastName: true, familyId: true, family: { select: { id: true, name: true } } } }, season: { select: { name: true } }, course: { select: { name: true } }, level: { select: { name: true } }, teacher: { select: { id: true, fullName: true } } } });
+  const previousUnpaid = await prisma.enrollment.findMany({ where: { season: { startDate: { lt: season.startDate } }, remainingCents: { gt: 0 } }, select: { remainingCents: true, courseName: true, student: { select: { studentCode: true, firstName: true, lastName: true, familyId: true, family: { select: { name: true } } } }, season: { select: { name: true } }, course: { select: { name: true } } } });
+  const payments = await prisma.payment.findMany({ where: { voidedAt: null, items: { some: { enrollment: { seasonId } } } }, select: { id: true, items: { where: { enrollment: { seasonId } }, select: { amountCents: true } } } });
+  const expenses = await prisma.expense.findMany({ where: { archivedAt: null, expenseDate: { gte: season.startDate, lte: season.endDate } }, select: { amountCents: true } });
+  const sessions = await prisma.scheduleSession.findMany({ where: { seasonId, archivedAt: null }, select: { status: true, teacher: { select: { id: true, fullName: true } }, room: { select: { id: true, name: true } } } });
   const studentIds = new Set(enrollments.map((row) => row.studentId)); const familyIds = new Set(enrollments.map((row) => row.student.familyId).filter(Boolean)); const paymentsReceivedCents = payments.reduce((sum, payment) => sum + payment.items.reduce((itemSum, item) => itemSum + item.amountCents, 0), 0); const outstandingCents = enrollments.reduce((sum, enrollment) => sum + enrollment.remainingCents, 0); const expenseCents = expenses.reduce((sum, expense) => sum + expense.amountCents, 0);
   const courses = new Map<string, { course: string; enrollments: number; students: Set<string>; amountDueCents: number; paidCents: number; outstandingCents: number }>();
   for (const enrollment of enrollments) { const key = enrollment.course?.name ?? enrollment.courseName; const row = courses.get(key) ?? { course: key, enrollments: 0, students: new Set<string>(), amountDueCents: 0, paidCents: 0, outstandingCents: 0 }; row.enrollments += 1; row.students.add(enrollment.studentId); row.amountDueCents += enrollment.finalFeeCents; row.paidCents += enrollment.paidCents; row.outstandingCents += enrollment.remainingCents; courses.set(key, row); }
@@ -128,13 +141,12 @@ export async function getSeasonClosingReport(seasonId: string) {
 }
 
 
-export async function getPayrollReport(filters: ReportFilters) {
-  const rows = await prisma.teacherPayroll.findMany({
-    where: { AND: [filters.teacherId ? { teacherId: filters.teacherId } : {}, filters.dateFrom ? { periodEnd: { gte: new Date(filters.dateFrom) } } : {}, filters.dateTo ? { periodStart: { lte: new Date(filters.dateTo) } } : {}, filters.paymentStatus ? { status: filters.paymentStatus as any } : {}] },
-    include: { teacher: true },
-    orderBy: [{ periodEnd: "desc" }, { createdAt: "desc" }],
-  });
-  return { rows: rows.map((row) => ({ id: row.id, teacher: row.teacher?.fullName ?? "Unassigned", periodStart: row.periodStart, periodEnd: row.periodEnd, lessonHours: (row.completedMinutes + row.missedPayableMinutes) / 60, completedHours: row.completedMinutes / 60, missedHours: row.missedPayableMinutes / 60, adjustmentCents: row.adjustmentCents, grossAmountCents: row.grossAmountCents, status: row.status })), totalCents: rows.reduce((sum, row) => sum + row.grossAmountCents, 0) };
+export async function getPayrollReport(filters: ReportFilters & Partial<ReportPagination>) {
+  const where = { AND: [filters.teacherId ? { teacherId: filters.teacherId } : {}, filters.dateFrom ? { periodEnd: { gte: new Date(filters.dateFrom) } } : {}, filters.dateTo ? { periodStart: { lte: new Date(filters.dateTo) } } : {}, filters.paymentStatus ? { status: filters.paymentStatus as any } : {}] };
+  const totalRows = await prisma.teacherPayroll.count({ where });
+  const total = await prisma.teacherPayroll.aggregate({ where, _sum: { grossAmountCents: true } });
+  const rows = await prisma.teacherPayroll.findMany({ where, select: { id: true, periodStart: true, periodEnd: true, completedMinutes: true, missedPayableMinutes: true, adjustmentCents: true, grossAmountCents: true, status: true, teacher: { select: { fullName: true } } }, orderBy: [{ periodEnd: "desc" }, { createdAt: "desc" }], skip: filters.skip ?? 0, take: filters.take ?? 25 });
+  return { totalRows, rows: rows.map((row) => ({ id: row.id, teacher: row.teacher?.fullName ?? "Unassigned", periodStart: row.periodStart, periodEnd: row.periodEnd, lessonHours: (row.completedMinutes + row.missedPayableMinutes) / 60, completedHours: row.completedMinutes / 60, missedHours: row.missedPayableMinutes / 60, adjustmentCents: row.adjustmentCents, grossAmountCents: row.grossAmountCents, status: row.status })), totalCents: total._sum.grossAmountCents ?? 0 };
 }
 
 
@@ -155,7 +167,7 @@ export async function getReportDashboardSummary(filters: ReportFilters) {
 
 function pageResult(rows: any[], totalRows: number, summary: Record<string, unknown> = {}) { return { rows, totalRows, summary }; }
 
-export async function loadReport(reportKind: LoadReportKind, filters: ReportFilters, pagination: ReportPagination) {
+export async function loadReport(reportKind: LoadReportKind, filters: ReportFilters, pagination: ReportPagination, dashboardSummary?: Awaited<ReturnType<typeof getReportDashboardSummary>>) {
   if (reportKind === "revenue") {
     const where = { AND: [dateRange("paymentDate", filters), { voidedAt: null }, filters.familyId ? { familyId: filters.familyId } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}, { items: { some: matchingItemWhere(filters) } }] };
     const totalRows = await prisma.payment.count({ where });
@@ -177,8 +189,8 @@ export async function loadReport(reportKind: LoadReportKind, filters: ReportFilt
     const rows = await prisma.expense.findMany({ where, orderBy: { expenseDate: "desc" }, skip: pagination.skip, take: pagination.take });
     return pageResult(rows, totalRows, { totalCents: total._sum.amountCents ?? 0 });
   }
-  if (reportKind === "profit-loss") { const summary = await getReportDashboardSummary(filters); return pageResult([], 0, { revenueCents: summary.revenueCents, expenseCents: summary.expenseCents, netCents: summary.netCents }); }
+  if (reportKind === "profit-loss") { const summary = dashboardSummary ?? await getReportDashboardSummary(filters); return pageResult([], 0, { revenueCents: summary.revenueCents, expenseCents: summary.expenseCents, netCents: summary.netCents }); }
   if (reportKind === "season-closing") { return filters.seasonId ? pageResult([], 0, await getSeasonClosingReport(filters.seasonId)) : pageResult([], 0, {}); }
-  const full = reportKind === "course-enrollment" ? await getCourseEnrollmentReport(filters) : reportKind === "teacher-schedule" ? await getTeacherScheduleAvailabilityReport(filters) : reportKind === "room-utilization" ? await getRoomUtilizationReport(filters) : await getPayrollReport(filters);
-  return pageResult(full.rows.slice(pagination.skip, pagination.skip + pagination.take), full.rows.length, { totalCents: (full as any).totalCents ?? 0 });
+  const full = reportKind === "course-enrollment" ? await getCourseEnrollmentReport({ ...filters, ...pagination }) : reportKind === "teacher-schedule" ? await getTeacherScheduleAvailabilityReport({ ...filters, ...pagination }) : reportKind === "room-utilization" ? await getRoomUtilizationReport({ ...filters, ...pagination }) : await getPayrollReport({ ...filters, ...pagination });
+  return pageResult(full.rows, (full as any).totalRows ?? full.rows.length, { totalCents: (full as any).totalCents ?? 0 });
 }
