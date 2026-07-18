@@ -32,7 +32,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   let reportData: Awaited<ReturnType<typeof loadReport>>;
   let reportError = false;
   try {
-    reportData = await loadReport(report, params, { skip, take });
+    // loadReport(report, params, { skip, take }) keeps only the selected report loader active.
+    reportData = await loadReport(report, params, { skip, take }, dashboard);
   } catch (error) {
     logServerError("reports.load", error, { report, filters: params });
     reportError = true;
