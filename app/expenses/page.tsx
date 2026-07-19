@@ -29,6 +29,12 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
     prisma.expense.count({ where }),
     prisma.expense.findMany({ distinct: ["category"], orderBy: { category: "asc" }, select: { category: true } }),
   ]);
+  const clearMessageHref = (() => {
+    const next = new URLSearchParams();
+    for (const key of ["dateFrom", "dateTo", "category", "paymentMethod", "status", "page"] as const) if (params[key]) next.set(key, params[key]!);
+    const query = next.toString();
+    return query ? `/expenses?${query}` : "/expenses";
+  })();
   const hrefFor = (targetPage: number) => {
     const next = new URLSearchParams();
     for (const key of ["dateFrom", "dateTo", "category", "paymentMethod", "status"] as const) if (params[key]) next.set(key, params[key]!);
@@ -48,8 +54,8 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       <select name="status" className="rounded border p-2" defaultValue={params.status ?? "active"}><option value="active">Active</option><option value="archived">Archived / Inactive</option><option value="all">All</option></select>
       <button className="rounded bg-primary px-4 py-2 text-white">Apply filters</button>
     </form>
-    {params.success ? <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800" role="status">{params.success}</div> : null}
-    {params.error ? <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-700" role="alert">{params.error}</div> : null}
+    {params.success ? <div className="mb-4 flex items-center justify-between gap-3 rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800" role="status"><span>{params.success}</span><Link className="text-sm underline" href={clearMessageHref}>Dismiss</Link></div> : null}
+    {params.error ? <div className="mb-4 flex items-center justify-between gap-3 rounded border border-red-200 bg-red-50 p-3 text-red-700" role="alert"><span>{params.error}</span><Link className="text-sm underline" href={clearMessageHref}>Dismiss</Link></div> : null}
     <DataTable><thead className="bg-muted"><tr><th className="p-3">Date</th><th>Category</th><th>Description</th><th>Method</th><th>Amount</th><th>Created by</th><th>Shift</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((expense) => {
       const shiftStatus = expense.shift?.status ?? "No shift";
       const deleteMessage = `Delete expense?\n\nDate: ${formatDate(expense.expenseDate)}\nCategory: ${expense.category}\nDescription: ${expense.description}\nAmount: ${formatExpenseAmount(expense.amountCents)}\nPayment method: ${formatPaymentMethod(expense.paymentMethod)}\nCreator: ${expense.createdBy?.name ?? "—"}\nShift status: ${shiftStatus}\n\nType DELETE to confirm.`;

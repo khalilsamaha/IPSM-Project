@@ -112,7 +112,7 @@ export async function getTeacherScheduleAvailabilityReport(filters: ReportFilter
   const where = filters.teacherId ? { id: filters.teacherId } : {};
   const totalRows = await prisma.teacher.count({ where });
   const teachers = await prisma.teacher.findMany({ where, select: { id: true, fullName: true, availability: { where: { AND: [filters.seasonId ? { OR: [{ seasonId: filters.seasonId }, { seasonId: null }] } : {}, { archivedAt: null }, { status: "ACTIVE" }] }, select: { id: true } }, scheduleSessions: { where: { AND: [dateRange("sessionDate", filters), filters.seasonId ? { seasonId: filters.seasonId } : {}, filters.roomId ? { roomId: filters.roomId } : {}, filters.studentId ? { studentId: filters.studentId } : {}, { archivedAt: null }] }, select: { status: true, room: { select: { name: true } } } } }, orderBy: { fullName: "asc" }, skip: filters.skip ?? 0, take: filters.take ?? 25 });
-  return { totalRows, rows: teachers.map((t) => ({ id: t.id, teacher: t.fullName, availabilityBlocks: t.availability.length, scheduledSessions: t.scheduleSessions.length, completedSessions: t.scheduleSessions.filter((s) => s.status === "COMPLETED").length, rooms: Array.from(new Set(t.scheduleSessions.map((s) => s.room?.name).filter(Boolean))).join(", ") || "—" })) };
+  return { totalRows, rows: teachers.map((t) => ({ id: t.id, teacher: t.fullName, availabilityBlocks: t.availability.length, scheduledSessions: t.scheduleSessions.length, completedSessions: t.scheduleSessions.filter((s) => s.status === "COMPLETED").length, rooms: Array.from(new Set(t.scheduleSessions.map((s) => s.room?.name ?? "No room"))).join(", ") || "No room" })) };
 }
 
 export async function getRoomUtilizationReport(filters: ReportFilters & Partial<ReportPagination>) {
@@ -122,22 +122,45 @@ export async function getRoomUtilizationReport(filters: ReportFilters & Partial<
   return { totalRows, rows: rooms.map((r) => ({ id: r.id, room: r.name, capacity: r.capacity, scheduledSessions: r.scheduleSessions.length, completedSessions: r.scheduleSessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: r.scheduleSessions.filter((s) => s.status === "CANCELLED").length, teachers: Array.from(new Set(r.scheduleSessions.map((s) => s.teacher?.fullName ?? "Unassigned"))).join(", ") || "—" })) };
 }
 
-export async function getSeasonClosingReport(seasonId: string) {
+
+export type SeasonClosingSummary = {
+  season: { id: string; name: string; startDate: Date; endDate: Date; status: string };
+  totals: {
+    students: number; families: number; enrollments: number; paymentsReceivedCents: number; outstandingCents: number; previousOutstandingCents: number; expenseCents: number; profitLossCents: number; completedSessions: number; cancelledSessions: number; missedSessions: number;
+  };
+  courses: { course: string; students: number; enrollments: number; amountDueCents: number; paidCents: number; outstandingCents: number }[];
+  teachers: { teacher: string; enrollments: number; completedSessions: number; cancelledSessions: number; missedSessions: number }[];
+  unpaidFamilies: { family: string; outstandingCents: number }[];
+  unpaidStudents: { studentCode: string; student: string; family: string; season: string; course: string; outstandingCents: number }[];
+  previousUnpaidStudents: { studentCode: string; student: string; family: string; season: string; course: string; outstandingCents: number }[];
+};
+
+export type ReportResult = { rows: any[]; totalRows: number; summary: Record<string, unknown> | SeasonClosingSummary | null; errorMessage?: string };
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const missingSeasonMessage = "The selected season could not be found. It may have been deleted.";
+
+function safeStudentName(student?: { firstName?: string | null; lastName?: string | null } | null) {
+  const name = [student?.firstName, student?.lastName].filter(Boolean).join(" ").trim();
+  return name || "Unknown student";
+}
+export async function getSeasonClosingReport(seasonId: string): Promise<SeasonClosingSummary | null> {
+  if (!uuidPattern.test(seasonId)) return null;
   const season = await prisma.season.findUnique({ where: { id: seasonId } });
-  if (!season) throw new Error("Season not found");
+  if (!season) return null;
   const enrollments = await prisma.enrollment.findMany({ where: { seasonId }, select: { id: true, studentId: true, seasonId: true, courseId: true, levelId: true, teacherId: true, courseName: true, finalFeeCents: true, paidCents: true, remainingCents: true, student: { select: { id: true, studentCode: true, firstName: true, lastName: true, familyId: true, family: { select: { id: true, name: true } } } }, season: { select: { name: true } }, course: { select: { name: true } }, level: { select: { name: true } }, teacher: { select: { id: true, fullName: true } } } });
   const previousUnpaid = await prisma.enrollment.findMany({ where: { season: { startDate: { lt: season.startDate } }, remainingCents: { gt: 0 } }, select: { remainingCents: true, courseName: true, student: { select: { studentCode: true, firstName: true, lastName: true, familyId: true, family: { select: { name: true } } } }, season: { select: { name: true } }, course: { select: { name: true } } } });
   const payments = await prisma.payment.findMany({ where: { voidedAt: null, items: { some: { enrollment: { seasonId } } } }, select: { id: true, items: { where: { enrollment: { seasonId } }, select: { amountCents: true } } } });
   const expenses = await prisma.expense.findMany({ where: { archivedAt: null, expenseDate: { gte: season.startDate, lte: season.endDate } }, select: { amountCents: true } });
   const sessions = await prisma.scheduleSession.findMany({ where: { seasonId, archivedAt: null }, select: { status: true, teacher: { select: { id: true, fullName: true } }, room: { select: { id: true, name: true } } } });
-  const studentIds = new Set(enrollments.map((row) => row.studentId)); const familyIds = new Set(enrollments.map((row) => row.student.familyId).filter(Boolean)); const paymentsReceivedCents = payments.reduce((sum, payment) => sum + payment.items.reduce((itemSum, item) => itemSum + item.amountCents, 0), 0); const outstandingCents = enrollments.reduce((sum, enrollment) => sum + enrollment.remainingCents, 0); const expenseCents = expenses.reduce((sum, expense) => sum + expense.amountCents, 0);
+  const studentIds = new Set(enrollments.map((row) => row.studentId).filter(Boolean)); const familyIds = new Set(enrollments.map((row) => row.student?.familyId).filter(Boolean)); const paymentsReceivedCents = payments.reduce((sum, payment) => sum + payment.items.reduce((itemSum, item) => itemSum + item.amountCents, 0), 0); const outstandingCents = enrollments.reduce((sum, enrollment) => sum + enrollment.remainingCents, 0); const expenseCents = expenses.reduce((sum, expense) => sum + expense.amountCents, 0);
   const courses = new Map<string, { course: string; enrollments: number; students: Set<string>; amountDueCents: number; paidCents: number; outstandingCents: number }>();
-  for (const enrollment of enrollments) { const key = enrollment.course?.name ?? enrollment.courseName; const row = courses.get(key) ?? { course: key, enrollments: 0, students: new Set<string>(), amountDueCents: 0, paidCents: 0, outstandingCents: 0 }; row.enrollments += 1; row.students.add(enrollment.studentId); row.amountDueCents += enrollment.finalFeeCents; row.paidCents += enrollment.paidCents; row.outstandingCents += enrollment.remainingCents; courses.set(key, row); }
+  for (const enrollment of enrollments) { const key = enrollment.course?.name ?? enrollment.courseName ?? "No activity"; const row = courses.get(key) ?? { course: key, enrollments: 0, students: new Set<string>(), amountDueCents: 0, paidCents: 0, outstandingCents: 0 }; row.enrollments += 1; if (enrollment.studentId) row.students.add(enrollment.studentId); row.amountDueCents += enrollment.finalFeeCents; row.paidCents += enrollment.paidCents; row.outstandingCents += enrollment.remainingCents; courses.set(key, row); }
   const teachers = new Map<string, { teacher: string; enrollments: number; completedSessions: number; cancelledSessions: number; missedSessions: number }>();
-  for (const enrollment of enrollments) if (enrollment.teacher) { const row = teachers.get(enrollment.teacher.id) ?? { teacher: enrollment.teacher.fullName, enrollments: 0, completedSessions: 0, cancelledSessions: 0, missedSessions: 0 }; row.enrollments += 1; teachers.set(enrollment.teacher.id, row); }
-  for (const session of sessions) if (session.teacher) { const row = teachers.get(session.teacher.id) ?? { teacher: session.teacher.fullName, enrollments: 0, completedSessions: 0, cancelledSessions: 0, missedSessions: 0 }; if (session.status === "COMPLETED") row.completedSessions += 1; if (session.status === "CANCELLED") row.cancelledSessions += 1; if (session.status === "MISSED") row.missedSessions += 1; teachers.set(session.teacher.id, row); }
+  for (const enrollment of enrollments) if (enrollment.teacher) { const row = teachers.get(enrollment.teacher.id) ?? { teacher: enrollment.teacher.fullName ?? "Unassigned", enrollments: 0, completedSessions: 0, cancelledSessions: 0, missedSessions: 0 }; row.enrollments += 1; teachers.set(enrollment.teacher.id, row); }
+  for (const session of sessions) if (session.teacher) { const row = teachers.get(session.teacher.id) ?? { teacher: session.teacher.fullName ?? "Unassigned", enrollments: 0, completedSessions: 0, cancelledSessions: 0, missedSessions: 0 }; if (session.status === "COMPLETED") row.completedSessions += 1; if (session.status === "CANCELLED") row.cancelledSessions += 1; if (session.status === "MISSED") row.missedSessions += 1; teachers.set(session.teacher.id, row); }
   const unpaidEnrollments = enrollments.filter((enrollment) => enrollment.remainingCents > 0);
-  return { season, totals: { students: studentIds.size, families: familyIds.size, enrollments: enrollments.length, paymentsReceivedCents, outstandingCents, previousOutstandingCents: previousUnpaid.reduce((s, e) => s + e.remainingCents, 0), expenseCents, profitLossCents: paymentsReceivedCents - expenseCents, completedSessions: sessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: sessions.filter((s) => s.status === "CANCELLED").length, missedSessions: sessions.filter((s) => s.status === "MISSED").length }, courses: Array.from(courses.values()).map((row) => ({ ...row, students: row.students.size })).sort((a, b) => a.course.localeCompare(b.course)), teachers: Array.from(teachers.values()).sort((a, b) => a.teacher.localeCompare(b.teacher)), unpaidFamilies: Array.from(new Map(unpaidEnrollments.map((e) => [e.student.familyId ?? e.student.id, { family: e.student.family?.name ?? "Independent", outstandingCents: unpaidEnrollments.filter((row) => (row.student.familyId ?? row.student.id) === (e.student.familyId ?? e.student.id)).reduce((sum, row) => sum + row.remainingCents, 0) }])).values()), unpaidStudents: unpaidEnrollments.map((e) => ({ studentCode: e.student.studentCode, student: `${e.student.firstName} ${e.student.lastName}`, family: e.student.family?.name ?? "Independent", season: e.season?.name ?? season.name, course: e.course?.name ?? e.courseName, outstandingCents: e.remainingCents })), previousUnpaidStudents: previousUnpaid.map((e) => ({ studentCode: e.student.studentCode, student: `${e.student.firstName} ${e.student.lastName}`, family: e.student.family?.name ?? "Independent", season: (e.season?.name ?? "No season"), course: e.course?.name ?? e.courseName, outstandingCents: e.remainingCents })) };
+  return { season, totals: { students: studentIds.size, families: familyIds.size, enrollments: enrollments.length, paymentsReceivedCents, outstandingCents, previousOutstandingCents: previousUnpaid.reduce((s, e) => s + e.remainingCents, 0), expenseCents, profitLossCents: paymentsReceivedCents - expenseCents, completedSessions: sessions.filter((s) => s.status === "COMPLETED").length, cancelledSessions: sessions.filter((s) => s.status === "CANCELLED").length, missedSessions: sessions.filter((s) => s.status === "MISSED").length }, courses: Array.from(courses.values()).map((row) => ({ ...row, students: row.students.size })).sort((a, b) => a.course.localeCompare(b.course)), teachers: Array.from(teachers.values()).sort((a, b) => a.teacher.localeCompare(b.teacher)), unpaidFamilies: Array.from(new Map(unpaidEnrollments.map((e) => [e.student?.familyId ?? e.student?.id ?? e.studentId, { family: e.student?.family?.name ?? "Independent", outstandingCents: unpaidEnrollments.filter((row) => (row.student?.familyId ?? row.student?.id ?? row.studentId) === (e.student?.familyId ?? e.student?.id ?? e.studentId)).reduce((sum, row) => sum + row.remainingCents, 0) }])).values()), unpaidStudents: unpaidEnrollments.map((e) => ({ studentCode: e.student?.studentCode ?? "—", student: safeStudentName(e.student), family: e.student?.family?.name ?? "Independent", season: e.season?.name ?? season.name ?? "Unknown season", course: e.course?.name ?? e.courseName ?? "No activity", outstandingCents: e.remainingCents })), previousUnpaidStudents: previousUnpaid.map((e) => ({ studentCode: e.student?.studentCode ?? "—", student: safeStudentName(e.student), family: e.student?.family?.name ?? "Independent", season: (e.season?.name ?? "Unknown season"), course: e.course?.name ?? e.courseName ?? "No activity", outstandingCents: e.remainingCents })) };
 }
 
 
@@ -165,7 +188,7 @@ export async function getReportDashboardSummary(filters: ReportFilters) {
   return { revenueCents, outstandingCents: outstanding._sum.remainingCents ?? 0, expenseCents, netCents: revenueCents - expenseCents, payrollCents: payroll._sum.grossAmountCents ?? 0 };
 }
 
-function pageResult(rows: any[], totalRows: number, summary: Record<string, unknown> = {}) { return { rows, totalRows, summary }; }
+function pageResult(rows: any[], totalRows: number, summary: ReportResult["summary"] = {}): ReportResult { return { rows, totalRows, summary }; }
 
 export async function loadReport(reportKind: LoadReportKind, filters: ReportFilters, pagination: ReportPagination, dashboardSummary?: Awaited<ReturnType<typeof getReportDashboardSummary>>) {
   if (reportKind === "revenue") {
@@ -190,7 +213,11 @@ export async function loadReport(reportKind: LoadReportKind, filters: ReportFilt
     return pageResult(rows, totalRows, { totalCents: total._sum.amountCents ?? 0 });
   }
   if (reportKind === "profit-loss") { const summary = dashboardSummary ?? await getReportDashboardSummary(filters); return pageResult([], 0, { revenueCents: summary.revenueCents, expenseCents: summary.expenseCents, netCents: summary.netCents }); }
-  if (reportKind === "season-closing") { return filters.seasonId ? pageResult([], 0, await getSeasonClosingReport(filters.seasonId)) : pageResult([], 0, {}); }
+  if (reportKind === "season-closing") {
+    if (!filters.seasonId) return pageResult([], 0, null);
+    const summary = await getSeasonClosingReport(filters.seasonId);
+    return summary ? pageResult([], 0, summary) : { ...pageResult([], 0, null), errorMessage: missingSeasonMessage };
+  }
   const full = reportKind === "course-enrollment" ? await getCourseEnrollmentReport({ ...filters, ...pagination }) : reportKind === "teacher-schedule" ? await getTeacherScheduleAvailabilityReport({ ...filters, ...pagination }) : reportKind === "room-utilization" ? await getRoomUtilizationReport({ ...filters, ...pagination }) : await getPayrollReport({ ...filters, ...pagination });
   return pageResult(full.rows, (full as any).totalRows ?? full.rows.length, { totalCents: (full as any).totalCents ?? 0 });
 }
