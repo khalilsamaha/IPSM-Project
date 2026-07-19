@@ -55,3 +55,13 @@ Admin users should be considered operational administrators, not system owners. 
 ## Payroll permissions
 
 Reception users have no payroll access. Admin and Super Admin users can generate teacher payroll drafts, approve payroll, mark approved payroll as paid, and cancel non-paid payroll with an audit trail.
+
+## Temporary deletion visibility update (July 2026)
+
+Delete access for eligible, dependency-safe records is temporarily visible to all authenticated application roles with `records:write` permission: RECEPTION, ADMIN, and SUPER_ADMIN. Financial safeguards, audit logging, dependency checks, and closed-shift protections remain required.
+
+Expenses now show Delete from the active and archived expense lists. Users must type `DELETE` to confirm after reviewing the date, category, description, amount, payment method, creator, and shift status. Expenses tied to CLOSED shifts remain blocked; OPEN and REOPENED shift expenses may be deleted when all safety checks pass.
+
+Payments and receipts must not expose a normal Delete action. Use the established Void, Reprint, or Regenerate workflows so financial history remains auditable.
+
+Reports now show only filters relevant to the selected report type. Use Reset Filters to clear report filters, and confirm that family/student choices use readable codes and names instead of internal IDs.

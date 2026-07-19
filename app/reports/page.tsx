@@ -6,6 +6,7 @@ import { formatPaymentMethod } from "@/lib/payment-methods";
 import { getPagination } from "@/lib/records/pagination";
 import { getReportDashboardSummary, getReportLookups, loadReport, type ReportFilters } from "@/lib/reports/data";
 import { logServerError } from "@/lib/server-log";
+import { filtersForReport, reportDescriptions } from "@/lib/reports/filter-config";
 
 type ReportSearchParams = ReportFilters & { report?: string; page?: string };
 const reports = ["revenue", "expenses", "profit-loss", "outstanding", "season-closing", "course-enrollment", "teacher-schedule", "room-utilization", "payroll"] as const;
@@ -43,6 +44,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const totalRows = reportData.totalRows;
   const profitLoss = report === "profit-loss" ? reportData.summary as any : dashboard;
   const seasonClosing = report === "season-closing" ? reportData.summary as any : null;
+  const activeFilters = new Set(filtersForReport(report));
+  const showFilter = (name: string) => activeFilters.has(name);
+  const resetHref = `/reports?report=${report}`;
   const hrefFor = (targetPage: number) => {
     const next = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) if (value && key !== "page") next.set(key, value);
@@ -52,7 +56,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   return <AppShell session={session}>
     <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div><h2 className="text-2xl font-bold">Reports & Dashboard</h2><p className="text-sm text-muted-foreground">Financial reports are available to Admin and Reception roles. Voided payments are excluded from revenue; archived expenses are excluded by default.</p></div>
+      <div><h2 className="text-2xl font-bold">Reports & Dashboard</h2><p className="text-sm text-muted-foreground">{reportDescriptions[report]}</p></div>
       <a className="rounded bg-primary px-4 py-2 text-center text-white" href={exportHref(report, params)}>Export CSV</a>
     </div>
 
@@ -66,24 +70,24 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
     <form className="mb-4 grid gap-2 rounded-xl border bg-white p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <select className="rounded border p-2" name="report" defaultValue={report}>{reports.map((item) => <option key={item} value={item}>{reportTitle(item)}</option>)}</select>
-      <input className="rounded border p-2" type="date" name="dateFrom" defaultValue={params.dateFrom} />
-      <input className="rounded border p-2" type="date" name="dateTo" defaultValue={params.dateTo} />
-      <select className="rounded border p-2" name="seasonId" defaultValue={params.seasonId ?? ""}><option value="">All seasons</option>{lookups.seasons.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
-      <select className="rounded border p-2" name="familyId" defaultValue={params.familyId ?? ""}><option value="">All families</option>{lookups.families.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
-      <select className="rounded border p-2" name="studentId" defaultValue={params.studentId ?? ""}><option value="">All students</option>{lookups.students.map((row) => <option key={row.id} value={row.id}>{row.studentCode} — {row.lastName}, {row.firstName}</option>)}</select>
-      <select className="rounded border p-2" name="teacherId" defaultValue={params.teacherId ?? ""}><option value="">All teachers</option>{lookups.teachers.map((row) => <option key={row.id} value={row.id}>{row.fullName}</option>)}</select>
-      <select className="rounded border p-2" name="courseId" defaultValue={params.courseId ?? ""}><option value="">All courses</option>{lookups.courses.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
-      <select className="rounded border p-2" name="levelId" defaultValue={params.levelId ?? ""}><option value="">All levels</option>{lookups.levels.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
-      <select className="rounded border p-2" name="roomId" defaultValue={params.roomId ?? ""}><option value="">All rooms</option>{lookups.rooms.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
-      <input className="rounded border p-2" name="studentCode" placeholder="Student ID" defaultValue={params.studentCode ?? ""} />
-      <select className="rounded border p-2" name="paymentStatus" defaultValue={params.paymentStatus ?? ""}><option value="">All payment statuses</option><option value="paid">Paid</option><option value="partial">Partially paid</option><option value="unpaid">Unpaid</option><option value="outstanding">Any outstanding</option></select>
-      <select className="rounded border p-2" name="paymentMethod" defaultValue={params.paymentMethod ?? ""}><option value="">All payment methods</option>{lookups.paymentMethods.map((row) => <option key={row.paymentMethod} value={row.paymentMethod}>{formatPaymentMethod(row.paymentMethod)}</option>)}</select>
-      <select className="rounded border p-2" name="category" defaultValue={params.category ?? ""}><option value="">All expense categories</option>{lookups.expenseCategories.map((row) => <option key={row.category} value={row.category}>{row.category}</option>)}</select>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="includeArchived" value="1" defaultChecked={params.includeArchived === "1"} /> Include archived expenses</label>
-      <button className="rounded bg-primary px-4 py-2 text-white md:col-span-2">Apply filters</button>
+      {showFilter("dateFrom") ? <input className="rounded border p-2" type="date" name="dateFrom" defaultValue={params.dateFrom} /> : null}
+      {showFilter("dateTo") ? <input className="rounded border p-2" type="date" name="dateTo" defaultValue={params.dateTo} /> : null}
+      {showFilter("seasonId") ? <select className="rounded border p-2" name="seasonId" defaultValue={params.seasonId ?? ""}><option value="">All seasons</option>{lookups.seasons.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select> : null}
+      {showFilter("familyId") ? <select className="rounded border p-2" name="familyId" defaultValue={params.familyId ?? ""}><option value="">All families</option>{lookups.families.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select> : null}
+      {showFilter("studentId") ? <select className="rounded border p-2" name="studentId" defaultValue={params.studentId ?? ""}><option value="">All students</option>{lookups.students.map((row) => <option key={row.id} value={row.id}>{row.studentCode} — {row.lastName}, {row.firstName}</option>)}</select> : null}
+      {showFilter("teacherId") ? <select className="rounded border p-2" name="teacherId" defaultValue={params.teacherId ?? ""}><option value="">All teachers</option>{lookups.teachers.map((row) => <option key={row.id} value={row.id}>{row.fullName}</option>)}</select> : null}
+      {showFilter("courseId") ? <select className="rounded border p-2" name="courseId" defaultValue={params.courseId ?? ""}><option value="">All courses</option>{lookups.courses.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select> : null}
+      {showFilter("levelId") ? <select className="rounded border p-2" name="levelId" defaultValue={params.levelId ?? ""}><option value="">All levels</option>{lookups.levels.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select> : null}
+      {showFilter("roomId") ? <select className="rounded border p-2" name="roomId" defaultValue={params.roomId ?? ""}><option value="">All rooms</option>{lookups.rooms.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select> : null}
+      {showFilter("studentCode") ? <input className="rounded border p-2" name="studentCode" placeholder="Student ID" defaultValue={params.studentCode ?? ""} /> : null}
+      {showFilter("paymentStatus") ? <select className="rounded border p-2" name="paymentStatus" defaultValue={params.paymentStatus ?? ""}><option value="">All payment statuses</option><option value="paid">Paid</option><option value="partial">Partially paid</option><option value="unpaid">Unpaid</option><option value="outstanding">Any outstanding</option></select> : null}
+      {showFilter("paymentMethod") ? <select className="rounded border p-2" name="paymentMethod" defaultValue={params.paymentMethod ?? ""}><option value="">All payment methods</option>{lookups.paymentMethods.map((row) => <option key={row.paymentMethod} value={row.paymentMethod}>{formatPaymentMethod(row.paymentMethod)}</option>)}</select> : null}
+      {showFilter("category") ? <select className="rounded border p-2" name="category" defaultValue={params.category ?? ""}><option value="">All expense categories</option>{lookups.expenseCategories.map((row) => <option key={row.category} value={row.category}>{row.category}</option>)}</select> : null}
+      {showFilter("includeArchived") ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="includeArchived" value="1" defaultChecked={params.includeArchived === "1"} /> Include archived expenses</label> : null}
+      <button className="rounded bg-primary px-4 py-2 text-white">Apply filters</button><a className="rounded border px-4 py-2 text-center" href={resetHref}>Reset Filters</a>
     </form>
 
-    <h3 className="mb-3 text-xl font-semibold">{reportTitle(report)}</h3>
+    <h3 className="mb-1 text-xl font-semibold">{reportTitle(report)} Report</h3><p className="mb-3 text-sm text-muted-foreground">{reportDescriptions[report]}</p>
     {reportError ? <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-bold">We could not load this report right now.</p><p>Please retry or narrow your filters. Technical details were logged for review.</p><a className="mt-2 inline-flex rounded bg-amber-700 px-3 py-2 text-white" href="/reports">Retry</a></div> : null}
     {report === "profit-loss" ? <div className="rounded-xl border bg-white p-6"><p>Revenue: <strong>{formatCurrency(profitLoss.revenueCents)}</strong></p><p>Expenses: <strong>{formatCurrency(profitLoss.expenseCents)}</strong></p><p>Net: <strong>{formatCurrency(profitLoss.netCents)}</strong></p></div> : null}
     {report === "season-closing" && seasonClosing ? <div className="rounded-xl border bg-white p-6"><p>Season: <strong>{seasonClosing.season.name}</strong></p><p>Students: <strong>{seasonClosing.totals.students}</strong></p><p>Families: <strong>{seasonClosing.totals.families}</strong></p><p>Enrollments: <strong>{seasonClosing.totals.enrollments}</strong></p><p>Payments: <strong>{formatCurrency(seasonClosing.totals.paymentsReceivedCents)}</strong></p><p>Outstanding: <strong>{formatCurrency(seasonClosing.totals.outstandingCents)}</strong></p><p>Previous season unpaid: <strong>{formatCurrency(seasonClosing.totals.previousOutstandingCents)}</strong></p><p>Expenses: <strong>{formatCurrency(seasonClosing.totals.expenseCents)}</strong></p><p>Profit/loss: <strong>{formatCurrency(seasonClosing.totals.profitLossCents)}</strong></p><p className="mt-3"><a className="text-primary" href={`/seasons/${seasonClosing.season.id}/closing-report`}>Open full closing report</a></p></div> : null}

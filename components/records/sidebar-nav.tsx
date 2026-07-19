@@ -5,7 +5,7 @@ import type { Role } from "@/lib/auth/roles";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, RotateCcw, Activity, Clock, Settings, SlidersHorizontal, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards, HandCoins } from "lucide-react";
+import { BarChart3, BookOpen, Building2, CalendarDays, CreditCard, GraduationCap, Home, Receipt, RotateCcw, Activity, Clock, Settings, Tags, UserCog, UserPlus, UserRoundCog, Users, WalletCards, HandCoins } from "lucide-react";
 import { canViewNavigationItem } from "@/lib/auth/navigation";
 
 type NavItem = {
@@ -25,56 +25,34 @@ export const navSections: NavSection[] = [
     label: "Daily Operations",
     items: [
       { label: "Register Student", href: "/register-student", icon: UserPlus },
-      { label: "Payments", href: "/payments", icon: CreditCard },
       { label: "Lessons / Schedule", href: "/schedule", icon: CalendarDays },
+      { label: "Payments", href: "/payments", icon: CreditCard },
       { label: "Expenses", href: "/expenses", icon: Receipt },
       { label: "Shift", href: "/shifts", icon: Clock },
     ],
   },
-  {
-    label: "People",
-    items: [
-      { label: "Families", href: "/families", icon: Users },
-      { label: "Students", href: "/students", icon: GraduationCap },
-      { label: "Teachers", href: "/teachers", icon: UserRoundCog },
-    ],
-  },
-  {
-    label: "Academic",
-    items: [
-      { label: "Seasons", href: "/seasons", icon: BookOpen },
-      { label: "Enrollments", href: "/enrollments", icon: WalletCards },
-      { label: "Courses & Pricing", href: "/admin/academic-pricing", icon: Tags },
-    ],
-  },
-  {
-    label: "Scheduling",
-    items: [
-      { label: "Lessons / Schedule", href: "/schedule", icon: CalendarDays },
-      { label: "Rooms", href: "/rooms", icon: Building2 },
-      { label: "Teacher Availability", href: "/teacher-availability", icon: UserCog },
-    ],
-  },
-  {
-    label: "Finance",
-    items: [
-      { label: "Payments", href: "/payments", icon: CreditCard },
-      { label: "Expenses", href: "/expenses", icon: Receipt },
-      { label: "Payroll", href: "/payroll", icon: HandCoins },
-      { label: "Reports", href: "/reports", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "System / Admin",
-    items: [
-      { label: "Users", href: "/users", icon: Settings },
-      { label: "School Profile", href: "/settings#school-profile", icon: SlidersHorizontal },
-      { label: "Receipt Settings", href: "/settings#receipt-settings", icon: Receipt },
-      { label: "Advanced Settings", href: "/settings#advanced-settings", icon: Settings },
-      { label: "Activity Monitoring", href: "/admin/activity", icon: Activity },
-      { label: "Production Reset", href: "/settings/production-reset", icon: RotateCcw },
-    ],
-  },
+  { label: "People", items: [
+    { label: "Families", href: "/families", icon: Users },
+    { label: "Students", href: "/students", icon: GraduationCap },
+    { label: "Teachers", href: "/teachers", icon: UserRoundCog },
+  ] },
+  { label: "Academic Setup", items: [
+    { label: "Enrollments", href: "/enrollments", icon: WalletCards },
+    { label: "Seasons", href: "/seasons", icon: BookOpen },
+    { label: "Instruments & Pricing", href: "/admin/academic-pricing", icon: Tags },
+    { label: "Rooms", href: "/rooms", icon: Building2 },
+    { label: "Teacher Availability", href: "/teacher-availability", icon: UserCog },
+  ] },
+  { label: "Management", items: [
+    { label: "Reports", href: "/reports", icon: BarChart3 },
+    { label: "Payroll", href: "/payroll", icon: HandCoins },
+  ] },
+  { label: "Administration", items: [
+    { label: "Users", href: "/users", icon: Settings },
+    { label: "School Settings", href: "/settings", icon: Settings },
+    { label: "Activity Monitoring", href: "/admin/activity", icon: Activity },
+    { label: "Production Reset", href: "/settings/production-reset", icon: RotateCcw },
+  ] },
 ];
 
 function isActivePath(pathname: string, href: string) {

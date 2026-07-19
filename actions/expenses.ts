@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
-import { hasPermission, isAdminOrHigher } from "@/lib/auth/roles";
+import { hasPermission } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { parseExpenseForm } from "@/lib/expenses";
 import { canPermanentlyDeleteExpense } from "@/lib/deletion-policy";
@@ -69,32 +69,41 @@ export async function restoreExpense(formData: FormData) {
 
 export async function permanentlyDeleteExpense(formData: FormData) {
   const session = await requireSession();
-  if (!isAdminOrHigher(session.role)) redirect(`/expenses?error=${encodeURIComponent("Only admins can permanently delete archived expenses.")}`);
+  if (!hasPermission(session.role, "records:write")) redirect(`/expenses?error=${encodeURIComponent("You do not have permission to delete expenses.")}`);
   const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
   const expenseId = idSchema.parse(formData.get("id"));
   const confirmation = String(formData.get("confirmation") ?? "");
-  if (confirmation !== "Permanently delete this expense? This action cannot be undone.") {
-    redirect(`/expenses?status=archived&error=${encodeURIComponent("Enter the exact confirmation text before permanent deletion.")}`);
+  if (confirmation !== "DELETE") {
+    redirect(`/expenses?error=${encodeURIComponent("Type DELETE to confirm.")}`);
   }
   try {
     await prisma.$transaction(async (tx) => {
-      const expense = await tx.expense.findUnique({ where: { id: expenseId }, include: { createdBy: true } });
+      const expense = await tx.expense.findUnique({ where: { id: expenseId }, include: { createdBy: true, shift: true } });
       if (!expense) throw new Error("Expense not found.");
-      const locked = await tx.expense.findUnique({ where: { id: expenseId }, include: { shift: true } });
-      assertMutableShiftTransaction(locked!);
       const decision = canPermanentlyDeleteExpense(expense);
+      const details = {
+        actor: session.userId,
+        actorRole: session.role,
+        date: expense.expenseDate,
+        category: expense.category,
+        description: expense.description,
+        amountCents: expense.amountCents,
+        paymentMethod: expense.paymentMethod,
+        creator: expense.createdBy?.name ?? expense.createdById,
+        shiftStatus: expense.shift?.status ?? "No shift",
+      };
       if (!decision.allowed) {
-        await tx.auditLog.create({ data: { action: "delete_blocked", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata: { reason: decision.reason, amount: expense.amountCents, category: expense.category, date: expense.expenseDate, createdBy: expense.createdById, deletionActor: session.userId } } });
-        throw new Error(decision.reason);
+        await tx.auditLog.create({ data: { action: "delete_blocked", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata: { ...details, outcome: "blocked", reason: decision.reason } } });
+        throw new Error(decision.reason ?? "Expense deletion is blocked by safety rules.");
       }
-      const metadata = { amount: expense.amountCents, category: expense.category, date: expense.expenseDate, createdBy: expense.createdById, deletionActor: session.userId };
-      await tx.auditLog.create({ data: { action: "delete", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata } });
+      await tx.auditLog.create({ data: { action: "delete", entity: "Expense", entityId: expenseId, actorId: session.userId, createdById: user?.id, metadata: { ...details, outcome: "deleted" } } });
       await tx.expense.delete({ where: { id: expenseId } });
     });
   } catch (error) {
     logServerError("expense.delete", error, { expenseId });
-    redirect(`/expenses?status=archived&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to delete expense safely.")}`);
+    const message = error instanceof Error ? error.message : "Unable to delete expense safely.";
+    redirect(`/expenses?error=${encodeURIComponent(message)}`);
   }
   revalidatePath("/expenses");
-  redirect(`/expenses?status=archived&success=${encodeURIComponent("Expense permanently deleted.")}`);
+  redirect(`/expenses?success=${encodeURIComponent("Expense deleted successfully.")}`);
 }
