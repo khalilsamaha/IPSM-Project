@@ -1,8 +1,9 @@
 export type DeleteDecision = { allowed: boolean; reason?: string };
 export type CountMap = Record<string, number>;
 
-export function canPermanentlyDeleteExpense(expense: { archivedAt: Date | null }) {
-  return expense.archivedAt ? { allowed: true } : { allowed: false, reason: "Archive this expense before permanent deletion." };
+export function canPermanentlyDeleteExpense(expense: { archivedAt?: Date | null; shift?: { status?: string | null } | null }) {
+  if (expense.shift?.status === "CLOSED") return { allowed: false, reason: "This expense belongs to a closed shift and cannot be deleted." };
+  return { allowed: true };
 }
 export function canDeletePayment() { return { allowed: false, reason: "Payments cannot be deleted. Use void/reversal so financial history remains auditable." }; }
 export function canDeleteReceipt() { return { allowed: false, reason: "Receipts are regenerated or reprinted from their payment and are not independently deleted." }; }
@@ -20,6 +21,6 @@ export function canDeleteTeacher(input: { archived: boolean; enrollments: number
 }
 export function canDeleteFamily(input: { archived: boolean; students: number; payments: number }): DeleteDecision {
   if (!input.archived) return { allowed: false, reason: "Archive/inactivate this family before permanent deletion." };
-  if (input.students || input.payments) return { allowed: false, reason: "Family has students or payments. Do not cascade-delete financial history." };
+  if (input.students || input.payments) return { allowed: false, reason: `This family cannot be deleted because it has ${input.students} students and ${input.payments} payments.` };
   return { allowed: true };
 }

@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { canDeleteEnrollment, canDeletePayment, canDeleteUnusedRecord, canPermanentlyDeleteExpense } from "@/lib/deletion-policy";
 
 describe("safe deletion policy", () => {
-  it("requires expenses to be archived before permanent deletion", () => {
-    expect(canPermanentlyDeleteExpense({ archivedAt: null }).allowed).toBe(false);
-    expect(canPermanentlyDeleteExpense({ archivedAt: new Date() }).allowed).toBe(true);
+  it("allows eligible active or archived expenses but blocks closed shifts", () => {
+    expect(canPermanentlyDeleteExpense({ archivedAt: null, shift: { status: "OPEN" } }).allowed).toBe(true);
+    expect(canPermanentlyDeleteExpense({ archivedAt: new Date(), shift: { status: "REOPENED" } }).allowed).toBe(true);
+    expect(canPermanentlyDeleteExpense({ archivedAt: null, shift: { status: "CLOSED" } }).allowed).toBe(false);
   });
   it("never allows payment deletion", () => {
     expect(canDeletePayment()).toMatchObject({ allowed: false });

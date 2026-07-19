@@ -3,21 +3,20 @@ import Link from "next/link";
 import { archiveExpense, permanentlyDeleteExpense, restoreExpense } from "@/actions/expenses";
 import { AppShell, Pager, StatusBadge, DataTable, StatusTabs, getStatusFilter, type RecordStatusFilter } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
-import { isAdminOrHigher } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { expensePaymentMethods, formatExpenseAmount } from "@/lib/expenses";
 import { formatPaymentMethod } from "@/lib/payment-methods";
 import { formatDate } from "@/lib/records/format";
 import { getPagination } from "@/lib/records/pagination";
+import { RecordActions, recordActionClass } from "@/components/record-actions";
 
-type ExpenseSearchParams = { page?: string; dateFrom?: string; dateTo?: string; category?: string; paymentMethod?: string; status?: string };
+type ExpenseSearchParams = { page?: string; dateFrom?: string; dateTo?: string; category?: string; paymentMethod?: string; status?: string; success?: string; error?: string };
 
 export default async function ExpensesPage({ searchParams }: { searchParams: Promise<ExpenseSearchParams> }) {
   const params = await searchParams;
   const session = await requireSession();
   const { page, skip, take } = getPagination(params);
   const status = getStatusFilter(params.status);
-  const isAdmin = isAdminOrHigher(session.role);
   const where = { AND: [
     status === "archived" ? { archivedAt: { not: null } } : status === "all" ? {} : { archivedAt: null },
     params.category ? { category: { contains: params.category, mode: "insensitive" as const } } : {},
@@ -26,7 +25,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
     params.dateTo ? { expenseDate: { lte: new Date(params.dateTo) } } : {},
   ] };
   const [rows, total, categories] = await Promise.all([
-    prisma.expense.findMany({ where, include: { createdBy: true }, orderBy: { expenseDate: "desc" }, skip, take }),
+    prisma.expense.findMany({ where, include: { createdBy: true, shift: true }, orderBy: { expenseDate: "desc" }, skip, take }),
     prisma.expense.count({ where }),
     prisma.expense.findMany({ distinct: ["category"], orderBy: { category: "asc" }, select: { category: true } }),
   ]);
@@ -49,7 +48,13 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       <select name="status" className="rounded border p-2" defaultValue={params.status ?? "active"}><option value="active">Active</option><option value="archived">Archived / Inactive</option><option value="all">All</option></select>
       <button className="rounded bg-primary px-4 py-2 text-white">Apply filters</button>
     </form>
-    <DataTable><thead className="bg-muted"><tr><th className="p-3">Date</th><th>Category</th><th>Description</th><th>Method</th><th>Amount</th><th>Created by</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((expense) => <tr className="border-t" key={expense.id}><td className="p-3">{formatDate(expense.expenseDate)}</td><td className="font-medium">{expense.category}</td><td>{expense.description}</td><td>{formatPaymentMethod(expense.paymentMethod)}</td><td>{formatExpenseAmount(expense.amountCents)}</td><td>{expense.createdBy?.name ?? "—"}</td><td><StatusBadge status={expense.archivedAt ? "Archived" : "Active"} /></td><td className="flex gap-3 py-3"><Link className="text-primary" href={`/expenses/${expense.id}/edit`}>Edit</Link>{expense.archivedAt ? <><form action={restoreExpense}><input type="hidden" name="id" value={expense.id} /><ConfirmSubmitButton className="text-primary" message="Restore this expense?">Restore</ConfirmSubmitButton></form>{isAdmin ? <form action={permanentlyDeleteExpense} className="flex flex-wrap gap-1"><input type="hidden" name="id" value={expense.id} /><input name="confirmation" className="w-36 rounded border px-2 py-1 text-xs" placeholder="Exact confirmation" /><ConfirmSubmitButton className="text-red-700" message="Permanently delete this expense? This action cannot be undone.">Delete forever</ConfirmSubmitButton></form> : null}</> : <form action={archiveExpense}><input type="hidden" name="id" value={expense.id} /><ConfirmSubmitButton className="text-primary" message="Archive this record? This will hide it from active workflows.">Archive</ConfirmSubmitButton></form>}</td></tr>)}</tbody></DataTable>
+    {params.success ? <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800" role="status">{params.success}</div> : null}
+    {params.error ? <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-700" role="alert">{params.error}</div> : null}
+    <DataTable><thead className="bg-muted"><tr><th className="p-3">Date</th><th>Category</th><th>Description</th><th>Method</th><th>Amount</th><th>Created by</th><th>Shift</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((expense) => {
+      const shiftStatus = expense.shift?.status ?? "No shift";
+      const deleteMessage = `Delete expense?\n\nDate: ${formatDate(expense.expenseDate)}\nCategory: ${expense.category}\nDescription: ${expense.description}\nAmount: ${formatExpenseAmount(expense.amountCents)}\nPayment method: ${formatPaymentMethod(expense.paymentMethod)}\nCreator: ${expense.createdBy?.name ?? "—"}\nShift status: ${shiftStatus}\n\nType DELETE to confirm.`;
+      return <tr className="border-t" key={expense.id}><td className="p-3">{formatDate(expense.expenseDate)}</td><td className="font-medium">{expense.category}</td><td>{expense.description}</td><td>{formatPaymentMethod(expense.paymentMethod)}</td><td>{formatExpenseAmount(expense.amountCents)}</td><td>{expense.createdBy?.name ?? "—"}</td><td>{shiftStatus}</td><td><StatusBadge status={expense.archivedAt ? "Archived" : "Active"} /></td><td className="py-3"><RecordActions><Link className={recordActionClass.normal} href={`/expenses/${expense.id}/edit`}>Edit</Link>{expense.archivedAt ? <form action={restoreExpense}><input type="hidden" name="id" value={expense.id} /><ConfirmSubmitButton className={recordActionClass.normal} message="Restore this expense?">Restore</ConfirmSubmitButton></form> : <form action={archiveExpense}><input type="hidden" name="id" value={expense.id} /><ConfirmSubmitButton className={recordActionClass.archive} message="Archive this record? This will hide it from active workflows.">Archive</ConfirmSubmitButton></form>}<form action={permanentlyDeleteExpense} className="flex flex-wrap items-center gap-1"><input type="hidden" name="id" value={expense.id} /><input name="confirmation" className="w-24 rounded border px-2 py-1 text-xs" placeholder="DELETE" aria-label="Type DELETE to confirm" /><ConfirmSubmitButton className={recordActionClass.delete} message={deleteMessage}>Delete</ConfirmSubmitButton></form></RecordActions></td></tr>;
+    })}</tbody></DataTable>
     <Pager page={page} total={total} hrefFor={hrefFor} />
   </AppShell>;
 }
