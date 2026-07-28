@@ -16,7 +16,6 @@ import { createStudentWithCode } from "@/lib/students";
 import { createFamilyWithCode } from "@/lib/families";
 import { isNewPaymentMethod } from "@/lib/payment-methods";
 import { requireCurrentOpenShift } from "@/lib/shifts/service";
-import { buildStudentCreateData } from "@/lib/registration/independent-student";
 import { academicPricingUrl, isUniqueConstraintError, normalizeName } from "@/lib/academic-pricing";
 
 async function requireRecordsWrite() {
@@ -582,12 +581,35 @@ export async function registerStudentWorkflow(formData: FormData) {
         await tx.auditLog.create({ data: { action: "create", entity: "Family", entityId: family.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", legacyCreateFamilyFromStudent: true } } });
       }
 
+      if (!familyId) {
+        throw new Error("Every student must belong to a family.");
+      }
+      const resolvedFamilyId = familyId;
+
       for (const row of studentRows) {
-        if (!row.firstName || !row.lastName) throw new Error("Each added student needs a first and last name.");
-        const studentData = buildStudentCreateData({ firstName: row.firstName, lastName: row.lastName, email: row.email, phone: row.phone, dateOfBirth: row.dateOfBirth }, familyId);
-        const student = await createStudentWithCode(tx.student, studentData as any);
+        if (!row.firstName || !row.lastName) {
+          throw new Error("Each added student needs a first and last name.");
+        }
+
+        const studentData: Prisma.StudentCreateInput = {
+          firstName: row.firstName,
+          lastName: row.lastName,
+          email: row.email ?? null,
+          phone: row.phone ?? null,
+          dateOfBirth: row.dateOfBirth ?? null,
+          family: {
+            connect: {
+              id: resolvedFamilyId,
+            },
+          },
+        };
+
+        const student = await createStudentWithCode(
+          tx.student,
+          studentData,
+        );
         createdStudentIds.push(student.id);
-        await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId } } });
+        await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId: resolvedFamilyId } } });
       }
 
       if (!primaryStudentId) {
