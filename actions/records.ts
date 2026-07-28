@@ -12,7 +12,7 @@ import { dollarsToCents } from "@/lib/records/format";
 import { calculateProratedFeeCents } from "@/lib/enrollments/proration";
 import { minutesFromTime, roomSchema, scheduleSessionSchema, teacherAvailabilitySchema, timeWindowsOverlap } from "@/lib/schedule/validation";
 import { logServerError } from "@/lib/server-log";
-import { createStudentWithCode } from "@/lib/students";
+import { createStudentWithCode, type StudentCreateWithoutCode } from "@/lib/students";
 import { createFamilyWithCode } from "@/lib/families";
 import { isNewPaymentMethod } from "@/lib/payment-methods";
 import { requireCurrentOpenShift } from "@/lib/shifts/service";
@@ -67,9 +67,9 @@ export async function saveStudent(formData: FormData) {
   await requireRecordsWrite();
   const parsed = studentSchema.parse(Object.fromEntries(formData));
   const { id: studentId, familyId, ...studentData } = parsed;
-  const data = { ...studentData, family: { connect: { id: familyId } } };
+  const data: StudentCreateWithoutCode = { ...studentData, family: { connect: { id: familyId } } };
   try {
-    const row = studentId ? await prisma.student.update({ where: { id: studentId }, data: data as any }) : await createStudentWithCode(prisma.student, data as any);
+    const row = studentId ? await prisma.student.update({ where: { id: studentId }, data }) : await createStudentWithCode(prisma.student, data);
     await audit(studentId ? "update" : "create", "Student", row.id, data);
     revalidatePath("/students");
   } catch (error) {
@@ -587,12 +587,21 @@ export async function registerStudentWorkflow(formData: FormData) {
         familyId = existing.familyId;
       }
       if (!familyId) throw new Error("Every student must belong to a family.");
+      const resolvedFamilyId = familyId;
 
       for (const row of studentRows) {
         if (!row.firstName || !row.lastName) throw new Error("Each added student needs a first and last name.");
-        const student = await createStudentWithCode(tx.student, studentData as any);
+        const studentData: StudentCreateWithoutCode = {
+          firstName: row.firstName,
+          lastName: row.lastName,
+          email: row.email ?? null,
+          phone: row.phone ?? null,
+          dateOfBirth: row.dateOfBirth ?? null,
+          family: { connect: { id: resolvedFamilyId } },
+        };
+        const student = await createStudentWithCode(tx.student, studentData);
         createdStudentIds.push(student.id);
-        await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId } } });
+        await tx.auditLog.create({ data: { action: "create", entity: "Student", entityId: student.id, createdById, actorId: session.userId, metadata: { source: "registration_workflow", familyId: resolvedFamilyId } } });
       }
 
       if (!primaryStudentId) {

@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 type StudentDelegate = Prisma.TransactionClient["student"] | PrismaClient["student"];
+export type StudentCreateWithoutCode = Omit<Prisma.StudentCreateInput, "studentCode">;
 
 export function formatStudentLabel(student: { studentCode: string; firstName: string; lastName: string }) {
   return `${student.studentCode} — ${student.firstName} ${student.lastName}`;
@@ -18,11 +19,12 @@ export async function generateStudentCode(student: StudentDelegate, createdAt = 
   return `${prefix}${String(Number.isFinite(next) ? next : 1).padStart(6, "0")}`;
 }
 
-export async function createStudentWithCode(student: StudentDelegate, data: Prisma.StudentCreateInput) {
+export async function createStudentWithCode(student: StudentDelegate, data: StudentCreateWithoutCode) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const studentCode = await generateStudentCode(student);
     try {
-      return await student.create({ data: { ...data, studentCode } });
+      const createData: Prisma.StudentCreateInput = { ...data, studentCode };
+      return await student.create({ data: createData });
     } catch (error) {
       if (!(error instanceof Error) || !error.message.includes("student_code")) throw error;
     }
