@@ -72,7 +72,7 @@ function matchingItemWhere(filters: ReportFilters) {
 export async function getRevenueReport(filters: ReportFilters) {
   const rows = await prisma.payment.findMany({
     where: { AND: [dateRange("paymentDate", filters), { voidedAt: null }, filters.familyId ? { familyId: filters.familyId } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}, { items: { some: matchingItemWhere(filters) } }] },
-    include: { family: true, student: true, items: { where: matchingItemWhere(filters), include: { enrollment: { include: { season: true, student: true, course: true, level: true, teacher: true } } } } },
+    include: { family: true, items: { where: matchingItemWhere(filters), include: { enrollment: { include: { season: true, course: true, level: true, teacher: true } } } } },
     orderBy: { paymentDate: "desc" },
   });
   const totalCents = rows.reduce((sum, payment) => sum + payment.items.reduce((itemSum, item) => itemSum + item.amountCents, 0), 0);
@@ -195,7 +195,7 @@ export async function loadReport(reportKind: LoadReportKind, filters: ReportFilt
     const where = { AND: [dateRange("paymentDate", filters), { voidedAt: null }, filters.familyId ? { familyId: filters.familyId } : {}, filters.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}, { items: { some: matchingItemWhere(filters) } }] };
     const totalRows = await prisma.payment.count({ where });
     const total = await prisma.payment.aggregate({ where, _sum: { totalAmountCents: true } });
-    const rows = await prisma.payment.findMany({ where, select: { id: true, paymentDate: true, paymentMethod: true, receiptNumber: true, totalAmountCents: true, family: { select: { familyCode: true, name: true } }, student: { select: { studentCode: true, firstName: true, lastName: true } }, items: { where: matchingItemWhere(filters), select: { amountCents: true, enrollment: { select: { courseName: true, season: { select: { name: true } }, course: { select: { name: true } } } } } } }, orderBy: { paymentDate: "desc" }, skip: pagination.skip, take: pagination.take });
+    const rows = await prisma.payment.findMany({ where, select: { id: true, paymentDate: true, paymentMethod: true, receiptNumber: true, totalAmountCents: true, family: { select: { familyCode: true, name: true } }, items: { where: matchingItemWhere(filters), select: { amountCents: true, enrollment: { select: { courseName: true, season: { select: { name: true } }, course: { select: { name: true } } } } } } }, orderBy: { paymentDate: "desc" }, skip: pagination.skip, take: pagination.take });
     return pageResult(rows.map((r) => ({ ...r, reportAmountCents: r.items.reduce((sum, i) => sum + i.amountCents, 0) || r.totalAmountCents })), totalRows, { totalCents: total._sum.totalAmountCents ?? 0 });
   }
   if (reportKind === "outstanding") {

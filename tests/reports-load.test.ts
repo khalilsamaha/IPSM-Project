@@ -23,6 +23,6 @@ describe("reports production loading", () => {
     expect(page).toContain('"No season"');
     expect(page).toContain('"No activity"');
     expect(page).toContain('"Unassigned"');
-    expect(page).toContain('"Independent"');
+    expect(page).not.toContain('"Independent"');
   });
 });

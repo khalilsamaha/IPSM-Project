@@ -103,3 +103,14 @@ Expense ledger with category, description, amount, `expense_date`, `payment_meth
 - `payment_items(payment_id)` and `payment_items(enrollment_id)` for allocation lookups.
 - `enrollments(status)` and `enrollments(status, archived_at)` for receivables and roster reports.
 - `expenses(expense_date)` and `expenses(expense_date, archived_at)` for expense reporting.
+
+## Family-only migration and recurring schedules
+
+The deployment migration first verifies referential integrity, creates one collision-safe `FAM-YYYY-NNNNNN` family for each legacy independent student, copies useful contact data, reassigns every direct payment without changing payment IDs or receipt numbers, and asserts allocation ownership. Only then does it apply `NOT NULL` and `ON DELETE RESTRICT` to student/payment family keys and remove `payments.student_id`.
+
+```text
+Family -> Students -> Enrollments -> SchedulePattern -> ScheduleSessions
+       -> Payments -> PaymentItems -> Receipts
+```
+
+`school_closures` and `schedule_patterns` have RLS enabled and no anonymous policies. Application access remains authenticated and server-side.

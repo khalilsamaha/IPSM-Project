@@ -1,0 +1,7 @@
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || "Asia/Beirut";
+export function formatDateShort(value:Date|string){return new Intl.DateTimeFormat("en-GB",{timeZone:APP_TIME_ZONE,day:"2-digit",month:"2-digit",year:"2-digit"}).format(typeof value==="string"?new Date(value):value)}
+export function formatDateTimeShort(value:Date|string){return `${formatDateShort(value)} ${new Intl.DateTimeFormat("en-GB",{timeZone:APP_TIME_ZONE,hour:"2-digit",minute:"2-digit",hour12:false}).format(typeof value==="string"?new Date(value):value)}`}
+export function formatTime24(value:Date|string){return new Intl.DateTimeFormat("en-GB",{timeZone:APP_TIME_ZONE,hour:"2-digit",minute:"2-digit",hour12:false}).format(typeof value==="string"?new Date(value):value)}
+export function formatDateForInput(value:Date|string){const d=typeof value==="string"?new Date(value):value;return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`}
+export function parseDisplayDate(value:string){const m=/^(\d{2})\/(\d{2})\/(\d{2})$/.exec(value.trim());if(!m)throw new Error("Enter a valid date in dd/mm/yy format.");const year=2000+Number(m[3]),month=Number(m[2]),day=Number(m[1]);const d=new Date(Date.UTC(year,month-1,day));if(d.getUTCFullYear()!==year||d.getUTCMonth()!==month-1||d.getUTCDate()!==day)throw new Error("Enter a valid calendar date.");return formatDateForInput(d)}
+export {APP_TIME_ZONE};

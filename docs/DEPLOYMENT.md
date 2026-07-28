@@ -151,3 +151,6 @@ Migration `20260703000000_optional_student_family_workflow.sql` makes `students.
 ## Phase 10 pre-deployment gates
 
 Run `npm run typecheck`, `npm test`, and `npm run build` before promoting a release. After deployment, sign in as Admin and Reception to verify route authorization and review `/admin/diagnostics` for data-integrity warnings.
+
+
+> The 20260728 family-only migration supersedes the earlier nullable-family migration. Follow `DEPLOYMENT_FAMILY_ONLY.md`; do not deploy the nullable workflow application afterward.

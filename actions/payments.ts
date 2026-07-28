@@ -1,52 +1,20 @@
 "use server";
-
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { createPaymentWithAllocations } from "@/lib/payments/payment-service";
 import { dollarsToCents } from "@/lib/records/format";
-import { logServerError } from "@/lib/server-log";
 import { isNewPaymentMethod } from "@/lib/payment-methods";
 import { requireCurrentOpenShift } from "@/lib/shifts/service";
-
-function paymentErrorRedirect(payerType: string, payerId: string | null, message: string): never {
-  const params = new URLSearchParams();
-  params.set("payerType", payerType);
-  if (payerType === "student" && payerId) params.set("studentId", payerId);
-  if (payerType !== "student" && payerId) params.set("familyId", payerId);
-  params.set("error", message);
-  redirect(`/payments/new?${params.toString()}`);
-}
-
-async function getPaymentActor() {
-  const session = await requireSession();
-  if (!hasPermission(session.role, "records:write")) throw new Error("Not authorized");
-  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
-  return { session, createdById: user?.id };
-}
-
 export async function createPayment(formData: FormData) {
-  const { session, createdById } = await getPaymentActor();
-  const payerType = String(formData.get("payerType") ?? "family") === "student" ? "student" : "family";
-  const familyId = payerType === "family" ? String(formData.get("familyId") ?? "") : "";
-  const studentId = payerType === "student" ? String(formData.get("studentId") ?? "") : "";
-  const payerId = payerType === "student" ? studentId : familyId;
-  const paymentMethod = String(formData.get("paymentMethod") ?? "cash");
-  if (!isNewPaymentMethod(paymentMethod)) paymentErrorRedirect(payerType, payerId || null, "Choose Cash or Whish for new payments.");
-  const notes = String(formData.get("notes") ?? "").trim() || null;
-  if (!payerId) paymentErrorRedirect(payerType, null, payerType === "student" ? "Select an independent student before creating a payment." : "Select a family before creating a payment.");
-
-  const allocations = Array.from(formData.entries()).filter(([key]) => key.startsWith("allocation:")).map(([key, amount]) => ({ enrollmentId: key.replace("allocation:", ""), amountCents: dollarsToCents(String(amount)) })).filter((a) => a.amountCents > 0);
-  let paymentId: string;
-  try {
-    if (!createdById) throw new Error("User profile not found.");
-    const shift = await requireCurrentOpenShift(prisma, createdById);
-    const payment = await createPaymentWithAllocations(prisma, { familyId: familyId || null, studentId: studentId || null, paymentDate: new Date(), paymentMethod, notes, createdById, actorId: session.userId, shiftId: shift.id, allocations });
-    paymentId = payment.id;
-  } catch (error) {
-    logServerError("payment.create", error, { familyId, studentId });
-    paymentErrorRedirect(payerType, payerId, "Unable to create payment. Please check the payment details and try again.");
-  }
-  redirect(`/payments/${paymentId}?success=created`);
+ const session=await requireSession(); if(!hasPermission(session.role,"records:write")) throw new Error("Not authorized");
+ const familyId=String(formData.get("familyId")??""); if(!familyId) redirect("/payments/new?error=Select%20a%20family.");
+ const method=String(formData.get("paymentMethod")??"cash"); if(!isNewPaymentMethod(method)) throw new Error("Choose Cash or Whish.");
+ const user=await prisma.userProfile.findUnique({where:{authId:session.userId},select:{id:true}}); if(!user) throw new Error("User profile not found.");
+ const shift=await requireCurrentOpenShift(prisma,user.id);
+ const allocations=Array.from(formData.entries()).filter(([k])=>k.startsWith("allocation:")).map(([k,v])=>({enrollmentId:k.slice(11),amountCents:dollarsToCents(String(v))})).filter(x=>x.amountCents>0);
+ let paymentId: string;
+ try { const payment=await createPaymentWithAllocations(prisma,{familyId,paymentDate:new Date(),paymentMethod:method,notes:String(formData.get("notes")??"").trim()||null,createdById:user.id,actorId:session.userId,shiftId:shift.id,allocations}); paymentId=payment.id; } catch (error) { redirect(`/payments/new?familyId=${familyId}&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to create payment.")}`); }
+ redirect(`/payments/${paymentId}?success=created`);
 }
