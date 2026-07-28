@@ -25,7 +25,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
     <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div>
         <h2 className="text-2xl font-bold">Students</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Search, filter, archive, and restore student records. Use Register Student for new independent students or Family / Group registrations.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Search, filter, archive, and restore student records. Use Register Student for new family-based registrations.</p>
       </div>
       <Link className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm" href="/register-student">Register Student</Link>
     </div>

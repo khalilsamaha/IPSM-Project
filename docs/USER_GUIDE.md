@@ -47,7 +47,7 @@ A family can have one or more students.
 Recommended workflow:
 
 1. Use **Register Student** when creating a new student registration.
-2. Choose **New independent student**, **New family / group**, **Existing family / group**, or **Existing student, new enrollment**.
+2. Choose **New family**, **New family / group**, **Existing family / group**, or **Existing student, new enrollment**.
 3. Add one or more students when the registration belongs to a Family / Group, or select the existing student when only a new enrollment is needed.
 4. Create the primary student enrollment, optional Initial Payment, and optional Book First Lesson in the guided flow.
 5. Record later payments against the Family / Group when applicable.
@@ -360,14 +360,14 @@ Potential future improvements include:
 
 Use **Register Student** for the preferred front-desk creation workflow. It supports four explicit registration types:
 
-- **New independent student**: creates one student without a Family / Group unless payment compatibility requires a payer record.
+- **New family**: creates one student under a Family / Group unless payment compatibility requires a payer record.
 - **New family / group with one or more students**: creates the Family / Group, creates one or more students under it, and enrolls the selected primary student.
 - **Existing family / group, add student**: selects an existing Family / Group, creates one or more new students under it, and enrolls the selected primary student.
 - **Existing student, new enrollment**: selects an existing student and creates a new season/course enrollment without editing the student profile.
 
 The workflow creates one enrollment for the selected primary student, can collect an Initial Payment, and can Book First Lesson.
 
-Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an independent student only when collecting an initial payment. Initial payments continue through existing allocation and receipt behavior. First Lesson booking continues through existing schedule validation, including double-booking checks.
+Students do not require a Family / Group unless the school wants a household payer record or multiple students should be grouped together. Payments still use Family / Group as the payer in this phase, so the guided workflow can create a lightweight payer group for an student with a family only when collecting an initial payment. Initial payments continue through existing allocation and receipt behavior. First Lesson booking continues through existing schedule validation, including double-booking checks.
 
 Use **Lessons / Calendar** to book lessons from day, week, teacher, student, or list views. Filters are available for teacher, student, course, season, status, and date.
 
@@ -391,7 +391,7 @@ Every student has a generated Student ID in the format `STU-YYYY-000001`. The ID
 
 ### Independent student
 
-An independent student is a student record with no Family / Group attached. Use **Register Student → New independent student** to create one student, continue to enrollment, optionally take an initial payment, and optionally book a first lesson. Because payments remain family-based in this phase, the system may create a lightweight payer Family / Group only when an initial payment is required.
+An student with a family is a student record with no Family / Group attached. Use **Register Student → New family** to create one student, continue to enrollment, optionally take an initial payment, and optionally book a first lesson. Because payments remain family-based in this phase, the system may create a lightweight payer Family / Group only when an initial payment is required.
 
 ### Family / Group and parent details
 
@@ -401,7 +401,7 @@ A Family / Group can represent a household, sibling group, company group, or oth
 
 Register Student supports four clear paths:
 
-1. **New independent student** — creates one student without a Family / Group and then creates the enrollment for that student.
+1. **New family** — creates one student under a Family / Group and then creates the enrollment for that student.
 2. **New family / group with one or more students** — creates the Family / Group with parent details, creates one or more students under it, and creates the enrollment for the selected primary student.
 3. **Existing family / group, add student** — selects an existing Family / Group, creates one or more students under it, and creates the enrollment for the selected primary student.
 4. **Existing student, new enrollment** — selects an existing student and creates a new enrollment without implying profile editing.
@@ -428,7 +428,7 @@ The Create Payment screen keeps payments family-based. Staff first search for th
 
 For each enrollment, staff can review Student ID, student name, season, course, level, amount due, paid amount, and remaining balance. A season summary highlights unpaid balances across current and previous seasons, and the Total outstanding line shows the full selected-family balance before allocations are entered.
 
-Independent students without a Family / Group are not hidden or silently paid under the wrong payer. Because payment records still require a family payer, assign or create a Family / Group payer before collecting payment for an independent student. The payment form displays this behavior so front-desk staff know why an independent student may not appear in the payer selector.
+Students under a Family / Group are not hidden or silently paid under the wrong payer. Because payment records still require a family payer, assign or create a Family / Group payer before collecting payment for an student with a family. The payment form displays this behavior so front-desk staff know why an student with a family may not appear in the payer selector.
 
 The Payments page now supports filters for Family / Group, Student name, Student ID, receipt number, season, payment method, status, and date range. The payment table includes receipt number, Family / Group, student(s), season(s), payment date, method, allocation count/amount, total, status, and actions to view, download the receipt, prepare an email receipt, and access admin-only voiding through the payment detail screen.
 
@@ -469,7 +469,7 @@ The final stabilized workflow keeps daily Reception work on Dashboard, Register 
 
 ## Hotfix: safe deletes, edit pages, and independent payments
 
-- Independent students are students without a Family / Group assignment. They can now pay as the direct payer during registration or from **Payments → Create payment** by choosing **Independent Student**; this does not create or attach a compatibility family.
+- Students are students under a Family / Group assignment. They can now pay as the direct payer during registration or from **Payments → Create payment** by choosing **Family**; this does not create or attach a compatibility family.
 - Family / Group payments continue to use the Family / Group payer and may allocate payments across the family’s students.
 - Existing records can be edited from **Students → View/Edit** (`/students/[id]`) and **Families / Groups → View/Edit** (`/families/[id]`). Register Student remains the creation and registration workflow.
 - Permanent deletes are intentionally restricted. Unused seasons can be deleted only when they have no enrollments, schedules, prices, or payments. Archived academic configuration records can be restored or deleted only when dependency checks allow it.

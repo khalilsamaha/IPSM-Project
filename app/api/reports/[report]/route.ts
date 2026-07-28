@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   let rows: unknown[][] = [];
   if (report === "revenue") {
     const data = await getRevenueReport(filters);
-    rows = data.rows.map((row) => [formatDate(row.paymentDate), row.family ? `${row.family.familyCode} — ${row.family.name}` : (row.student ? `${row.student.studentCode} — ${row.student.firstName} ${row.student.lastName}` : "Independent Student"), formatPaymentMethod(row.paymentMethod), row.receiptNumber ?? "", Array.from(new Set(row.items.map((item) => item.enrollment?.season?.name ?? "No season"))).join("; "), Array.from(new Set(row.items.map((item) => item.enrollment?.course?.name ?? item.enrollment?.courseName ?? "No activity"))).join("; "), row.reportAmountCents]);
+    rows = data.rows.map((row) => [formatDate(row.paymentDate), `${row.family.familyCode} — ${row.family.name}`, formatPaymentMethod(row.paymentMethod), row.receiptNumber ?? "", Array.from(new Set(row.items.map((item) => item.enrollment?.season?.name ?? "No season"))).join("; "), Array.from(new Set(row.items.map((item) => item.enrollment?.course?.name ?? item.enrollment?.courseName ?? "No activity"))).join("; "), row.reportAmountCents]);
   } else if (report === "outstanding") {
     const data = await getOutstandingReport(filters);
     rows = data.rows.map((row) => [row.student?.family ? `${row.student.family.familyCode} — ${row.student.family.name}` : "Independent", row.student?.studentCode ?? "—", `${row.student?.firstName ?? "Unknown"} ${row.student?.lastName ?? "student"}`, row.season?.name ?? "Unknown season", row.course?.name ?? row.courseName ?? "No activity", row.level?.name ?? "—", row.teacher?.fullName ?? "Unassigned", row.remainingCents]);

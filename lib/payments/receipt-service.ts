@@ -9,8 +9,7 @@ type ReceiptPayment = {
   paymentDate: Date;
   paymentMethod: string;
   totalAmountCents: number;
-  family: { familyCode?: string | null; name: string; email: string | null; phone: string | null; fatherPhone?: string | null; motherPhone?: string | null; fatherEmail?: string | null; motherEmail?: string | null } | null;
-  student?: { studentCode: string; firstName: string; lastName: string; email: string | null; phone: string | null } | null;
+  family: { familyCode?: string | null; name: string; email: string | null; phone: string | null; fatherPhone?: string | null; motherPhone?: string | null; fatherEmail?: string | null; motherEmail?: string | null; fatherFirstName?: string | null; fatherLastName?: string | null; motherFirstName?: string | null; motherLastName?: string | null; students?: {studentCode:string; firstName:string; lastName:string}[] };
   createdBy?: { name?: string | null; email: string } | null;
   items: {
     amountCents: number;
@@ -111,14 +110,16 @@ function addDashedLine(commands: string[], x1: number, y: number, x2: number) { 
 
 function receiptFacts(payment: ReceiptPayment) {
   const receiptYear = payment.receiptNumber?.match(/RCPT-(\d{4})-/)?.[1] ?? String(payment.paymentDate.getUTCFullYear());
-  const students = unique(payment.items.map((item) => `${item.enrollment.student.firstName} ${item.enrollment.student.lastName}`));
-  const studentIds = unique(payment.items.map((item) => item.enrollment.student.studentCode));
+  const students = unique((payment.family.students ?? []).map((student) => `${student.studentCode} - ${student.firstName} ${student.lastName}`));
+  const studentIds = unique((payment.family.students ?? []).map((student) => student.studentCode));
   const seasons = unique(payment.items.map((item) => item.enrollment.season.name));
   const courses = unique(payment.items.map((item) => `${item.enrollment.course?.name ?? item.enrollment.courseName}${item.enrollment.level?.name ? ` / ${item.enrollment.level.name}` : ""}`));
   const levels = unique(payment.items.map((item) => item.enrollment.level?.name));
   const remainingBalance = payment.items.reduce((sum, item) => sum + item.enrollment.remainingCents, 0);
-  const payerName = payment.family?.name ?? (payment.student ? `${payment.student.studentCode} - ${payment.student.firstName} ${payment.student.lastName}` : "Independent Student");
-  const contact = payment.family ? unique([payment.family.phone, payment.family.email, payment.family.fatherPhone, payment.family.motherPhone, payment.family.fatherEmail, payment.family.motherEmail]).join(" / ") || "Not available" : unique([payment.student?.phone, payment.student?.email]).join(" / ") || "Not available";
+  const father = [payment.family.fatherFirstName, payment.family.fatherLastName].filter(Boolean).join(" ").trim();
+  const mother = [payment.family.motherFirstName, payment.family.motherLastName].filter(Boolean).join(" ").trim();
+  const payerName = father || mother || payment.family.name;
+  const contact = unique([payment.family.phone, payment.family.email, payment.family.fatherPhone, payment.family.motherPhone, payment.family.fatherEmail, payment.family.motherEmail]).join(" / ") || "Not available";
   const receivedBy = payment.createdBy?.name ?? payment.createdBy?.email ?? "IPSM Staff";
   return { receiptYear, students, studentIds, seasons, courses, levels, remainingBalance, payerName, contact, receivedBy };
 }
@@ -142,8 +143,8 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
 
     let y = 522;
     const fields: [string, string][] = [
-      ["Family code", payment.family?.familyCode ?? "-"], ["Student code(s)", facts.studentIds.join(", ") || "-"],
-      ["Student name(s)", facts.students.join(", ") || "-"], ["Family/group", facts.payerName],
+      ["Received from", facts.payerName], ["Family code", payment.family.familyCode ?? "-"],
+      ["Family members", facts.students.join(", ") || "-"], ["Family name", payment.family.name],
       ["Season", facts.seasons.join(", ") || "-"], ["Course/instrument", facts.courses.join(", ") || "-"],
       ["Level", facts.levels.join(", ") || "-"], ["Payment method", formatPaymentMethod(payment.paymentMethod)],
       ["Contact", facts.contact],

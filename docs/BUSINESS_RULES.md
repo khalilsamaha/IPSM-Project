@@ -31,3 +31,9 @@
 - Financial records should be voided or reversed rather than hard-deleted.
 - Soft-deleted or inactive operational records must remain available to financial reporting.
 - Payment totals and allocation totals should be validated so overpayment and stale balances are not silently introduced.
+
+## Family-only operations (2026 overhaul)
+
+Every student belongs to exactly one family; a family may contain only one student. Payments are family-level only and every payment, including an initial registration payment, requires the operator's open cashier shift. An enrollment is the academic and financial registration of one student for one activity and season—not a lesson. Lessons are booked under an enrollment or generated from an active weekly schedule pattern; closures and booking conflicts are skipped or rejected.
+
+Completed lessons are payable by default. Scheduled and cancelled lessons are not payable; missed lessons require explicit approval. Used and financial records are archived, cancelled, or voided rather than hard-deleted. Courses and levels are global reusable records: global prices apply normally and an exact season override takes precedence.
