@@ -240,3 +240,27 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] Scheduled lessons block generation; completed and explicitly approved missed lessons calculate from the rate snapshot.
 - [ ] Same/partial/contained overlap is blocked; adjacent periods and different teachers are permitted.
 - [ ] Month/year/teacher/status filters, cards, rollup/grand totals, CSV, and print totals agree.
+
+## PR 74 administration completion
+
+### Academic pricing and assignments
+- [ ] In Global defaults, edit several matrix cells and verify they save together; enter one invalid negative value and verify no cells change.
+- [ ] Select a season and verify blue overrides win, amber inherited defaults remain read-only until edited, archived prices are ignored, and missing exact pairs never borrow another course or level.
+- [ ] Remove a season override and verify registration returns to the exact global pair; verify a genuinely missing pair displays the administrator setup warning.
+- [ ] Preview copying global/another season and reconcile create, update, preserved override, and missing-source counts before confirming overwrite.
+- [ ] Assign multiple teachers to one course using All levels, then selected levels; verify duplicates are preserved rather than duplicated.
+- [ ] Archive assignments in bulk and verify registration accepts active exact and All levels rows but excludes archived rows.
+
+### Receipt sharing
+- [ ] On a file-share capable device, click Share receipt and verify the authenticated A5 PDF is offered; cancel and verify cancellation is not described as delivery.
+- [ ] In a browser without file sharing, verify the PDF downloads and generic WhatsApp opens with URL-encoded receipt, family, amount, and truthful manual-attachment instructions.
+- [ ] Block popups, expire authentication, and use a missing payment; verify friendly status text in every case.
+- [ ] Verify `receipt_share_initiated` records method, actor, payment ID and receipt number; only WhatsApp initiation updates `sharedByWhatsappAt`.
+
+### Localized dates and safety
+- [ ] Enter `29/02/28` and verify ISO `2028-02-29` is submitted; reject `29/02/25`, `31/02/26`, invalid months, and non-padded input.
+- [ ] Verify years `00–69` mean 2000–2069 and `70–99` mean 1970–1999; clearing an optional date submits empty.
+- [ ] Audit Families, Students, Teachers, Enrollments, Registration, Payments/Receipts, Expenses/Shifts, Schedule/closures/availability, Attendance, Payroll, Reports, Activity and Settings for `dd/mm/yy`, `dd/mm/yy HH:mm`, and `HH:mm` display.
+- [ ] For every entity in `DELETION_POLICY.md`, test authorized/unauthorized archive, restore and safe delete plus dependency-blocked audit metadata. Type `VOID`, `DELETE`, or `CANCEL` where prompted.
+- [ ] Confirm payments only void with allocation reversal, paid payroll is immutable, closed-shift transactions are protected, receipts remain attached, and users deactivate without losing audit ownership.
+- [ ] Run the deterministic seed on a clean database and reconcile family rosters, multi-student allocations, global/override prices, generated lesson statuses, closure, and draft/approved/paid payroll without duplicate sessions.

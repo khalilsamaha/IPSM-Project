@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/records/format";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-time";
 import { calculateFamilyFinancialSummary } from "@/lib/family-financial-summary";
+import { ShareReceiptButton } from "@/components/share-receipt-button";
 
 const methodLabels: Record<string, string> = { cash: "Cash", card: "Card", check: "Check", ach: "Bank Transfer" };
 function receiptMailto(payment: { receiptNumber: string | null; paymentDate: Date; totalAmountCents: number; family: { name: string; email: string | null } }) {
@@ -53,6 +54,7 @@ export default async function PaymentDetailPage({
         <div className="flex flex-wrap gap-2">
           <Link className="rounded border px-4 py-2" href="/payments">Back to payments</Link>
           <a className="rounded bg-primary px-4 py-2 text-white" href={`/api/receipts/${payment.id}?layout=a5`}>Download A5</a><a className="rounded border px-4 py-2" href={`/api/receipts/${payment.id}?layout=a4-two-copies`}>Print two copies</a><a className="rounded border px-4 py-2" href={`/api/receipts/${payment.id}?layout=a5&reprint=1`}>Reprint receipt</a>{family.email ? <a className="rounded border px-4 py-2" href={receiptMailto({ ...payment, family })}>Send receipt by email</a> : <span className="rounded border px-4 py-2 text-sm text-muted-foreground">No payer email on file</span>}
+          {payment.receiptNumber?<ShareReceiptButton paymentId={payment.id} receiptNumber={payment.receiptNumber} familyName={family.name} amount={formatCurrency(payment.totalAmountCents)}/>:null}
         </div>
       </div>
 

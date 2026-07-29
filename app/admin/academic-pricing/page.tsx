@@ -7,6 +7,7 @@ import { requireSession } from "@/lib/auth/session";
 import { isAdminOrHigher } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/records/format";
+import { PricingMatrix } from "./pricing-matrix";
 
 type Props = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
@@ -29,6 +30,7 @@ export default async function AcademicPricingPage({ searchParams }: Props) {
   const editLevelId = stringParam(params, "editLevelId");
   const error = stringParam(params, "error");
   const success = stringParam(params, "success");
+  const selectedSeasonId = stringParam(params, "seasonId") || null;
 
   const [courses, levels, seasons, pricings] = await Promise.all([
     prisma.course.findMany({ orderBy: [{ status: "asc" }, { name: "asc" }] }),
@@ -59,6 +61,9 @@ export default async function AcademicPricingPage({ searchParams }: Props) {
 
       <section className="card mb-6">
         <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-center md:justify-between"><div><h3 className="text-xl font-bold">Course Pricing Matrix</h3><p className="text-sm text-muted-foreground">Set a default course/level price, or choose a season for season-specific pricing.</p></div>{editPrice ? <Link className="text-sm font-bold text-primary" href="/admin/academic-pricing">Cancel price edit</Link> : null}</div>
+        <form className="mb-4 flex items-end gap-3"><label className="text-sm font-bold">Price set<select name="seasonId" defaultValue={selectedSeasonId??""} className="input mt-1 block"><option value="">Global defaults</option>{seasons.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label><button className="btn-secondary">View matrix</button></form>
+        <PricingMatrix courses={courses} levels={levels} prices={pricings.map(p=>({id:p.id,courseId:p.courseId,levelId:p.levelId,seasonId:p.seasonId,priceCents:p.priceCents,status:p.status}))} seasonId={selectedSeasonId}/>
+        <details className="mt-6"><summary className="cursor-pointer font-bold">Single-price editor and archive/restore actions</summary><div className="mt-4">
         <form action={saveCoursePricing} className="mb-5 grid gap-3 md:grid-cols-6">
           {editPrice ? <input type="hidden" name="id" value={editPrice.id} /> : null}
           <select name="courseId" required className="input" defaultValue={editPrice?.courseId ?? ""}><option value="">Course</option>{(editPrice && editPrice.course.status !== "ACTIVE" ? [editPrice.course, ...activeCourses.filter((course) => course.id !== editPrice.courseId)] : activeCourses).map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}</select>
@@ -69,6 +74,7 @@ export default async function AcademicPricingPage({ searchParams }: Props) {
           <button className="btn-primary">{editPrice ? "Update price" : "Add price"}</button>
         </form>
         <DataTable><thead><tr><th className="p-3">Course</th><th>Level</th><th>Season</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>{pricings.map((pricing) => <tr className="border-t" key={pricing.id}><td className="p-3 font-bold">{pricing.course.name}</td><td>{pricing.level.name}</td><td>{pricing.season?.name ?? "All seasons"}</td><td>{formatCurrency(pricing.priceCents)}</td><td><StatusBadge status={pricing.status}/></td><td className="flex flex-wrap gap-3"><Link className="text-primary" href={`/admin/academic-pricing?editPriceId=${pricing.id}`}>Edit</Link>{pricing.status !== "ARCHIVED" ? <form action={archiveCoursePricing}><input type="hidden" name="id" value={pricing.id}/><ConfirmSubmitButton className="text-red-700" message="Archive this price?">Archive</ConfirmSubmitButton></form> : <><form action={restoreCoursePricing}><input type="hidden" name="id" value={pricing.id}/><ConfirmSubmitButton className="text-primary" message="Restore this archived price?">Restore</ConfirmSubmitButton></form><form action={deleteCoursePricing}><input type="hidden" name="id" value={pricing.id}/><ConfirmSubmitButton className="text-red-700" message="Permanently delete this archived price? Prefer Archive for historical configuration.">Delete</ConfirmSubmitButton></form></>}</td></tr>)}</tbody></DataTable>
+        </div></details>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-2">

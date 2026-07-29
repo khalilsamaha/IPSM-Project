@@ -542,3 +542,6 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 2. Review the visible lessons, choose **Mark all scheduled as completed**, confirm, and then change only missed or cancelled exceptions. Cancellation requires a reason.
 3. Resolve every Scheduled lesson before generating payroll. Payroll includes completed lessons; cancelled/scheduled lessons are unpaid; missed lessons require explicit pay approval.
 4. Under **Payroll**, filter the business month to review totals and teacher rollups, export CSV, or print. Overlapping payroll periods are prohibited. Approved and paid payroll-linked attendance cannot be changed.
+# Administration updates (PR 74)
+
+Administrators can edit course/level prices as a matrix and manage multi-teacher assignments from the Administration area. Receipt pages provide a user-initiated **Share receipt** action with native PDF sharing where supported and an honest download-plus-WhatsApp fallback. School dates are entered as `dd/mm/yy`; the application stores an ISO date without browser-dependent parsing.
