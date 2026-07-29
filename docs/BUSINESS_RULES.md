@@ -37,3 +37,10 @@
 Every student belongs to exactly one family; a family may contain only one student. Payments are family-level only and every payment, including an initial registration payment, requires the operator's open cashier shift. An enrollment is the academic and financial registration of one student for one activity and season—not a lesson. Lessons are booked under an enrollment or generated from an active weekly schedule pattern; closures and booking conflicts are skipped or rejected.
 
 Completed lessons are payable by default. Scheduled and cancelled lessons are not payable; missed lessons require explicit approval. Used and financial records are archived, cancelled, or voided rather than hard-deleted. Courses and levels are global reusable records: global prices apply normally and an exact season override takes precedence.
+
+## Attendance and payroll finalization
+
+- Lesson attendance is represented by `ScheduleSession.status`: completed is payable, scheduled/cancelled are not, and missed is payable only with explicit payroll approval.
+- Administrators finalize the day in bulk and edit exceptions; each bulk operation is authorized, transactional, payroll-lock-aware, and audited.
+- Unfinalized scheduled lessons block payroll generation. Non-cancelled payroll periods for the same teacher must not overlap.
+- Draft payroll reserves its lessons. Approved payroll locks attendance and amounts. Paid payroll is immutable and cannot be cancelled or rewritten; corrections must be additive rather than changing paid history.
