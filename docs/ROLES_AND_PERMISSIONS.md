@@ -70,3 +70,6 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 ### Attendance and payroll
 
 Only `ADMIN` and `SUPER_ADMIN` may bulk-finalize attendance, generate/approve/cancel payroll, mark payroll paid, or export payroll. Attendance audit entries record session identifiers and transition details without student personal data. Approved payroll locks financial and attendance history; paid payroll is fully immutable.
+
+## Shift closing and receipt access
+The shift owner or an administrator may close an open shift. Only Admin and Super Admin may reopen a closed shift, and a reason is mandatory. Existing authenticated record permissions continue to govern payment creation and receipt/report access; hiding an action in the interface is not an authorization control.

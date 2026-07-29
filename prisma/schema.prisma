@@ -594,6 +594,8 @@ model CashierShift {
   reopenedById      String?      @map("reopened_by_id") @db.Uuid
   reopenedBy        UserProfile? @relation("ShiftReopenedBy", fields: [reopenedById], references: [id], onDelete: SetNull)
   reopenReason      String?      @map("reopen_reason")
+  closingSnapshot   Json?        @map("closing_snapshot")
+  varianceReason    String?      @map("variance_reason")
   payments          Payment[]
   expenses          Expense[]
   createdAt         DateTime     @default(now()) @map("created_at")

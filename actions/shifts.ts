@@ -33,12 +33,24 @@ export async function closeShift(formData: FormData) {
   const shiftId = id.parse(formData.get("id"));
   const declaredCashCents = dollarsToCents(String(formData.get("declaredCash") ?? "0"));
   const closeNote = String(formData.get("closeNote") ?? "").trim();
+  const varianceReason = String(formData.get("varianceReason") ?? "").trim();
   const { shift, totals } = await calculateShiftTotalsFromDb(prisma, shiftId);
   if (shift.userId !== userId && !isAdminOrHigher(session.role)) throw new Error("Not authorized");
   if (shift.status === "CLOSED") redirect(`/shifts/${shiftId}?error=${encodeURIComponent("Shift is already closed.")}`);
+  const differenceCents = declaredCashCents - totals.expectedCashCents;
+  if (differenceCents !== 0 && !varianceReason) redirect(`/shifts/${shiftId}?error=${encodeURIComponent("Explain the cash difference before closing the shift.")}`);
   const notes = [shift.notes, closeNote ? `Close note: ${closeNote}` : null].filter(Boolean).join("\n") || null;
-  const row = await prisma.cashierShift.update({ where: { id: shiftId }, data: { status: "CLOSED", closedAt: new Date(), closedById: userId, expectedCashCents: totals.expectedCashCents, declaredCashCents, differenceCents: declaredCashCents - totals.expectedCashCents, notes } });
-  await prisma.auditLog.create({ data: { action: "close", entity: "CashierShift", entityId: shiftId, actorId: session.userId, createdById: userId, metadata: { ...totals, declaredCashCents, differenceCents: row.differenceCents } } });
+  const receiptNumbers = await prisma.payment.findMany({ where: { shiftId, receiptNumber: { not: null } }, select: { receiptNumber: true }, orderBy: { receiptNumber: "asc" } });
+  const closedAt = new Date();
+  const closingSnapshot = {
+    version: 1, openingCashCents: shift.openingCashCents, ...totals, declaredCashCents, differenceCents,
+    receiptCount: receiptNumbers.length, firstReceiptNumber: receiptNumbers[0]?.receiptNumber ?? null,
+    lastReceiptNumber: receiptNumbers.at(-1)?.receiptNumber ?? null, closedAt: closedAt.toISOString(), closedById: userId,
+  };
+  await prisma.$transaction(async (tx) => {
+    await tx.cashierShift.update({ where: { id: shiftId }, data: { status: "CLOSED", closedAt, closedById: userId, expectedCashCents: totals.expectedCashCents, declaredCashCents, differenceCents, varianceReason: varianceReason || null, closingSnapshot, notes } });
+    await tx.auditLog.create({ data: { action: "close", entity: "CashierShift", entityId: shiftId, actorId: session.userId, createdById: userId, metadata: closingSnapshot } });
+  });
   revalidatePath("/shifts"); revalidatePath(`/shifts/${shiftId}`);
   redirect(`/shifts/${shiftId}?success=closed`);
 }

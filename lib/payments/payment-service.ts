@@ -1,15 +1,15 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { applyPaymentBalance, reversePaymentBalance, validatePaymentAllocations } from "@/lib/payments/payment-allocation";
+import { allocateFamilyPaymentAutomatically, applyPaymentBalance, reversePaymentBalance, validateManualFamilyAllocations, validatePaymentAllocations } from "@/lib/payments/payment-allocation";
 import { ensurePaymentReceipt, isUniqueReceiptConflict } from "@/lib/payments/receipt-repair";
 
 export type RequestedPaymentAllocation = { enrollmentId: string; amountCents: number };
-export type CreatePaymentInput = { familyId: string; paymentDate: Date; paymentMethod: string; notes: string | null; createdById?: string | null; actorId?: string; shiftId: string; allocations: RequestedPaymentAllocation[] };
+export type CreatePaymentInput = { familyId: string; paymentDate: Date; paymentMethod: string; notes: string | null; createdById?: string | null; actorId?: string; shiftId: string; amountCents?: number; allocationMode?: "automatic" | "manual"; allocations: RequestedPaymentAllocation[] };
 export type VoidPaymentInput = { paymentId: string; createdById?: string | null; actorId?: string };
 
 export async function createPaymentWithAllocations(prisma: PrismaClient, input: CreatePaymentInput) {
   for (let attempt = 1; attempt <= 5; attempt++) {
     try {
-      return await prisma.$transaction((tx) => createPaymentWithAllocationsInTransaction(tx, input));
+      return await prisma.$transaction((tx) => createPaymentWithAllocationsInTransaction(tx, input), { isolationLevel: "Serializable" });
     } catch (error) {
       if (!isUniqueReceiptConflict(error) || attempt === 5) throw error;
     }
@@ -18,12 +18,18 @@ export async function createPaymentWithAllocations(prisma: PrismaClient, input: 
 }
 
 export async function createPaymentWithAllocationsInTransaction(tx: Prisma.TransactionClient, input: CreatePaymentInput) {
-        const requested = input.allocations.filter((item) => item.enrollmentId && item.amountCents > 0);
-        if (!requested.length) throw new Error("Enter an amount for at least one enrollment.");
-        const enrollments = await tx.enrollment.findMany({
-          where: { id: { in: requested.map((item) => item.enrollmentId) }, student: { familyId: input.familyId } },
-          select: { id: true, paidCents: true, remainingCents: true },
+        const shift = await tx.cashierShift.findUnique({ where: { id: input.shiftId }, select: { status: true } });
+        if (!shift || !["OPEN", "REOPENED"].includes(shift.status)) throw new Error("The cashier shift is no longer open. Review the payment and try again.");
+        const familyEnrollments = await tx.enrollment.findMany({
+          where: { student: { familyId: input.familyId } },
+          select: { id: true, paidCents: true, remainingCents: true, archivedAt: true, enrollmentStartDate: true, createdAt: true, student: { select: { familyId: true } } },
         });
+        const balances = familyEnrollments.map((row) => ({ id: row.id, familyId: row.student.familyId!, remainingCents: row.remainingCents, archivedAt: row.archivedAt, startDate: row.enrollmentStartDate, createdAt: row.createdAt }));
+        const requested = input.allocationMode === "automatic"
+          ? allocateFamilyPaymentAutomatically(input.familyId, input.amountCents ?? 0, balances)
+          : validateManualFamilyAllocations(input.familyId, input.amountCents ?? input.allocations.reduce((sum, row) => sum + row.amountCents, 0), input.allocations, balances);
+        if (!requested.length) throw new Error("Enter an amount for at least one enrollment.");
+        const enrollments = familyEnrollments.filter((row) => requested.some((item) => item.enrollmentId === row.id));
         if (enrollments.length !== requested.length) throw new Error("All allocations must belong to the selected family.");
 
         const byId = new Map(enrollments.map((row) => [row.id, row]));

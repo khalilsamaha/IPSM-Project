@@ -16,3 +16,8 @@ The generator wraps long values rather than relying on fixed-character truncatio
 ## A4 Two-Copy Layout
 
 The two-copy layout embeds the A5 receipt twice on an A4 `595 × 842` point page, with Customer Copy above School Copy and a dashed cut line between them. If a very long allocation list needs continuation pages, the generator emits continuation pages rather than omitting rows.
+# Official stamp asset
+
+`public/assets/receipts/ipsm-official-stamp.png` is the production receipt stamp derived from the supplied authorized scan. Processing cropped away the complete CamScanner footer, removed the cream paper background and isolated scan speckles, preserved the source black IPSM mark and original blue signature in their original relative positions, and exported an RGBA PNG with minimal transparent padding. Because the repository's pull-request workflow does not accept binary files, neither the JPG scan nor the processed PNG is committed: deployment must provision the processed PNG at that exact path.
+
+The authoritative receipt service reads this asset on the server and embeds it with a PDF transparency soft mask on every A5 logical receipt page and on both customer and school copies. Missing, unreadable, or unsupported stamp data causes a controlled receipt-generation error rather than an unstamped official receipt.

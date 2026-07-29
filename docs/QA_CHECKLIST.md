@@ -264,3 +264,9 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] For every entity in `DELETION_POLICY.md`, test authorized/unauthorized archive, restore and safe delete plus dependency-blocked audit metadata. Type `VOID`, `DELETE`, or `CANCEL` where prompted.
 - [ ] Confirm payments only void with allocation reversal, paid payroll is immutable, closed-shift transactions are protected, receipts remain attached, and users deactivate without losing audit ownership.
 - [ ] Run the deterministic seed on a clean database and reconcile family rosters, multi-student allocations, global/override prices, generated lesson statuses, closure, and draft/approved/paid payroll without duplicate sessions.
+
+## Payment and closing checks
+- Verify automatic allocation skips settled and archived enrollments and follows oldest-first ordering.
+- Verify manual allocations cannot be submitted when their sum differs from the received amount.
+- Verify cash variance requires a non-blank explanation and Whish never changes expected physical cash.
+- Verify reopening retains the saved closing snapshot and close/reopen audit events.

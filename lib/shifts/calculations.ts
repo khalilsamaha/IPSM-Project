@@ -17,6 +17,8 @@ export function calculateShiftTotals(input: { openingCashCents: number; payments
     postedPaymentCount: postedPayments.length,
     expenseCount: activeExpenses.length,
     voidedPaymentCount: input.payments.length - postedPayments.length,
+    activeExpenseCount: activeExpenses.length,
+    archivedExpenseCount: input.expenses.length - activeExpenses.length,
   };
 }
 

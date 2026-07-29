@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildReceiptPdf } from "@/lib/payments/receipt-service";
 
+// Transparent 1x1 test fixture. Production always reads the separately
+// provisioned authorized stamp; tests never substitute this fixture there.
+const testStamp = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAHnOcQAAAAABJRU5ErkJggg==", "base64");
+const receipt = (value: Parameters<typeof buildReceiptPdf>[0], layout: "a5" | "a4-two-copies" = "a5", mode?: "original" | "reprint" | "voided") => buildReceiptPdf(value, layout, mode, testStamp);
+
 function payment(itemCount = 3) {
   return {
     receiptNumber: "RCPT-2026-0007",
@@ -16,18 +21,26 @@ function payment(itemCount = 3) {
 
 describe("receipt PDF layout", () => {
   it("uses A5 MediaBox by default", () => {
-    expect(buildReceiptPdf(payment()).toString("utf8")).toContain("/MediaBox [0 0 420 595]");
+    expect(receipt(payment()).toString("utf8")).toContain("/MediaBox [0 0 420 595]");
   });
   it("wraps long names and does not emit omitted allocation notices", () => {
-    const pdf = buildReceiptPdf(payment(16)).toString("utf8");
+    const pdf = receipt(payment(16)).toString("utf8");
     expect(pdf).not.toContain("omitted");
     expect(pdf).toContain("Continued on next A5 page");
   });
   it("supports A4 two-copy output with the same receipt number", () => {
-    const pdf = buildReceiptPdf(payment(2), "a4-two-copies").toString("utf8");
+    const pdf = receipt(payment(2), "a4-two-copies").toString("utf8");
     expect(pdf).toContain("/MediaBox [0 0 595 842]");
     expect(pdf).toContain("Customer Copy");
     expect(pdf).toContain("School Copy");
     expect((pdf.match(/RCPT-2026-0007/g) ?? []).length).toBe(2);
+    expect((pdf.match(/\/Stamp Do/g) ?? []).length).toBe(2);
+    expect(pdf).toContain("/SMask");
+  });
+  it("marks voided copies without changing the receipt number", () => {
+    const pdf = receipt({ ...payment(1), voidedAt: new Date() }, "a5").toString("utf8");
+    expect(pdf).toContain("(VOID)");
+    expect(pdf).toContain("RCPT-2026-0007");
+    expect(pdf).toContain("allocations were reversed");
   });
 });
