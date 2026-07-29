@@ -76,3 +76,6 @@ The shift owner or an administrator may close an open shift. Only Admin and Supe
 
 ## Teacher availability and operations
 Reception may view active teacher availability and the active attendance policy but cannot create, edit, archive, or restore availability, change operational settings, or generate payroll. Admin and Super Admin can manage availability, attendance policy, attendance corrections, and monthly payroll. Approved and paid payroll always lock attendance.
+# Permanent person/family deletion
+
+Admin and Super Admin may permanently delete archived, unused students, families, and teachers after exact typed confirmation. Reception may archive under its existing records-write permission but cannot permanently delete. Server actions enforce this independently of button visibility.
