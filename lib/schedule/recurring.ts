@@ -67,6 +67,36 @@ export async function createPatternAndGenerate(prisma: PrismaClient, input: Recu
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
+/** Creates every requested pattern and occurrence as one serializable unit. */
+export async function createPatternsAndGenerate(prisma: PrismaClient, inputs: RecurringScheduleInput[]) {
+  if (!inputs.length) throw new Error("Select at least one weekly slot.");
+  const keys = inputs.map((input) => `${input.dayOfWeek}:${input.startTime}:${input.endTime}:${input.roomId ?? ""}`);
+  if (new Set(keys).size !== keys.length) throw new Error("Duplicate weekly slots are not allowed.");
+  if (inputs.length > 7) throw new Error("A maximum of 7 weekly slots is allowed.");
+  return prisma.$transaction(async (tx) => {
+    const previews = [];
+    for (const input of inputs) {
+      const preview = await previewRecurringSchedule(tx, input);
+      if (preview.conflicts.length) throw new Error(preview.conflicts[0].message);
+      if (!preview.generatedCount) throw new Error("No valid occurrence exists inside the enrollment period.");
+      previews.push(preview);
+    }
+    const enrollment = await tx.enrollment.findUniqueOrThrow({ where: { id: inputs[0].enrollmentId } });
+    const patterns = []; let generatedSessionCount = 0; let firstLessonId: string | null = null;
+    for (let index = 0; index < inputs.length; index++) {
+      const input = inputs[index]; const preview = previews[index];
+      const pattern = await tx.schedulePattern.create({ data: { ...input, roomId: input.roomId ?? null } });
+      patterns.push(pattern);
+      const skipped = new Set([...preview.closureDatesSkipped, ...preview.existingDatesSkipped].map((date) => dateOnly(date).getTime()));
+      for (const sessionDate of preview.candidateDates.filter((date) => !skipped.has(dateOnly(date).getTime()))) {
+        const lesson = await tx.scheduleSession.create({ data: { studentId: enrollment.studentId, teacherId: input.teacherId, enrollmentId: enrollment.id, seasonId: enrollment.seasonId, roomId: input.roomId ?? null, title: enrollment.courseName, sessionDate, startTime: input.startTime, endTime: input.endTime, schedulePatternId: pattern.id } });
+        generatedSessionCount++; if (!firstLessonId) firstLessonId = lesson.id;
+      }
+    }
+    return { patterns, generatedSessionCount, firstLessonId, previews };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
 export async function generateMissingLessons(prisma: PrismaClient, patternId: string) {
   return prisma.$transaction(async (tx) => {
     const pattern = await tx.schedulePattern.findUniqueOrThrow({ where: { id: patternId } });

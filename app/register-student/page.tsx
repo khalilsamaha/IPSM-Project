@@ -3,6 +3,8 @@ import { AppShell, PageHeader } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { RegisterStudentWorkflowForm } from "./register-student-workflow-form";
+import { ShareReceiptButton } from "@/components/share-receipt-button";
+import { formatCurrency } from "@/lib/records/format";
 
 export default async function RegisterStudentPage({
   searchParams,
@@ -29,6 +31,7 @@ export default async function RegisterStudentPage({
     levels,
     pricings,
     teacherCourses,
+    availability,
   ] = await Promise.all([
     prisma.student.findMany({
       where: { status: "ACTIVE" },
@@ -68,13 +71,19 @@ export default async function RegisterStudentPage({
       where: { status: "ACTIVE", teacher: { status: "ACTIVE" } },
       select: { teacherId: true, courseId: true, levelId: true },
     }),
+    prisma.teacherAvailability.findMany({
+      where: { status: "ACTIVE", archivedAt: null },
+      select: { teacherId: true, dayOfWeek: true, startTime: true, endTime: true },
+      orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+    }),
   ]);
+  const successPayment = params.paymentId ? await prisma.payment.findUnique({ where: { id: params.paymentId }, include: { family: true } }) : null;
 
   return (
     <AppShell session={session}>
       <PageHeader
         title="Register Student"
-        description="A step-by-step registration wizard for Admin and Reception users. Use it to create a student or family/group when needed, enroll the primary student, optionally record an initial payment, and optionally book the first lesson."
+        description="A step-by-step registration wizard for Admin and Reception users. Use it to create a student or family/group when needed, enroll the primary student, optionally record an initial payment, and optionally create an availability-driven weekly lesson schedule."
       />
       {params.error ? (
         <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
@@ -86,16 +95,13 @@ export default async function RegisterStudentPage({
           <p className="font-black">Registration completed successfully.</p>
           <p>Students created: {params.students ?? "0"}</p>
           <p>Enrollment: {params.enrollmentId}</p>
-          {params.paymentId ? (
-            <p>
-              Initial payment receipt:{" "}
-              <Link
-                className="font-bold underline"
-                href={`/payments/${params.paymentId}`}
-              >
-                open receipt
-              </Link>
-            </p>
+          {successPayment?.receiptNumber ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link className="rounded border px-4 py-2 font-bold" href={`/payments/${successPayment.id}`}>Open receipt</Link>
+              <a className="rounded border px-4 py-2 font-bold" href={`/api/receipts/${successPayment.id}?layout=a5`} download>Download A5 PDF</a>
+              <ShareReceiptButton paymentId={successPayment.id} receiptNumber={successPayment.receiptNumber} familyName={successPayment.family.name} amount={formatCurrency(successPayment.totalAmountCents)}/>
+              <Link className="rounded border px-4 py-2 font-bold" href={`/payments/new?familyId=${successPayment.familyId}`}>Record another payment</Link>
+            </div>
           ) : null}
           {params.sessionId ? (
             <p>First lesson confirmation: {params.sessionId}</p>
@@ -147,6 +153,7 @@ export default async function RegisterStudentPage({
           price: (pricing.priceCents / 100).toFixed(2),
         }))}
         teacherCourses={teacherCourses}
+        availability={availability}
         isAdmin={session.role === "ADMIN" || session.role === "SUPER_ADMIN"}
       />
     </AppShell>

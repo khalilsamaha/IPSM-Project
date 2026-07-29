@@ -29,6 +29,8 @@ type PricingOption = {
   seasonId: string | null;
   price: string;
 };
+type AvailabilityOption = { teacherId: string; dayOfWeek: number; startTime: string; endTime: string };
+type WeeklySlot = { dayOfWeek: number; startTime: string; endTime: string; roomId: null };
 type TeacherCourseOption = {
   teacherId: string;
   courseId: string;
@@ -51,6 +53,7 @@ type Props = {
   levels: LevelOption[];
   pricings: PricingOption[];
   teacherCourses: TeacherCourseOption[];
+  availability: AvailabilityOption[];
   isAdmin: boolean;
   initialFamilyId: string;
 };
@@ -83,7 +86,7 @@ const stepTitles = [
   "Student details",
   "Enrollment / activity",
   "Payment",
-  "First lesson & review",
+  "Weekly schedule & review",
 ];
 
 export function RegisterStudentWorkflowForm(props: Props) {
@@ -141,10 +144,8 @@ export function RegisterStudentWorkflowForm(props: Props) {
   const [discount, setDiscount] = useState("");
   const [initialPayment, setInitialPayment] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [bookFirstSession, setBookFirstSession] = useState(false);
-  const [sessionDate, setSessionDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [scheduleNow, setScheduleNow] = useState(false);
+  const [weeklySlots, setWeeklySlots] = useState<WeeklySlot[]>([]);
   const [attempted, setAttempted] = useState(false);
   const [isPending, startTransition] = useTransition();
   const selectedSeason = seasons.find((season) => season.id === seasonId);
@@ -187,10 +188,8 @@ export function RegisterStudentWorkflowForm(props: Props) {
     setFee("");
     setDiscount("");
     setInitialPayment("");
-    setBookFirstSession(false);
-    setSessionDate("");
-    setStartTime("");
-    setEndTime("");
+    setScheduleNow(false);
+    setWeeklySlots([]);
   }
   function changeFamily(value: string) {
     setFamily((current) => ({ ...current, familyId: value }));
@@ -231,11 +230,11 @@ export function RegisterStudentWorkflowForm(props: Props) {
     }
     if (
       step === 5 &&
-      bookFirstSession &&
-      (!teacherId || !sessionDate || !startTime || !endTime)
+      scheduleNow &&
+      (!teacherId || weeklySlots.length === 0)
     )
       return [
-        "Choose teacher, date, start time, and end time for the first lesson.",
+        "Choose a teacher and at least one available weekly slot.",
       ];
     return [];
   }
@@ -308,6 +307,8 @@ export function RegisterStudentWorkflowForm(props: Props) {
       <input type="hidden" name="discount" value={discount} />
       <input type="hidden" name="initialPayment" value={initialPayment} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
+      <input type="hidden" name="scheduleNow" value={scheduleNow ? "1" : ""} />
+      <input type="hidden" name="weeklySlots" value={JSON.stringify(weeklySlots)} />
       <Progress step={step} />
       {attempted &&
         errors.map((e) => (
@@ -807,42 +808,17 @@ export function RegisterStudentWorkflowForm(props: Props) {
         <section className="card border-violet-200 bg-violet-50/30">
           <StepTitle
             step="6"
-            title="First lesson and final review"
+            title="Weekly schedule and final review"
             description="Review everything before submitting. Nothing is saved until Confirm Registration."
           />
-          <label className="flex items-center gap-2 font-bold">
-            <input
-              type="checkbox"
-              name="bookFirstSession"
-              value="1"
-              checked={bookFirstSession}
-              onChange={(e) => setBookFirstSession(e.target.checked)}
-            />{" "}
-            Book first lesson
-          </label>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <LocalizedDateInput
-              name="sessionDateDisplay"
-              label="Lesson date"
-              required={bookFirstSession}
-              defaultValue={sessionDate}
-              onChange={setSessionDate}
-            />
-            <Input
-              name="startTime"
-              label="Start time"
-              type="time"
-              value={startTime}
-              set={setStartTime}
-            />
-            <Input
-              name="endTime"
-              label="End time"
-              type="time"
-              value={endTime}
-              set={setEndTime}
-            />
-          </div>
+          <fieldset className="space-y-3"><legend className="font-black">Lesson scheduling <span className="text-xs font-normal text-slate-500">Required choice</span></legend>
+            <label className="block"><input type="radio" checked={scheduleNow} onChange={() => { setScheduleNow(true); setWeeklySlots([]); }}/> Create weekly lesson schedule now</label>
+            <label className="block"><input type="radio" checked={!scheduleNow} onChange={() => { setScheduleNow(false); setWeeklySlots([]); }}/> Complete registration and schedule later</label>
+          </fieldset>
+          {scheduleNow ? <div className="mt-4 space-y-3"><h4 className="font-bold">Available weekly slots</h4>
+            {props.availability.filter((window) => window.teacherId === teacherId).map((window) => { const selected = weeklySlots.some((slot) => slot.dayOfWeek === window.dayOfWeek && slot.startTime === window.startTime && slot.endTime === window.endTime); return <label key={`${window.dayOfWeek}-${window.startTime}-${window.endTime}`} className="flex items-center justify-between rounded-xl border bg-white p-3"><span>{["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][window.dayOfWeek]} · {window.startTime}–{window.endTime}</span><input type="checkbox" checked={selected} onChange={() => setWeeklySlots((slots) => selected ? slots.filter((slot) => !(slot.dayOfWeek === window.dayOfWeek && slot.startTime === window.startTime && slot.endTime === window.endTime)) : slots.length < 7 ? [...slots, { ...window, roomId: null }] : slots)}/></label>})}
+            {!props.availability.some((window) => window.teacherId === teacherId) ? <p className="rounded-xl bg-amber-100 p-3">No active availability exists for this teacher.</p> : null}
+          </div> : null}
           <dl className="mt-5 grid gap-3 text-sm md:grid-cols-3">
             <Review
               label="Registration type"
@@ -857,7 +833,7 @@ export function RegisterStudentWorkflowForm(props: Props) {
                 existingFamilyMode === "existing"
                   ? (students.find((student) => student.id === studentId)
                       ?.label ?? "—")
-                  : `${studentRows.length} student row(s)`
+                  : studentRows.map((row) => `${row.firstName} ${row.lastName}`.trim()).filter(Boolean).join(", ") || "—"
               }
             />
             <Review
