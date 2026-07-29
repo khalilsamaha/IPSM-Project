@@ -157,3 +157,10 @@ failure_case "INSERT INTO families VALUES (gen_random_uuid(),'DUP','A',null,null
 failure_case "INSERT INTO payment_items VALUES (gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),1)"
 
 echo "PostgreSQL family-only migration integration tests passed"
+
+SESSION_PRICING_MIGRATION="prisma/migrations/20260729010000_session_pricing_registration/migration.sql"
+SUPABASE_SESSION_PRICING_MIGRATION="supabase/migrations/20260729010000_session_pricing_registration.sql"
+cmp "$SESSION_PRICING_MIGRATION" "$SUPABASE_SESSION_PRICING_MIGRATION"
+grep -q 'planned_session_count.*INTEGER NOT NULL DEFAULT 15' "$SESSION_PRICING_MIGRATION"
+grep -q 'configured_price_cents' "$SESSION_PRICING_MIGRATION"
+grep -q 'pricing_source_id.*UUID' "$SESSION_PRICING_MIGRATION"

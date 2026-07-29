@@ -31,6 +31,8 @@ import {
   normalizeName,
 } from "@/lib/academic-pricing";
 import { parseIsoDateOnly } from "@/lib/date-time";
+import { calculateSessionBasedFeeCents, findApplicableCoursePrice } from "@/lib/registration/pricing";
+import { createPatternsAndGenerate } from "@/lib/schedule/recurring";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -412,6 +414,7 @@ const seasonSchema = z
       .min(1)
       .transform((v) => new Date(v)),
     status: z.enum(["PLANNED", "ACTIVE", "CLOSED", "ARCHIVED"]),
+    plannedSessionCount: z.coerce.number().int().positive().default(15),
   })
   .refine((v) => v.endDate >= v.startDate, "End date must be after start date");
 export async function saveSeason(formData: FormData) {
@@ -1155,10 +1158,9 @@ const registrationSchema = z.object({
     .string()
     .default("cash")
     .refine(isNewPaymentMethod, "Choose Cash or Whish."),
-  bookFirstSession: z.string().optional(),
-  sessionDate: z.string().optional(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
+  scheduleNow: z.string().optional(),
+  weeklySlots: z.string().default("[]"),
+  pricingOverrideReason: z.string().trim().optional(),
 });
 
 function registrationErrorRedirect(message: string): never {
@@ -1213,7 +1215,7 @@ export async function registerStudentWorkflow(formData: FormData) {
     }),
     prisma.season.findUnique({
       where: { id: parsed.seasonId },
-      select: { startDate: true, endDate: true, status: true },
+      select: { startDate: true, endDate: true, status: true, plannedSessionCount: true },
     }),
   ]);
   if (!course) registrationErrorRedirect("Choose a valid course.");
@@ -1237,7 +1239,16 @@ export async function registerStudentWorkflow(formData: FormData) {
     registrationErrorRedirect(
       "Enrollment dates must stay inside the selected season.",
     );
-  const feeCents = dollarsToCents(parsed.fee);
+  const pricingRows = await prisma.coursePricing.findMany({ where: { courseId: parsed.courseId, levelId: parsed.levelId, status: "ACTIVE" } });
+  const pricing = findApplicableCoursePrice(pricingRows, parsed.courseId, parsed.levelId, parsed.seasonId);
+  if (!pricing) registrationErrorRedirect("No active price is configured for this course, level, and season.");
+  // The server owns all inputs to this calculation. Scheduling-later registrations use the full package.
+  const plannedSessionCount = season.plannedSessionCount;
+  let feeCents = calculateSessionBasedFeeCents(pricing.priceCents, plannedSessionCount, season.plannedSessionCount);
+  if (parsed.pricingOverrideReason) {
+    if (!isAdminOrHigher(session.role)) registrationErrorRedirect("Only an Admin may override calculated pricing.");
+    feeCents = dollarsToCents(parsed.fee);
+  }
   const discountCents = dollarsToCents(parsed.discount);
   const finalFeeCents = Math.max(0, feeCents - discountCents);
   const initialPaymentCents = dollarsToCents(parsed.initialPayment);
@@ -1259,28 +1270,7 @@ export async function registerStudentWorkflow(formData: FormData) {
       );
     }
   }
-  if (parsed.bookFirstSession) {
-    if (!parsed.teacherId)
-      registrationErrorRedirect(
-        "Choose a teacher before booking the first lesson.",
-      );
-    if (!parsed.sessionDate)
-      registrationErrorRedirect(
-        "First lesson date is required when booking the first lesson.",
-      );
-    const firstLessonDate = parseIsoDateOnly(parsed.sessionDate);
-    if (
-      firstLessonDate < enrollmentStartDate ||
-      firstLessonDate > enrollmentEndDate
-    )
-      registrationErrorRedirect(
-        "First lesson date must be inside the enrollment date range.",
-      );
-    if (firstLessonDate < season.startDate || firstLessonDate > season.endDate)
-      registrationErrorRedirect(
-        "First lesson date must be inside the enrollment date range.",
-      );
-  }
+
 
   try {
     const prior = await prisma.enrollment.findUnique({
@@ -1448,6 +1438,13 @@ export async function registerStudentWorkflow(formData: FormData) {
           discountCents,
           finalFeeCents,
           remainingCents: finalFeeCents,
+          configuredPriceCents: pricing.priceCents,
+          priceBaseSessionCount: season.plannedSessionCount,
+          plannedSessionCount,
+          calculatedFeeCents: calculateSessionBasedFeeCents(pricing.priceCents, plannedSessionCount, season.plannedSessionCount),
+          pricingSourceId: pricing.id,
+          pricingCalculatedAt: new Date(),
+          pricingOverrideReason: parsed.pricingOverrideReason || null,
           registrationSubmissionId: parsed.registrationSubmissionId,
         },
       });
@@ -1509,7 +1506,7 @@ export async function registerStudentWorkflow(formData: FormData) {
           entityId: enrollment.id,
           createdById,
           actorId: session.userId,
-          metadata: { familyId, primaryStudentId },
+          metadata: { familyId, primaryStudentId, enrollmentId: enrollment.id, patternCount: 0, generatedSessionCount: 0 },
         },
       });
       return {
@@ -1522,62 +1519,21 @@ export async function registerStudentWorkflow(formData: FormData) {
     });
 
     let sessionId: string | null = null;
+    let patternCount = 0;
+    let generatedSessionCount = 0;
     let scheduleError: string | null = null;
-    if (parsed.bookFirstSession) {
+    if (parsed.scheduleNow) {
       try {
-        if (
-          !parsed.teacherId ||
-          !parsed.sessionDate ||
-          !parsed.startTime ||
-          !parsed.endTime
-        )
-          throw new Error(
-            "Teacher, date, start time, and end time are required to schedule a lesson.",
-          );
-        const sessionData = scheduleSessionSchema.parse({
-          studentId: result.primaryStudentId,
-          teacherId: parsed.teacherId,
-          enrollmentId: result.enrollmentId,
-          seasonId: parsed.seasonId,
-          sessionDate: parsed.sessionDate,
-          startTime: parsed.startTime,
-          endTime: parsed.endTime,
-          status: "SCHEDULED",
-          title: courseName,
-        });
-        await assertScheduleSessionIsValid(sessionData);
-        const sessionRow = await prisma.$transaction(async (tx) => {
-          const row = await tx.scheduleSession.create({
-            data: sessionData as Prisma.ScheduleSessionUncheckedCreateInput,
-          });
-          await tx.auditLog.create({
-            data: {
-              action: "registration_schedule_completed",
-              entity: "ScheduleSession",
-              entityId: row.id,
-              createdById,
-              actorId: session.userId,
-              metadata: { enrollmentId: result.enrollmentId },
-            },
-          });
-          return row;
-        });
-        sessionId = sessionRow.id;
+        const slots = z.array(z.object({ dayOfWeek: z.number().int().min(0).max(6), startTime: z.string(), endTime: z.string(), roomId: z.string().uuid().nullable().optional() })).min(1).max(7).parse(JSON.parse(parsed.weeklySlots));
+        if (!parsed.teacherId) throw new Error("Choose a teacher before scheduling weekly lessons.");
+        const assignment = await prisma.teacherCourse.findFirst({ where: { teacherId: parsed.teacherId, courseId: parsed.courseId, status: "ACTIVE", OR: [{ levelId: null }, { levelId: parsed.levelId }], teacher: { status: "ACTIVE" } } });
+        if (!assignment) throw new Error("The selected teacher is not assigned to this course and level.");
+        const scheduled = await createPatternsAndGenerate(prisma, slots.map((slot) => ({ ...slot, enrollmentId: result.enrollmentId, teacherId: parsed.teacherId!, startsOn: enrollmentStartDate, endsOn: enrollmentEndDate })));
+        patternCount = scheduled.patterns.length; generatedSessionCount = scheduled.generatedSessionCount; sessionId = scheduled.firstLessonId;
+        await prisma.auditLog.create({ data: { action: "registration_schedule_completed", entity: "Enrollment", entityId: result.enrollmentId, createdById, actorId: session.userId, metadata: { enrollmentId: result.enrollmentId, patternCount, generatedSessionCount } } });
       } catch (error) {
-        scheduleError =
-          error instanceof Error
-            ? error.message
-            : "The requested lesson could not be scheduled.";
-        await prisma.auditLog.create({
-          data: {
-            action: "registration_schedule_failed",
-            entity: "Enrollment",
-            entityId: result.enrollmentId,
-            createdById,
-            actorId: session.userId,
-            metadata: { error: scheduleError },
-          },
-        });
+        scheduleError = error instanceof Error ? error.message : "The requested weekly lessons could not be scheduled.";
+        await prisma.auditLog.create({ data: { action: "registration_schedule_failed", entity: "Enrollment", entityId: result.enrollmentId, createdById, actorId: session.userId, metadata: { enrollmentId: result.enrollmentId, patternCount: 0, generatedSessionCount: 0, error: scheduleError.slice(0, 250) } } });
       }
     }
 
@@ -1585,7 +1541,7 @@ export async function registerStudentWorkflow(formData: FormData) {
     revalidatePath("/students");
     revalidatePath("/enrollments");
     revalidatePath("/schedule");
-    const successUrl = `/register-student?success=1&enrollmentId=${result.enrollmentId}&familyId=${result.familyId}&students=${result.createdStudentCount}${sessionId ? `&sessionId=${sessionId}` : ""}${result.paymentId ? `&paymentId=${result.paymentId}` : ""}${scheduleError ? `&scheduleError=${encodeURIComponent(scheduleError)}` : ""}`;
+    const successUrl = `/register-student?success=1&enrollmentId=${result.enrollmentId}&familyId=${result.familyId}&students=${result.createdStudentCount}&patterns=${patternCount}&generated=${generatedSessionCount}${sessionId ? `&sessionId=${sessionId}` : ""}${result.paymentId ? `&paymentId=${result.paymentId}` : ""}${scheduleError ? `&scheduleError=${encodeURIComponent(scheduleError)}` : ""}`;
     redirect(successUrl);
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT")

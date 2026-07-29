@@ -186,6 +186,7 @@ model Season {
   startDate           DateTime              @map("start_date") @db.Date
   endDate             DateTime              @map("end_date") @db.Date
   status              SeasonStatus          @default(PLANNED)
+  plannedSessionCount Int                   @default(15) @map("planned_session_count")
   enrollments         Enrollment[]
   scheduleSessions    ScheduleSession[]
   coursePricings      CoursePricing[]
@@ -313,6 +314,13 @@ model Enrollment {
   finalFeeCents       Int               @default(0) @map("final_fee_cents")
   paidCents           Int               @default(0) @map("paid_cents")
   remainingCents      Int               @default(0) @map("remaining_cents")
+  configuredPriceCents  Int?            @map("configured_price_cents")
+  priceBaseSessionCount Int?            @map("price_base_session_count")
+  plannedSessionCount   Int?            @map("planned_session_count")
+  calculatedFeeCents    Int?            @map("calculated_fee_cents")
+  pricingSourceId       String?          @map("pricing_source_id") @db.Uuid
+  pricingCalculatedAt   DateTime?        @map("pricing_calculated_at")
+  pricingOverrideReason String?          @map("pricing_override_reason")
   enrollmentStartDate DateTime          @map("enrollment_start_date") @db.Date
   enrollmentEndDate   DateTime          @map("enrollment_end_date") @db.Date
   status              EnrollmentStatus  @default(ACTIVE)
