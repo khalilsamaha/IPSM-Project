@@ -72,3 +72,29 @@ export function parseIsoDateOnly(value: string) {
   return date;
 }
 export { APP_TIME_ZONE };
+
+export class BusinessTimeConfigurationError extends Error {
+  constructor(message: string) { super(message); this.name = "BusinessTimeConfigurationError"; }
+}
+export function businessTimeZone(value = process.env.APP_TIME_ZONE) {
+  if (!value) throw new BusinessTimeConfigurationError("APP_TIME_ZONE is required.");
+  try { new Intl.DateTimeFormat("en", { timeZone: value }).format(new Date()); }
+  catch { throw new BusinessTimeConfigurationError("APP_TIME_ZONE is invalid."); }
+  return value;
+}
+/** Converts a date-only value and HH:mm wall time in an IANA zone to an instant.
+ * The iterative Intl calculation handles ordinary DST offsets and rejects nonexistent wall times.
+ */
+export function sessionEndInstant(input: { sessionDate: Date | string; endTime: string; timeZone?: string }) {
+  const zone = businessTimeZone(input.timeZone);
+  const date = typeof input.sessionDate === "string" ? parseIsoDateOnly(input.sessionDate) : input.sessionDate;
+  const match = /^(\d{2}):(\d{2})$/.exec(input.endTime);
+  if (!match || +match[1] > 23 || +match[2] > 59 || Number.isNaN(date.valueOf())) throw new Error("Invalid lesson date or end time.");
+  const wanted = { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate(), hour: +match[1], minute: +match[2] };
+  let instant = Date.UTC(wanted.year, wanted.month - 1, wanted.day, wanted.hour, wanted.minute);
+  const partsAt = (ms: number) => Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: zone, year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23" }).formatToParts(ms).filter(p=>p.type!=="literal").map(p=>[p.type,+p.value]));
+  for (let i=0;i<3;i++) { const got=partsAt(instant); const wall=Date.UTC(got.year,got.month-1,got.day,got.hour,got.minute); instant += Date.UTC(wanted.year,wanted.month-1,wanted.day,wanted.hour,wanted.minute)-wall; }
+  const got=partsAt(instant);
+  if (got.year!==wanted.year || got.month!==wanted.month || got.day!==wanted.day || got.hour!==wanted.hour || got.minute!==wanted.minute) throw new Error("Lesson end time does not exist in the business timezone.");
+  return new Date(instant);
+}

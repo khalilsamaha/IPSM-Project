@@ -114,3 +114,6 @@ Family -> Students -> Enrollments -> SchedulePattern -> ScheduleSessions
 ```
 
 `school_closures` and `schedule_patterns` have RLS enabled and no anonymous policies. Application access remains authenticated and server-side.
+
+## Teacher operations additions
+`operational_settings` is an RLS-enabled singleton (`school-default`) holding auto-finalization, 0–240 minute grace, and payable-missed enablement. `schedule_sessions` has additive attendance provenance fields. `teacher_payrolls.payroll_month` stores the first date of each new calendar month and is unique with `teacher_id`; nullable legacy custom-period payrolls remain unchanged. Prisma and Supabase migration `20260729030000_teacher_operations` are identical.

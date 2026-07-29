@@ -550,3 +550,6 @@ Administrators can edit course/level prices as a matrix and manage multi-teacher
 Family payments default to **Automatic distribution**: enter one amount and the server applies integer cents to non-archived outstanding enrollments by enrollment start date, creation date, then stable ID. The advanced manual option supports exceptional exact allocations; its rows must equal the amount received and cannot exceed a balance.
 
 Closing a cashier shift separates Cash from Whish. Enter declared physical cash and explain every overage or shortage. Closing saves an authoritative reconciliation snapshot; reopening is restricted to administrators and does not erase earlier close/reopen audit history.
+
+## Teacher operations
+Elapsed scheduled lessons are assumed completed after the configured grace period. Attendance is the exception workspace: cancellation, missed attendance, and corrections require a reason and remain blocked by approved or paid payroll. Payroll creation uses a `YYYY-MM` month and never accepts a custom range. The current month can be previewed but only a completed month can be generated. Teacher Availability opens in a Monday-first calendar view; Reception can review it, while Admin and Super Admin manage recurring rules.

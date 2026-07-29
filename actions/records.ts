@@ -739,6 +739,22 @@ export async function deleteRoom(formData: FormData) {
 export async function saveTeacherAvailability(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const data = teacherAvailabilitySchema.parse(Object.fromEntries(formData));
+  const conflicts = await prisma.teacherAvailability.findMany({ where: { teacherId: data.teacherId, dayOfWeek: data.dayOfWeek, status: "ACTIVE", archivedAt: null, ...(data.id ? { id: { not: data.id } } : {}), OR: [{ seasonId: data.seasonId || null }, { seasonId: null }] } });
+  const overlap = conflicts.find((row) => timeWindowsOverlap({ startTime: row.startTime, endTime: row.endTime }, { startTime: data.startTime, endTime: data.endTime }));
+  if (overlap) {
+    await prisma.auditLog.create({ data: { action: "teacher_availability_change_blocked", entity: "TeacherAvailability", entityId: data.id, createdById, actorId: session.userId, metadata: { reason: "overlapping_rule", conflictingAvailabilityId: overlap.id } } });
+    throw new Error("This availability overlaps an existing rule for the teacher and season scope.");
+  }
+  if (data.id) {
+    const existing = await prisma.teacherAvailability.findUnique({ where: { id: data.id } });
+    if (existing && (data.startTime > existing.startTime || data.endTime < existing.endTime)) {
+      const bookings = await prisma.scheduleSession.count({ where: { teacherId: data.teacherId, archivedAt: null, status: "SCHEDULED", startTime: { lt: data.endTime }, endTime: { gt: data.startTime } } });
+      if (bookings) {
+        await prisma.auditLog.create({ data: { action: "teacher_availability_change_blocked", entity: "TeacherAvailability", entityId: data.id, createdById, actorId: session.userId, metadata: { reason: "existing_bookings", bookingCount: bookings } } });
+        throw new Error("This change could exclude existing lessons. Handle those lessons before reducing availability.");
+      }
+    }
+  }
   const availabilityData =
     data as Prisma.TeacherAvailabilityUncheckedCreateInput &
       Prisma.TeacherAvailabilityUncheckedUpdateInput;
@@ -752,7 +768,7 @@ export async function saveTeacherAvailability(formData: FormData) {
       });
   await prisma.auditLog.create({
     data: {
-      action: data.id ? "update" : "create",
+      action: data.id ? "teacher_availability_updated" : "teacher_availability_created",
       entity: "TeacherAvailability",
       entityId: row.id,
       createdById,
@@ -771,7 +787,7 @@ export async function archiveTeacherAvailability(formData: FormData) {
   });
   await prisma.auditLog.create({
     data: {
-      action: "archive",
+      action: "teacher_availability_archived",
       entity: "TeacherAvailability",
       entityId: row.id,
       createdById,

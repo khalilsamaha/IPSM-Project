@@ -73,3 +73,6 @@ Only `ADMIN` and `SUPER_ADMIN` may bulk-finalize attendance, generate/approve/ca
 
 ## Shift closing and receipt access
 The shift owner or an administrator may close an open shift. Only Admin and Super Admin may reopen a closed shift, and a reason is mandatory. Existing authenticated record permissions continue to govern payment creation and receipt/report access; hiding an action in the interface is not an authorization control.
+
+## Teacher availability and operations
+Reception may view active teacher availability and the active attendance policy but cannot create, edit, archive, or restore availability, change operational settings, or generate payroll. Admin and Super Admin can manage availability, attendance policy, attendance corrections, and monthly payroll. Approved and paid payroll always lock attendance.
