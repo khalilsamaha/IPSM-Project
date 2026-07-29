@@ -24,6 +24,8 @@ export async function createPayment(formData: FormData) {
 
   const method = String(formData.get("paymentMethod") ?? "cash");
   const notes = String(formData.get("notes") ?? "").trim();
+  const allocationMode = formData.get("allocationMode") === "manual" ? "manual" : "automatic";
+  const amountCents = dollarsToCents(String(formData.get("amount") ?? "0"));
   if (!isNewPaymentMethod(method)) {
     redirect(paymentFormUrl(familyId, "cash", notes, "Choose Cash or Whish."));
   }
@@ -60,6 +62,8 @@ export async function createPayment(formData: FormData) {
       createdById: user.id,
       actorId: session.userId,
       shiftId: shift.id,
+      amountCents,
+      allocationMode,
       allocations,
     });
     paymentId = payment.id;

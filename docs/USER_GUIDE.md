@@ -545,3 +545,8 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 # Administration updates (PR 74)
 
 Administrators can edit course/level prices as a matrix and manage multi-teacher assignments from the Administration area. Receipt pages provide a user-initiated **Share receipt** action with native PDF sharing where supported and an honest download-plus-WhatsApp fallback. School dates are entered as `dd/mm/yy`; the application stores an ISO date without browser-dependent parsing.
+
+## Family payments and shift reconciliation
+Family payments default to **Automatic distribution**: enter one amount and the server applies integer cents to non-archived outstanding enrollments by enrollment start date, creation date, then stable ID. The advanced manual option supports exceptional exact allocations; its rows must equal the amount received and cannot exceed a balance.
+
+Closing a cashier shift separates Cash from Whish. Enter declared physical cash and explain every overage or shortage. Closing saves an authoritative reconciliation snapshot; reopening is restricted to administrators and does not erase earlier close/reopen audit history.

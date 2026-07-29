@@ -1,10 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { deflateSync, inflateSync } from "node:zlib";
 import { formatCurrency, formatFormalDate } from "@/lib/records/format";
 import { formatPaymentMethod } from "@/lib/payment-methods";
 import { generateUniqueReceiptNumber } from "@/lib/payments/receipt-repair";
 
 type PaymentStore = Pick<PrismaClient, "payment">;
 type ReceiptPayment = {
+  voidedAt?: Date | null;
   receiptNumber: string | null;
   paymentDate: Date;
   paymentMethod: string;
@@ -67,6 +71,8 @@ export function receiptPdfPath(paymentId: string) {
 }
 
 export type ReceiptLayout = "a5" | "a4-two-copies";
+export type ReceiptMode = "original" | "reprint" | "voided";
+export const OFFICIAL_STAMP_PATH = "public/assets/receipts/ipsm-official-stamp.png";
 
 type DrawCommand = string;
 type PageSpec = { width: number; height: number; commands: DrawCommand[] };
@@ -124,7 +130,7 @@ function receiptFacts(payment: ReceiptPayment) {
   return { receiptYear, students, studentIds, seasons, courses, levels, remainingBalance, payerName, contact, receivedBy };
 }
 
-function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart = 0): PageSpec[] {
+function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart = 0, mode: ReceiptMode = "original"): PageSpec[] {
   const facts = receiptFacts(payment);
   const pages: PageSpec[] = [];
   let index = allocationStart;
@@ -140,6 +146,7 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
     addText(commands, 260, 558, `Payment date: ${formatFormalDate(payment.paymentDate)}`, { size: 8 });
     addText(commands, 260, 546, `Year: ${facts.receiptYear}`, { size: 8 });
     addLine(commands, margin, 538, A5.width - margin, 538);
+    addText(commands, 260, 534, `Status: ${mode === "voided" ? "Voided Copy" : mode === "reprint" ? "Reprint" : "Posted"}`, { size: 7, font: "bold" });
 
     let y = 522;
     const fields: [string, string][] = [
@@ -178,15 +185,18 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
     if (index < payment.items.length) addText(commands, margin, 124, `Continued on next A5 page (${payment.items.length - index} allocation(s) remaining).`, { size: 7, font: "bold" });
 
     addRect(commands, margin, 58, 175, 58);
-    addText(commands, margin + 8, 101, "Signature / Stamp", { size: 9, font: "bold" });
-    addLine(commands, margin + 18, 78, margin + 150, 78);
-    addText(commands, margin + 18, 66, "Authorized signature", { size: 6.5 });
+    addText(commands, margin + 8, 104, "Official stamp and authorized signature", { size: 7, font: "bold" });
+    commands.push("q 120 0 0 50 50 59 cm /Stamp Do Q");
     addRect(commands, 218, 58, 178, 58);
     addText(commands, 226, 101, `Total paid: ${formatCurrency(payment.totalAmountCents)}`, { size: 9, font: "bold" });
     addWrappedText(commands, 226, 88, `Amount in words: ${amountInWords(payment.totalAmountCents)}`, 160, { size: 6.5, leading: 8 });
     addText(commands, 226, 72, `Remaining: ${formatCurrency(facts.remainingBalance)}`, { size: 7, font: "bold" });
     addText(commands, 226, 62, `Received by: ${facts.receivedBy}`, { size: 6.5 });
     addText(commands, margin, 42, "Reprinting reuses the same receipt number and does not create a new payment.", { size: 6 });
+    if (mode === "voided") {
+      commands.push("q 0.85 0 0 RG 2 w 0.707 0.707 -0.707 0.707 175 200 cm BT /F2 52 Tf 0 0 Td (VOID) Tj ET Q");
+      addText(commands, margin, 50, "This payment was voided and its allocations were reversed.", { size: 7, font: "bold" });
+    }
     
     pages.push({ width: A5.width, height: A5.height, commands });
     pageNo++;
@@ -194,19 +204,50 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
   return pages;
 }
 
-function renderPdf(pages: PageSpec[]) {
+function readOfficialStamp(providedPng?: Buffer) {
+  const assetPath = path.join(process.cwd(), OFFICIAL_STAMP_PATH);
+  let png: Buffer;
+  try { png = providedPng ?? readFileSync(assetPath); } catch (error) {
+    if (process.env.NODE_ENV !== "production") console.error(`Official receipt stamp unavailable: ${assetPath}`, error);
+    throw new Error("The official receipt could not be generated. Please contact an administrator.");
+  }
+  if (png.readUInt32BE(0) !== 0x89504e47) throw new Error("The official receipt could not be generated. Please contact an administrator.");
+  const width = png.readUInt32BE(16), height = png.readUInt32BE(20), colorType = png[25], depth = png[24];
+  if (colorType !== 6 || depth !== 8) throw new Error("The official receipt could not be generated. Please contact an administrator.");
+  const chunks: Buffer[] = []; let offset = 8;
+  while (offset < png.length) { const length = png.readUInt32BE(offset); const type = png.toString("ascii", offset + 4, offset + 8); if (type === "IDAT") chunks.push(png.subarray(offset + 8, offset + 8 + length)); offset += length + 12; }
+  const packed = inflateSync(Buffer.concat(chunks)), stride = width * 4, rgba = Buffer.alloc(stride * height); let source = 0;
+  for (let y = 0; y < height; y++) { const filter = packed[source++]; for (let x = 0; x < stride; x++) { const raw = packed[source++], left = x >= 4 ? rgba[y * stride + x - 4] : 0, up = y ? rgba[(y - 1) * stride + x] : 0, upperLeft = y && x >= 4 ? rgba[(y - 1) * stride + x - 4] : 0; let value = raw;
+    if (filter === 1) value += left; else if (filter === 2) value += up; else if (filter === 3) value += Math.floor((left + up) / 2); else if (filter === 4) { const p = left + up - upperLeft, pa = Math.abs(p-left), pb = Math.abs(p-up), pc = Math.abs(p-upperLeft); value += pa <= pb && pa <= pc ? left : pb <= pc ? up : upperLeft; } rgba[y * stride + x] = value & 255; }
+  }
+  const rgb = Buffer.alloc(width * height * 3), alpha = Buffer.alloc(width * height); for (let p = 0; p < width * height; p++) { rgb[p*3]=rgba[p*4]; rgb[p*3+1]=rgba[p*4+1]; rgb[p*3+2]=rgba[p*4+2]; alpha[p]=rgba[p*4+3]; }
+  let transparentPixels = 0, darkPixels = 0, bluePixels = 0, opaqueLightPixels = 0;
+  for (let p = 0; p < width * height; p++) { const r = rgba[p*4], g = rgba[p*4+1], b = rgba[p*4+2], a = rgba[p*4+3]; if (a === 0) transparentPixels++; if (a > 80 && r < 100 && g < 100 && b < 100) darkPixels++; if (a > 80 && b > r * 1.25 && b > g * 1.25) bluePixels++; if (a > 240 && r > 220 && g > 220 && b > 210) opaqueLightPixels++; }
+  return { width, height, rgb: deflateSync(rgb, { level: 9 }), alpha: deflateSync(alpha, { level: 9 }), transparentPixels, darkPixels, bluePixels, opaqueLightPixels };
+}
+
+export function inspectOfficialStampAsset(providedPng?: Buffer) {
+  const { width, height, transparentPixels, darkPixels, bluePixels, opaqueLightPixels } = readOfficialStamp(providedPng);
+  return { width, height, transparentPixels, darkPixels, bluePixels, opaqueLightPixels };
+}
+
+function renderPdf(pages: PageSpec[], stampPng?: Buffer) {
+  const stamp = readOfficialStamp(stampPng);
   const objects: string[] = [];
   const pageObjectIds: number[] = [];
   objects.push("1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj");
   objects.push("");
-  objects.push("4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj");
-  objects.push("5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj");
+  objects.push("3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj");
+  objects.push("4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj");
+  const alphaHex = `${stamp.alpha.toString("hex")}>`, rgbHex = `${stamp.rgb.toString("hex")}>`;
+  objects.push(`5 0 obj << /Type /XObject /Subtype /Image /Width ${stamp.width} /Height ${stamp.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter [/ASCIIHexDecode /FlateDecode] /Length ${alphaHex.length} >> stream\n${alphaHex}\nendstream endobj`);
+  objects.push(`6 0 obj << /Type /XObject /Subtype /Image /Width ${stamp.width} /Height ${stamp.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter [/ASCIIHexDecode /FlateDecode] /SMask 5 0 R /Length ${rgbHex.length} >> stream\n${rgbHex}\nendstream endobj`);
   pages.forEach((page) => {
     const pageId = objects.length + 1;
     const contentId = pageId + 1;
     const stream = page.commands.join("\n");
     pageObjectIds.push(pageId);
-    objects.push(`${pageId} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 ${page.width} ${page.height}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents ${contentId} 0 R >> endobj`);
+    objects.push(`${pageId} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 ${page.width} ${page.height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Stamp 6 0 R >> >> /Contents ${contentId} 0 R >> endobj`);
     objects.push(`${contentId} 0 obj << /Length ${Buffer.byteLength(stream, "utf8")} >> stream\n${stream}\nendstream endobj`);
   });
   objects[1] = `2 0 obj << /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >> endobj`;
@@ -218,11 +259,12 @@ function renderPdf(pages: PageSpec[]) {
   return Buffer.from(pdf, "utf8");
 }
 
-export function buildReceiptPdf(payment: ReceiptPayment, layout: ReceiptLayout = "a5") {
+export function buildReceiptPdf(payment: ReceiptPayment, layout: ReceiptLayout = "a5", requestedMode?: ReceiptMode, stampPng?: Buffer) {
+  const mode = requestedMode ?? (payment.voidedAt ? "voided" : "original");
   if (layout === "a4-two-copies") {
     const pages: PageSpec[] = [];
     for (const label of ["Customer Copy", "School Copy"]) {
-      const a5Pages = drawA5Receipt(payment, label);
+      const a5Pages = drawA5Receipt(payment, label, 0, mode);
       a5Pages.forEach((a5, i) => {
         const topOffset = label === "Customer Copy" ? A4.height - A5.height + 8 : 8;
         const commands = ["0.20 w", "0 0 0 RG", `q 1 0 0 1 88 ${topOffset} cm`, ...a5.commands, "Q"];
@@ -230,8 +272,8 @@ export function buildReceiptPdf(payment: ReceiptPayment, layout: ReceiptLayout =
         pages.push({ width: A4.width, height: A4.height, commands });
       });
     }
-    if (pages.length === 2) return renderPdf([{ width: A4.width, height: A4.height, commands: [...pages[0].commands, ...pages[1].commands] }]);
-    return renderPdf(pages);
+    if (pages.length === 2) return renderPdf([{ width: A4.width, height: A4.height, commands: [...pages[0].commands, ...pages[1].commands] }], stampPng);
+    return renderPdf(pages, stampPng);
   }
-  return renderPdf(drawA5Receipt(payment));
+  return renderPdf(drawA5Receipt(payment, "", 0, mode), stampPng);
 }
