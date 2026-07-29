@@ -18,6 +18,7 @@ IPSM supports three application roles with a strict hierarchy:
 | Records and daily operations | Yes | Yes | Yes |
 | Reports | Yes | Yes | Yes |
 | Void/delete sensitive finance records | Yes | Yes | No |
+| Pricing matrix / teacher assignments | Yes | Yes | No |
 
 ## Protected system owner account
 
