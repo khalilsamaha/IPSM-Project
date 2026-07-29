@@ -42,6 +42,7 @@ export const navSections: NavSection[] = [
     { label: "Instruments & Pricing", href: "/admin/academic-pricing", icon: Tags },
     { label: "Rooms", href: "/rooms", icon: Building2 },
     { label: "Teacher Availability", href: "/teacher-availability", icon: UserCog },
+    { label: "School Closures", href: "/admin/school-closures", icon: CalendarDays },
   ] },
   { label: "Management", items: [
     { label: "Reports", href: "/reports", icon: BarChart3 },
