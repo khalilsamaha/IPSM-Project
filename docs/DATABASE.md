@@ -117,3 +117,8 @@ Family -> Students -> Enrollments -> SchedulePattern -> ScheduleSessions
 
 ## Teacher operations additions
 `operational_settings` is an RLS-enabled singleton (`school-default`) holding auto-finalization, 0–240 minute grace, and payable-missed enablement. `schedule_sessions` has additive attendance provenance fields. `teacher_payrolls.payroll_month` stores the first date of each new calendar month and is unique with `teacher_id`; nullable legacy custom-period payrolls remain unchanged. Prisma and Supabase migration `20260729030000_teacher_operations` are identical.
+# Retention and lesson-register queries
+
+Person and family deletion uses serializable transactions and fresh dependency counts. Audit rows retain the deleted entity UUID without a foreign-key cascade. Financial, receipt, enrollment, attendance, lesson, and payroll rows are blockers, never cleanup targets. Teacher course and availability rows are the only permitted configuration cleanup.
+
+The schedule register uses additive composite indexes for date/time and season/status plus date. Prisma and Supabase migration copies are kept in parity.

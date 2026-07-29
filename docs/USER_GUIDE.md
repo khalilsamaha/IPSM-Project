@@ -553,3 +553,6 @@ Closing a cashier shift separates Cash from Whish. Enter declared physical cash 
 
 ## Teacher operations
 Elapsed scheduled lessons are assumed completed after the configured grace period. Attendance is the exception workspace: cancellation, missed attendance, and corrections require a reason and remain blocked by approved or paid payroll. Payroll creation uses a `YYYY-MM` month and never accepts a custom range. The current month can be previewed but only a completed month can be generated. Teacher Availability opens in a Monday-first calendar view; Reception can review it, while Admin and Super Admin manage recurring rules.
+# Safe deletion and Lessons Table
+
+Use Archive for any student, family, or teacher with history. Admins can open the detail/profile page to review live dependency counts and permanently delete only an archived, unused record by typing the exact displayed confirmation. The Lessons Schedule opens on the server-side Lessons Table; filters, sorting, page size, and page are preserved in the URL. Student, instrument, season-agenda, and booking views remain available as tabs.

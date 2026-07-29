@@ -33,6 +33,7 @@ import {
 import { parseIsoDateOnly } from "@/lib/date-time";
 import { calculateSessionBasedFeeCents, findApplicableCoursePrice } from "@/lib/registration/pricing";
 import { createPatternsAndGenerate } from "@/lib/schedule/recurring";
+import { deleteFamilySafely, deleteStudentSafely, deleteTeacherSafely, SafeDeletionError } from "@/lib/deletion/entity-deletion";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -190,102 +191,30 @@ export async function restoreStudent(formData: FormData) {
   revalidatePath("/students");
 }
 
-export async function deleteArchivedStudentCascade(formData: FormData) {
+export async function deleteStudentPermanently(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const studentId = id.parse(formData.get("id"));
-  const confirmation = String(formData.get("confirm") ?? "");
-  const redirectTo = `/students/${studentId}`;
-  if (confirmation !== "DELETE")
-    redirect(
-      `${redirectTo}?error=${encodeURIComponent("Type DELETE to confirm permanent student deletion.")}`,
-    );
-  let result: { deletedEnrollmentCount: number; deletedSessionCount: number; deletedOrphanPaymentCount: number };
   try {
-    result = await prisma.$transaction(async (tx) => {
-      const student = await tx.student.findUnique({
-        where: { id: studentId },
-        include: { enrollments: { select: { id: true } } },
-      });
-      if (!student) throw new Error("Student not found.");
-      if (student.status !== "INACTIVE" && !student.archivedAt)
-        throw new Error("Archive the student before permanent deletion.");
-      const enrollmentIds = student.enrollments.map((e) => e.id);
-      const paymentIds = enrollmentIds.length
-        ? Array.from(
-            new Set(
-              (
-                await tx.paymentItem.findMany({
-                  where: { enrollmentId: { in: enrollmentIds } },
-                  select: { paymentId: true },
-                })
-              ).map((i) => i.paymentId),
-            ),
-          )
-        : [];
-      const deletedSessions = await tx.scheduleSession.deleteMany({
-        where: { studentId },
-      });
-      const deletedPaymentItems = enrollmentIds.length
-        ? await tx.paymentItem.deleteMany({
-            where: { enrollmentId: { in: enrollmentIds } },
-          })
-        : { count: 0 };
-      const orphanPayments = paymentIds.length
-        ? await tx.payment.findMany({
-            where: { id: { in: paymentIds }, items: { none: {} } },
-            select: { id: true },
-          })
-        : [];
-      const orphanPaymentIds = orphanPayments.map((p) => p.id);
-      const deletedReceipts = orphanPaymentIds.length
-        ? await tx.receipt.deleteMany({
-            where: { paymentId: { in: orphanPaymentIds } },
-          })
-        : { count: 0 };
-      const deletedPayments = orphanPaymentIds.length
-        ? await tx.payment.deleteMany({
-            where: { id: { in: orphanPaymentIds } },
-          })
-        : { count: 0 };
-      const deletedEnrollments = enrollmentIds.length
-        ? await tx.enrollment.deleteMany({
-            where: { id: { in: enrollmentIds } },
-          })
-        : { count: 0 };
-      await tx.student.delete({ where: { id: studentId } });
-      const metadata = {
-        studentId,
-        studentCode: student.studentCode,
-        name: `${student.firstName} ${student.lastName}`,
-        deletedEnrollmentCount: deletedEnrollments.count,
-        deletedSessionCount: deletedSessions.count,
-        deletedPaymentItemCount: deletedPaymentItems.count,
-        deletedOrphanPaymentCount: deletedPayments.count,
-        deletedReceiptCount: deletedReceipts.count,
-      };
-      await tx.auditLog.create({
-        data: {
-          action: "delete",
-          entity: "Student",
-          entityId: studentId,
-          createdById,
-          actorId: session.userId,
-          metadata,
-        },
-      });
-      return metadata;
-    });
+    await deleteStudentSafely(studentId, String(formData.get("confirm") ?? ""), { actorId: session.userId, createdById });
   } catch (error) {
-    logServerError("student.deleteCascade", error, { studentId });
+    logServerError("student.deleteSafe", error, { studentId });
     redirect(
-      `${redirectTo}?error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to delete student safely.")}`,
+      `/students/${studentId}?error=${encodeURIComponent(error instanceof SafeDeletionError ? error.message : "Unable to delete student safely.")}`,
     );
   }
   revalidatePath("/students");
-  redirect(
-    `/students?status=archived&success=${encodeURIComponent(`Student permanently deleted. Removed ${result.deletedEnrollmentCount} enrollment(s), ${result.deletedSessionCount} session(s), and ${result.deletedOrphanPaymentCount} orphan payment(s).`)}`,
-  );
+  redirect(`/students?status=archived&success=${encodeURIComponent("Student permanently deleted.")}`);
 }
+
+async function deletePerson(formData: FormData, type: "family" | "teacher") {
+  const { session, createdById } = await requireAdminAction(); const entityId = id.parse(formData.get("id"));
+  try { await (type === "family" ? deleteFamilySafely : deleteTeacherSafely)(entityId, String(formData.get("confirm") ?? ""), { actorId: session.userId, createdById }); }
+  catch (error) { logServerError(`${type}.deleteSafe`, error, { entityId }); redirect(`/${type === "family" ? "families" : "teachers"}/${entityId}${type === "teacher" ? "/edit" : ""}?error=${encodeURIComponent(error instanceof SafeDeletionError ? error.message : `Unable to delete ${type} safely.`)}`); }
+  revalidatePath(type === "family" ? "/families" : "/teachers");
+  redirect(`/${type === "family" ? "families" : "teachers"}?status=archived&success=${encodeURIComponent(`${type === "family" ? "Family" : "Teacher"} permanently deleted.`)}`);
+}
+export async function deleteFamilyPermanently(formData: FormData) { return deletePerson(formData, "family"); }
+export async function deleteTeacherPermanently(formData: FormData) { return deletePerson(formData, "teacher"); }
 
 const teacherSchema = z.object({
   id: id.optional(),

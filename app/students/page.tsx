@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
-import { archiveStudent, deleteArchivedStudentCascade, restoreStudent } from "@/actions/records";
+import { archiveStudent, restoreStudent } from "@/actions/records";
 import { AppShell, DataTable, Pager, SearchBox, StatusBadge, StatusTabs, getStatusFilter, type RecordStatusFilter } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";

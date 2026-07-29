@@ -379,9 +379,12 @@ model ScheduleSession {
 
   @@index([studentId, sessionDate])
   @@index([teacherId, sessionDate])
+  @@index([sessionDate, startTime])
   @@index([enrollmentId])
+  @@index([seasonId, sessionDate])
   @@index([seasonId])
   @@index([roomId, sessionDate])
+  @@index([status, sessionDate])
   @@index([status])
   @@unique([schedulePatternId, sessionDate])
   @@map("schedule_sessions")

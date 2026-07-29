@@ -278,3 +278,10 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - Verify previous-month payroll preview/generation and current/future generation rejection.
 - Verify Admin calendar editing and Reception read-only access on desktop and mobile.
 - Verify closures, lesson overlays, availability overlap unions, CSV and print output.
+# PR 79 safe deletion and lessons register
+
+- [ ] Reception cannot forge permanent student, family, or teacher deletion.
+- [ ] Active and history-bearing records are blocked and the attempt is audited.
+- [ ] An unused archived record deletes and redirects to its archived list without a deleted-record 404.
+- [ ] Teacher configuration-only rows are disclosed and removed transactionally.
+- [ ] Lessons Table is the default; combined filters, inclusive dates, sort, pagination, archive state, payroll state, and specialized tabs work.
