@@ -535,3 +535,10 @@ Expenses now show Delete from the active and archived expense lists. Users must 
 Payments and receipts must not expose a normal Delete action. Use the established Void, Reprint, or Regenerate workflows so financial history remains auditable.
 
 Reports now show only filters relevant to the selected report type. Use Reset Filters to clear report filters, and confirm that family/student choices use readable codes and names instead of internal IDs.
+
+## Daily attendance and monthly payroll
+
+1. Under **Daily Operations**, open **Attendance** (today is selected by default).
+2. Review the visible lessons, choose **Mark all scheduled as completed**, confirm, and then change only missed or cancelled exceptions. Cancellation requires a reason.
+3. Resolve every Scheduled lesson before generating payroll. Payroll includes completed lessons; cancelled/scheduled lessons are unpaid; missed lessons require explicit pay approval.
+4. Under **Payroll**, filter the business month to review totals and teacher rollups, export CSV, or print. Overlapping payroll periods are prohibited. Approved and paid payroll-linked attendance cannot be changed.

@@ -9,7 +9,7 @@ function labelsForSection(sectionLabel: string) {
 
 describe("admin-only navigation and route access", () => {
   it("organizes sidebar items by workflow area instead of one configuration menu", () => {
-    expect(labelsForSection("Daily Operations")).toEqual(["Register Student", "Lessons / Schedule", "Payments", "Expenses", "Shift"]);
+    expect(labelsForSection("Daily Operations")).toEqual(["Register Student", "Lessons / Schedule", "Attendance", "Payments", "Expenses", "Shift"]);
     expect(labelsForSection("People")).toEqual(["Families", "Students", "Teachers"]);
     expect(labelsForSection("Academic Setup")).toEqual(["Enrollments", "Seasons", "Instruments & Pricing", "Rooms", "Teacher Availability", "School Closures"]);
     expect(labelsForSection("Management")).toEqual(["Reports", "Payroll"]);

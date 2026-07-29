@@ -57,3 +57,11 @@ Payroll uses the teacher hourly rate at draft generation time. Later changes to 
 - Paid payroll records paid date.
 - Reception cannot access `/payroll`.
 - Payroll totals equal lesson item amounts plus adjustments.
+
+## Attendance-driven monthly operations
+
+`ScheduleSession.status` is the attendance source of truth; no duplicate attendance record is maintained. Administrators open **Attendance** for today's lessons, mark all scheduled lessons completed, and then record missed/cancelled exceptions. Missed lessons are unpaid unless explicitly selected and approved during draft payroll generation.
+
+Bulk attendance changes are transactional and audited. Draft-linked lessons must first be released by cancelling/recalculating the draft; approved and paid payroll items lock attendance history, and paid payrolls are immutable.
+
+Payroll generation is blocked while unfinalized `SCHEDULED` lessons remain. A teacher cannot have overlapping DRAFT, APPROVED, or PAID periods. Generation serializes on the teacher record and rechecks overlap within a serializable transaction. The monthly payroll page provides status totals, teacher rollups, CSV export, and a print-friendly report.

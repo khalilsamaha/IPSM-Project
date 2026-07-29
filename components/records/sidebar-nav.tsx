@@ -26,6 +26,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: "Register Student", href: "/register-student", icon: UserPlus },
       { label: "Lessons / Schedule", href: "/schedule", icon: CalendarDays },
+      { label: "Attendance", href: "/attendance", icon: Activity },
       { label: "Payments", href: "/payments", icon: CreditCard },
       { label: "Expenses", href: "/expenses", icon: Receipt },
       { label: "Shift", href: "/shifts", icon: Clock },

@@ -231,3 +231,12 @@ Expenses now show Delete from the active and archived expense lists. Users must 
 Payments and receipts must not expose a normal Delete action. Use the established Void, Reprint, or Regenerate workflows so financial history remains auditable.
 
 Reports now show only filters relevant to the selected report type. Use Reset Filters to clear report filters, and confirm that family/student choices use readable codes and names instead of internal IDs.
+
+## Attendance / monthly payroll
+
+- [ ] Attendance defaults to today and filters by range, teacher, student, activity, status, source, and payroll state.
+- [ ] Bulk complete/missed/cancel/revert reports updated, skipped, and blocked counts; cancel requires a reason.
+- [ ] Draft, approved, and paid payroll items block attendance changes with a clear reason; audit events contain IDs/statuses only.
+- [ ] Scheduled lessons block generation; completed and explicitly approved missed lessons calculate from the rate snapshot.
+- [ ] Same/partial/contained overlap is blocked; adjacent periods and different teachers are permitted.
+- [ ] Month/year/teacher/status filters, cards, rollup/grand totals, CSV, and print totals agree.

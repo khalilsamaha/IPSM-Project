@@ -65,3 +65,7 @@ Expenses now show Delete from the active and archived expense lists. Users must 
 Payments and receipts must not expose a normal Delete action. Use the established Void, Reprint, or Regenerate workflows so financial history remains auditable.
 
 Reports now show only filters relevant to the selected report type. Use Reset Filters to clear report filters, and confirm that family/student choices use readable codes and names instead of internal IDs.
+
+### Attendance and payroll
+
+Only `ADMIN` and `SUPER_ADMIN` may bulk-finalize attendance, generate/approve/cancel payroll, mark payroll paid, or export payroll. Attendance audit entries record session identifiers and transition details without student personal data. Approved payroll locks financial and attendance history; paid payroll is fully immutable.

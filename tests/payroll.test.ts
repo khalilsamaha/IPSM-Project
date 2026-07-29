@@ -36,3 +36,23 @@ describe("teacher payroll calculations", () => {
     expect(["DRAFT", "APPROVED", "PAID", "CANCELLED"]).toContain("PAID");
   });
 });
+
+import { monthlyPayrollSummary, periodsOverlap } from "@/lib/payroll/calculations";
+describe("payroll period and monthly reporting", () => {
+  const d = (day: number) => new Date(Date.UTC(2026, 6, day));
+  it("blocks inclusive overlaps but permits adjacent periods", () => {
+    expect(periodsOverlap(d(1), d(31), d(1), d(31))).toBe(true);
+    expect(periodsOverlap(d(10), d(20), d(1), d(15))).toBe(true);
+    expect(periodsOverlap(d(1), d(15), d(10), d(31))).toBe(true);
+    expect(periodsOverlap(d(10), d(12), d(1), d(31))).toBe(true);
+    expect(periodsOverlap(d(1), d(15), d(16), d(31))).toBe(false);
+  });
+  it("rolls multiple records into exact integer-derived totals", () => {
+    const summary = monthlyPayrollSummary([
+      {teacherId:"a",teacherName:"A",completedMinutes:60,missedPayableMinutes:0,adjustmentCents:100,grossAmountCents:5100,status:"DRAFT"},
+      {teacherId:"a",teacherName:"A",completedMinutes:30,missedPayableMinutes:30,adjustmentCents:-100,grossAmountCents:4900,status:"PAID"},
+    ]);
+    expect(summary.rollup[0]).toMatchObject({completedMinutes:90,missedPayableMinutes:30,adjustmentCents:0,grossAmountCents:10000});
+    expect(summary.gross).toBe(10000); expect(summary.draft).toBe(5100); expect(summary.paid).toBe(4900);
+  });
+});
