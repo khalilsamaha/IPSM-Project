@@ -56,6 +56,12 @@ enum ScheduleSessionStatus {
   MISSED
 }
 
+enum AttendanceSource {
+  MANUAL
+  AUTOMATIC
+  IMPORT
+}
+
 enum AcademicConfigStatus {
   ACTIVE
   ARCHIVED
@@ -360,6 +366,10 @@ model ScheduleSession {
   endTime      String                @map("end_time")
   status       ScheduleSessionStatus @default(SCHEDULED)
   notes        String?
+  attendanceFinalizedAt DateTime? @map("attendance_finalized_at")
+  attendanceFinalizedBy String? @map("attendance_finalized_by") @db.Uuid
+  attendanceSource AttendanceSource? @map("attendance_source")
+  attendanceReason String? @map("attendance_reason")
   createdAt    DateTime              @default(now()) @map("created_at")
   updatedAt    DateTime              @updatedAt @map("updated_at")
   archivedAt   DateTime?             @map("archived_at")
@@ -457,6 +467,7 @@ model TeacherPayroll {
   teacher                 Teacher              @relation(fields: [teacherId], references: [id], onDelete: Restrict)
   periodStart             DateTime             @map("period_start") @db.Date
   periodEnd               DateTime             @map("period_end") @db.Date
+  payrollMonth            DateTime?            @map("payroll_month") @db.Date
   hourlyRateSnapshotCents Int                  @map("hourly_rate_snapshot_cents")
   completedMinutes        Int                  @default(0) @map("completed_minutes")
   missedPayableMinutes    Int                  @default(0) @map("missed_payable_minutes")
@@ -474,7 +485,20 @@ model TeacherPayroll {
 
   @@index([teacherId, periodStart, periodEnd])
   @@index([status])
+  @@unique([teacherId, payrollMonth])
   @@map("teacher_payrolls")
+}
+
+
+model OperationalSettings {
+  id                             String   @id
+  attendanceAutoFinalizeEnabled Boolean  @default(true) @map("attendance_auto_finalize_enabled")
+  attendanceFinalizeGraceMinutes Int     @default(15) @map("attendance_finalize_grace_minutes")
+  allowPayableMissedLessons      Boolean  @default(false) @map("allow_payable_missed_lessons")
+  updatedAt                      DateTime @updatedAt @map("updated_at")
+  updatedById                    String?  @map("updated_by_id") @db.Uuid
+
+  @@map("operational_settings")
 }
 
 model TeacherPayrollItem {

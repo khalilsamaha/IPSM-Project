@@ -19,7 +19,7 @@ export async function bulkAttendance(formData: FormData) {
   const reason = String(formData.get("reason") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
   if (!ids.length) throw new Error("Select at least one lesson.");
-  if (action === "cancel" && !reason) throw new Error("A cancellation reason is required.");
+  if (["cancel", "missed", "revert"].includes(action) && !reason) throw new Error("A reason is required for exceptions and corrections.");
 
   const result = await prisma.$transaction(async (tx) => {
     const rows = await tx.scheduleSession.findMany({
@@ -34,7 +34,7 @@ export async function bulkAttendance(formData: FormData) {
       if (block) { blocked++; blockedReasons[row.id] = block; continue; }
       previousStatuses[row.id] = row.status;
       const auditNote = [row.notes, reason && `${action} reason: ${reason}`, notes && `Internal: ${notes}`].filter(Boolean).join("\n") || null;
-      await tx.scheduleSession.update({ where: { id: row.id }, data: { status: attendanceTarget(action), notes: auditNote } });
+      await tx.scheduleSession.update({ where: { id: row.id }, data: { status: attendanceTarget(action), notes: auditNote, attendanceFinalizedAt: new Date(), attendanceFinalizedBy: actor?.id, attendanceSource: "MANUAL", attendanceReason: reason || null } });
       updated++;
     }
     const metadata = { actorId: session.userId, sessionIds: ids, previousStatuses, newStatus: attendanceTarget(action), blocked, skipped, reason: reason || undefined, blockedReasons };

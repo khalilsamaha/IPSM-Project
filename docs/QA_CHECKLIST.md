@@ -270,3 +270,11 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - Verify manual allocations cannot be submitted when their sum differs from the received amount.
 - Verify cash variance requires a non-blank explanation and Whish never changes expected physical cash.
 - Verify reopening retains the saved closing snapshot and close/reopen audit events.
+
+## Teacher operations (PR 78)
+- Verify elapsed lessons finalize only after the grace period in `APP_TIME_ZONE`.
+- Verify cancelled/missed/archived and approved/paid payroll lessons remain unchanged.
+- Verify cron rejects missing/incorrect `CRON_SECRET` and returns compact counts when authorized.
+- Verify previous-month payroll preview/generation and current/future generation rejection.
+- Verify Admin calendar editing and Reception read-only access on desktop and mobile.
+- Verify closures, lesson overlays, availability overlap unions, CSV and print output.
