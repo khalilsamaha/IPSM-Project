@@ -1,3 +1,5 @@
+import { formatDateShort } from "@/lib/date-time";
+
 export function formatCurrencyInput(cents: number) {
   return (cents / 100).toFixed(2);
 }
@@ -16,8 +18,12 @@ function dateParts(date: Date | string) {
 
 export function formatDate(date: Date | string | null | undefined) {
   if (!date) return "—";
-  const { day, month, year } = dateParts(date);
-  return `${day}/${month}/${year.slice(-2)}`;
+  // Date-only database values must retain their calendar day; instants use business time.
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split("-");
+    return `${day}/${month}/${year.slice(-2)}`;
+  }
+  return formatDateShort(date);
 }
 
 export function formatFormalDate(date: Date | string | null | undefined) {
