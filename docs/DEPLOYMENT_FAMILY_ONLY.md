@@ -37,3 +37,42 @@ WHERE n.nspname = 'public'
 ```
 
 Before deployment, snapshot payment IDs and receipt numbers and compare that snapshot after migration. The migration updates payer ownership in place; it does not recreate payments or receipts.
+
+## Production rollout checklist
+
+- [ ] Take a verified, restorable Supabase/PostgreSQL backup.
+- [ ] Record pre-migration student, family, payment, payment-item, and enrollment counts.
+- [ ] Export payment IDs and receipt numbers for an exact post-migration comparison.
+- [ ] Apply `20260728000000_family_only_recurring_schedule` during the maintenance window.
+- [ ] Run every read-only post-migration query above and compare the recorded counts and identifiers.
+- [ ] Confirm `payments.student_id` is absent.
+- [ ] Confirm `schedule_patterns` and `school_closures` exist.
+- [ ] Confirm row-level security is enabled on both new tables.
+- [ ] Confirm student/payment null-family, orphan-item, and cross-family mismatch counts are all zero.
+- [ ] Set `APP_TIME_ZONE` to the school's IANA business timezone in every runtime.
+- [ ] Deploy the application only after database verification passes.
+- [ ] Run the registration, payment, and receipt smoke tests below.
+
+## Manual production smoke tests
+
+Use disposable test records and an authorized receptionist; never use real card or database credentials.
+
+### Registration
+
+- Register a new one-student family without payment and confirm no cashier shift is required.
+- Register a new family with siblings, add a student to an existing family, and add an enrollment to an existing student.
+- With an open shift, register with an initial payment and verify its payment, allocation, shift, balance, and receipt.
+- Without an open shift, attempt an initial payment and verify the friendly shift message and that the entire registration/payment transaction rolls back if any operation fails.
+
+### Family payment
+
+- Select a family and confirm all current and previous-season enrollments appear; settled enrollments remain visible but cannot be allocated.
+- Confirm Total amount, Paid, and Remaining equal the stored enrollment values.
+- Record a valid payment with an open shift and verify its family, allocations, shift, receipt, and resulting balances.
+- Verify cross-family allocations, over-allocation, and payment without an open shift are rejected without creating a payment or allocation.
+
+### Receipt and reprint
+
+- Verify the payer display falls back in order from father name, to mother name, to family name.
+- Verify the complete family roster and allocation-only payment table are present.
+- Reprint the receipt and confirm the existing receipt number is preserved.
