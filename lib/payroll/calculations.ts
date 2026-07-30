@@ -8,6 +8,11 @@ export function calculatePayrollItemAmountCents(minutes: number, hourlyRateSnaps
   return Math.round((minutes * hourlyRateSnapshotCents) / 60);
 }
 
+export function calculateCompensationAmountCents(minutes: number, rateCents: number, basis: "HOURLY" | "SESSION_UNIT" = "HOURLY", unitMinutes = 60) {
+  if (!Number.isInteger(minutes) || minutes < 0 || !Number.isInteger(rateCents) || rateCents < 0 || !Number.isInteger(unitMinutes) || unitMinutes <= 0) throw new Error("Invalid compensation values");
+  return Math.round((minutes * rateCents) / (basis === "HOURLY" ? 60 : unitMinutes));
+}
+
 export function calculateGrossPayrollCents(items: { amountCents: number }[], adjustmentCents = 0) {
   return items.reduce((sum, item) => sum + item.amountCents, 0) + adjustmentCents;
 }
