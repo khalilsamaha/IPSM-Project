@@ -34,6 +34,7 @@ import { parseIsoDateOnly } from "@/lib/date-time";
 import { calculateSessionBasedFeeCents, findApplicableCoursePrice } from "@/lib/registration/pricing";
 import { createPatternsAndGenerate } from "@/lib/schedule/recurring";
 import { deleteFamilySafely, deleteStudentSafely, deleteTeacherSafely, SafeDeletionError } from "@/lib/deletion/entity-deletion";
+import { validateAvailabilityRange } from "@/lib/teachers/availability-dates";
 
 async function requireRecordsWrite() {
   const session = await requireSession();
@@ -222,14 +223,17 @@ const teacherSchema = z.object({
   email: optionalEmail,
   phone: optionalString,
   hourlyRate: z.string().default("0"),
+  compensationBasis: z.enum(["HOURLY", "SESSION_UNIT"]).default("HOURLY"),
+  sessionRate: z.string().default("0"),
+  sessionUnitMinutes: z.coerce.number().int().positive().default(30),
   status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]),
   notes: optionalString,
 });
 export async function saveTeacher(formData: FormData) {
   await requireRecordsWrite();
   const parsed = teacherSchema.parse(Object.fromEntries(formData));
-  const { hourlyRate, ...rest } = parsed;
-  const data = { ...rest, hourlyRateCents: dollarsToCents(hourlyRate) };
+  const { hourlyRate, sessionRate, ...rest } = parsed;
+  const data = { ...rest, hourlyRateCents: dollarsToCents(hourlyRate), sessionRateCents: rest.compensationBasis === "SESSION_UNIT" ? dollarsToCents(sessionRate) : null };
   const row = data.id
     ? await prisma.teacher.update({ where: { id: data.id }, data })
     : await prisma.teacher.create({ data });
@@ -668,6 +672,12 @@ export async function deleteRoom(formData: FormData) {
 export async function saveTeacherAvailability(formData: FormData) {
   const { session, createdById } = await requireAdminAction();
   const data = teacherAvailabilitySchema.parse(Object.fromEntries(formData));
+  if (data.seasonId) {
+    const season = await prisma.season.findUnique({ where: { id: data.seasonId }, select: { startDate: true, endDate: true } });
+    if (!season || !data.effectiveFrom || !data.effectiveTo) throw new Error("Seasonal availability requires both effective dates.");
+    validateAvailabilityRange({ seasonStart: season.startDate, seasonEnd: season.endDate, weekday: data.dayOfWeek, effectiveFrom: data.effectiveFrom, effectiveTo: data.effectiveTo });
+  }
+  if (data.courseId) { const assigned = await prisma.teacherCourse.findFirst({ where: { teacherId: data.teacherId, courseId: data.courseId, status: "ACTIVE", archivedAt: null } }); if (!assigned) throw new Error("The selected course is not actively assigned to this teacher."); }
   const conflicts = await prisma.teacherAvailability.findMany({ where: { teacherId: data.teacherId, dayOfWeek: data.dayOfWeek, status: "ACTIVE", archivedAt: null, ...(data.id ? { id: { not: data.id } } : {}), OR: [{ seasonId: data.seasonId || null }, { seasonId: null }] } });
   const overlap = conflicts.find((row) => timeWindowsOverlap({ startTime: row.startTime, endTime: row.endTime }, { startTime: data.startTime, endTime: data.endTime }));
   if (overlap) {

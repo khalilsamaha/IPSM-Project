@@ -72,6 +72,7 @@ export const roomSchema = z.object({
 export const teacherAvailabilitySchema = z.object({
   id: z.string().uuid().optional(),
   teacherId: z.string().uuid().or(z.literal("")).optional().transform((value) => value || undefined),
+  courseId: z.string().uuid().or(z.literal("")).optional().transform((value) => value || null),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time is required"),
   endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time is required"),
