@@ -80,7 +80,14 @@ enum TeacherAvailabilityStatus {
 enum ShiftStatus {
   OPEN
   CLOSED
+  AUTO_CLOSED
   REOPENED
+}
+
+enum RegistrationAttemptStatus {
+  IDENTITY_SAVED
+  COMPLETED
+  CANCELLED
 }
 
 enum PayrollStatus {
@@ -109,6 +116,7 @@ model UserProfile {
   shiftsReopened   CashierShift[]   @relation("ShiftReopenedBy")
   auditLogsCreated AuditLog[]       @relation("AuditLogCreatedBy")
   approvedPayrolls TeacherPayroll[] @relation("PayrollApprovedBy")
+  registrationAttempts RegistrationAttempt[]
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
   archivedAt       DateTime?        @map("archived_at")
@@ -154,6 +162,7 @@ model Family {
   status                FamilyStatus @default(ACTIVE)
   notes                 String?
   students              Student[]
+  registrationAttempts  RegistrationAttempt[]
   payments              Payment[]
   createdAt             DateTime     @default(now()) @map("created_at")
   updatedAt             DateTime     @updatedAt @map("updated_at")
@@ -176,6 +185,7 @@ model Student {
   status           StudentStatus     @default(ACTIVE)
   enrollments      Enrollment[]
   scheduleSessions ScheduleSession[]
+  registrationAttempts RegistrationAttempt[]
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   archivedAt       DateTime?         @map("archived_at")
@@ -337,6 +347,7 @@ model Enrollment {
   updatedAt           DateTime          @updatedAt @map("updated_at")
   archivedAt          DateTime?         @map("archived_at")
   registrationSubmissionId String?      @unique @map("registration_submission_id") @db.Uuid
+  registrationAttempt RegistrationAttempt?
 
   @@index([studentId, seasonId, courseId, levelId])
   @@index([studentId])
@@ -346,6 +357,28 @@ model Enrollment {
   @@index([levelId])
   @@index([status])
   @@map("enrollments")
+}
+
+model RegistrationAttempt {
+  id                String                    @id @db.Uuid
+  status            RegistrationAttemptStatus @default(IDENTITY_SAVED)
+  familyId          String                    @map("family_id") @db.Uuid
+  family            Family                    @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  primaryStudentId  String                    @map("primary_student_id") @db.Uuid
+  primaryStudent    Student                   @relation(fields: [primaryStudentId], references: [id], onDelete: Restrict)
+  enrollmentId      String?                   @unique @map("enrollment_id") @db.Uuid
+  enrollment        Enrollment?               @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  paymentId         String?                   @unique @map("payment_id") @db.Uuid
+  payment           Payment?                  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  lastFailureReason String?                   @map("last_failure_reason")
+  createdById       String?                   @map("created_by_id") @db.Uuid
+  createdBy         UserProfile?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  @@index([familyId])
+  @@index([primaryStudentId])
+  @@index([status])
+  @@map("registration_attempts")
 }
 
 model ScheduleSession {
@@ -541,6 +574,7 @@ model Payment {
   voidedAt         DateTime?     @map("voided_at")
   items            PaymentItem[]
   receipt          Receipt?
+  registrationAttempt RegistrationAttempt?
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
 

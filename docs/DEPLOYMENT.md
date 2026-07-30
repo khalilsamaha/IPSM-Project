@@ -154,3 +154,10 @@ Run `npm run typecheck`, `npm test`, and `npm run build` before promoting a rele
 
 
 > The 20260728 family-only migration supersedes the earlier nullable-family migration. Follow `DEPLOYMENT_FAMILY_ONLY.md`; do not deploy the nullable workflow application afterward.
+# PR80 migration recovery
+
+The normal PR80 migration must be applied through the standard deployment
+pipeline. If an operator previously attempted the defective draft migration
+that referenced `user_profiles`, use `docs/PR80_MIGRATION_RECOVERY.sql` once to
+repair only that known partial state. Do not repeatedly run normal Prisma
+migrations or mark them complete to conceal a schema mismatch.

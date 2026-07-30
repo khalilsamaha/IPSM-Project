@@ -6,6 +6,7 @@ import { isAdminOrHigher } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatFormalDate, formatFormalDateTime } from "@/lib/records/format";
 import { calculateShiftTotals } from "@/lib/shifts/calculations";
+import { PrintReportButton } from "@/components/print-report-button";
 
 export default async function ShiftDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> }) {
   const session = await requireSession(); const { id } = await params; const sp = await searchParams;
@@ -15,6 +16,8 @@ export default async function ShiftDetail({ params, searchParams }: { params: Pr
   const audits = await prisma.auditLog.findMany({ where: { entity: "CashierShift", entityId: id, action: { in: ["reopen", "close", "open"] } }, include: { createdBy: true }, orderBy: { createdAt: "asc" } });
   return <AppShell session={session}><div className="print:hidden"><PageHeader title="Shift Closing Report" description="Printable controlled cash and Whish shift report." /></div>
     {sp?.error ? <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-700 print:hidden">{sp.error}</div> : null}
+    {shift.status === "AUTO_CLOSED" ? <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 font-bold text-amber-900">Automatically closed — reconciliation pending</div> : null}
+    {shift.status === "CLOSED" || shift.status === "AUTO_CLOSED" ? <div className="mb-4 flex gap-2 print:hidden"><a className="rounded border px-4 py-2" href={`/api/shifts/${shift.id}/export?format=pdf`}>Download PDF</a><a className="rounded border px-4 py-2" href={`/api/shifts/${shift.id}/export?format=csv`}>Export CSV</a><PrintReportButton /></div> : null}
     <section className="rounded-xl border bg-white p-5"><div className="flex justify-between"><div><h1 className="text-2xl font-bold">Closing Report</h1><p>Business date: {formatFormalDate(shift.businessDate)}</p><p>Receptionist: {shift.user.name}</p><p>Opened: {formatFormalDateTime(shift.openedAt)} · Closed: {formatFormalDateTime(shift.closedAt)}</p></div><StatusBadge status={shift.status} /></div>
     <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[["Opening cash", shift.openingCashCents], ["Cash payments", totals.cashPaymentsCents], ["Whish payments", totals.whishPaymentsCents], ["Cash expenses", totals.cashExpensesCents], ["Whish expenses", totals.whishExpensesCents], ["Expected cash", totals.expectedCashCents], ["Declared cash", shift.declaredCashCents], ["Difference", shift.differenceCents]].map(([label, value]) => <div className="rounded border p-3" key={label as string}><p className="text-xs uppercase text-muted-foreground">{label}</p><p className="font-bold">{value == null ? "—" : formatCurrency(value as number)}</p></div>)}</div>
     <p className="mt-3 text-sm">Payments: {totals.postedPaymentCount}; Expenses: {totals.expenseCount}; Voided payments: {totals.voidedPaymentCount}. Closing user: {shift.closedBy?.name ?? "—"}.</p>

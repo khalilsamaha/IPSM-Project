@@ -8,4 +8,3 @@ coverage
 tsconfig.tsbuildinfo
 # Authorized receipt stamp is provisioned as a deployment secret/artifact. Do not
 # commit the supplied scan or its binary derivative to source control.
-public/assets/receipts/ipsm-official-stamp.png

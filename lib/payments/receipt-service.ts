@@ -6,6 +6,13 @@ import { formatCurrency, formatFormalDate } from "@/lib/records/format";
 import { formatPaymentMethod } from "@/lib/payment-methods";
 import { generateUniqueReceiptNumber } from "@/lib/payments/receipt-repair";
 
+export type ReceiptGenerationFailureCode = "STAMP_FILE_MISSING" | "STAMP_FILE_UNREADABLE" | "STAMP_INVALID_PNG" | "STAMP_UNSUPPORTED_ENCODING" | "STAMP_DECODE_FAILED" | "PDF_RENDER_FAILED";
+export class ReceiptGenerationError extends Error {
+  constructor(public readonly code: ReceiptGenerationFailureCode, options?: { cause?: unknown }) {
+    super(code, options); this.name = "ReceiptGenerationError";
+  }
+}
+
 type PaymentStore = Pick<PrismaClient, "payment">;
 type ReceiptPayment = {
   voidedAt?: Date | null;
@@ -208,17 +215,30 @@ function readOfficialStamp(providedPng?: Buffer) {
   const assetPath = path.join(process.cwd(), OFFICIAL_STAMP_PATH);
   let png: Buffer;
   try { png = providedPng ?? readFileSync(assetPath); } catch (error) {
-    if (process.env.NODE_ENV !== "production") console.error(`Official receipt stamp unavailable: ${assetPath}`, error);
-    throw new Error("The official receipt could not be generated. Please contact an administrator.");
+    const code = (error as NodeJS.ErrnoException)?.code === "ENOENT" ? "STAMP_FILE_MISSING" : "STAMP_FILE_UNREADABLE";
+    throw new ReceiptGenerationError(code, { cause: error });
   }
-  if (png.readUInt32BE(0) !== 0x89504e47) throw new Error("The official receipt could not be generated. Please contact an administrator.");
+  if (png.length < 33 || png.readUInt32BE(0) !== 0x89504e47) throw new ReceiptGenerationError("STAMP_INVALID_PNG");
   const width = png.readUInt32BE(16), height = png.readUInt32BE(20), colorType = png[25], depth = png[24];
-  if (colorType !== 6 || depth !== 8) throw new Error("The official receipt could not be generated. Please contact an administrator.");
-  const chunks: Buffer[] = []; let offset = 8;
-  while (offset < png.length) { const length = png.readUInt32BE(offset); const type = png.toString("ascii", offset + 4, offset + 8); if (type === "IDAT") chunks.push(png.subarray(offset + 8, offset + 8 + length)); offset += length + 12; }
-  const packed = inflateSync(Buffer.concat(chunks)), stride = width * 4, rgba = Buffer.alloc(stride * height); let source = 0;
-  for (let y = 0; y < height; y++) { const filter = packed[source++]; for (let x = 0; x < stride; x++) { const raw = packed[source++], left = x >= 4 ? rgba[y * stride + x - 4] : 0, up = y ? rgba[(y - 1) * stride + x] : 0, upperLeft = y && x >= 4 ? rgba[(y - 1) * stride + x - 4] : 0; let value = raw;
-    if (filter === 1) value += left; else if (filter === 2) value += up; else if (filter === 3) value += Math.floor((left + up) / 2); else if (filter === 4) { const p = left + up - upperLeft, pa = Math.abs(p-left), pb = Math.abs(p-up), pc = Math.abs(p-upperLeft); value += pa <= pb && pa <= pc ? left : pb <= pc ? up : upperLeft; } rgba[y * stride + x] = value & 255; }
+  if (!width || !height) throw new ReceiptGenerationError("STAMP_INVALID_PNG");
+  if (![0, 2, 3, 4, 6].includes(colorType) || depth !== 8 || png[28] !== 0) throw new ReceiptGenerationError("STAMP_UNSUPPORTED_ENCODING");
+  const chunks: Buffer[] = []; let palette: Buffer | undefined, transparency: Buffer | undefined, offset = 8;
+  try { while (offset + 12 <= png.length) { const length = png.readUInt32BE(offset); if (offset + length + 12 > png.length) throw new Error("truncated chunk"); const type = png.toString("ascii", offset + 4, offset + 8), data = png.subarray(offset + 8, offset + 8 + length); if (type === "IDAT") chunks.push(data); else if (type === "PLTE") palette = data; else if (type === "tRNS") transparency = data; offset += length + 12; } } catch (error) { throw new ReceiptGenerationError("STAMP_INVALID_PNG", { cause: error }); }
+  if (!chunks.length || (colorType === 3 && !palette)) throw new ReceiptGenerationError("STAMP_INVALID_PNG");
+  const channels = colorType === 0 || colorType === 3 ? 1 : colorType === 2 ? 3 : colorType === 4 ? 2 : 4;
+  let packed: Buffer;
+  try { packed = inflateSync(Buffer.concat(chunks)); } catch (error) { throw new ReceiptGenerationError("STAMP_DECODE_FAILED", { cause: error }); }
+  const stride = width * channels, decoded = Buffer.alloc(stride * height); let source = 0;
+  try { for (let y = 0; y < height; y++) { const filter = packed[source++]; if (filter > 4) throw new Error("invalid filter"); for (let x = 0; x < stride; x++) { const raw = packed[source++], left = x >= channels ? decoded[y * stride + x - channels] : 0, up = y ? decoded[(y - 1) * stride + x] : 0, upperLeft = y && x >= channels ? decoded[(y - 1) * stride + x - channels] : 0; let value = raw;
+    if (filter === 1) value += left; else if (filter === 2) value += up; else if (filter === 3) value += Math.floor((left + up) / 2); else if (filter === 4) { const p = left + up - upperLeft, pa = Math.abs(p-left), pb = Math.abs(p-up), pc = Math.abs(p-upperLeft); value += pa <= pb && pa <= pc ? left : pb <= pc ? up : upperLeft; } decoded[y * stride + x] = value & 255; }
+  } } catch (error) { throw new ReceiptGenerationError("STAMP_DECODE_FAILED", { cause: error }); }
+  const rgba = Buffer.alloc(width * height * 4);
+  for (let p = 0; p < width * height; p++) { const at = p * channels, out = p * 4;
+    if (colorType === 0) rgba.set([decoded[at], decoded[at], decoded[at], transparency && transparency.length >= 2 && decoded[at] === transparency.readUInt16BE(0) ? 0 : 255], out);
+    else if (colorType === 2) rgba.set([decoded[at], decoded[at+1], decoded[at+2], 255], out);
+    else if (colorType === 3) { const index=decoded[at], pi=index*3; if (!palette || pi+2>=palette.length) throw new ReceiptGenerationError("STAMP_DECODE_FAILED"); rgba.set([palette[pi],palette[pi+1],palette[pi+2],transparency?.[index] ?? 255],out); }
+    else if (colorType === 4) rgba.set([decoded[at],decoded[at],decoded[at],decoded[at+1]],out);
+    else rgba.set(decoded.subarray(at, at+4),out);
   }
   const rgb = Buffer.alloc(width * height * 3), alpha = Buffer.alloc(width * height); for (let p = 0; p < width * height; p++) { rgb[p*3]=rgba[p*4]; rgb[p*3+1]=rgba[p*4+1]; rgb[p*3+2]=rgba[p*4+2]; alpha[p]=rgba[p*4+3]; }
   let transparentPixels = 0, darkPixels = 0, bluePixels = 0, opaqueLightPixels = 0;
@@ -260,6 +280,7 @@ function renderPdf(pages: PageSpec[], stampPng?: Buffer) {
 }
 
 export function buildReceiptPdf(payment: ReceiptPayment, layout: ReceiptLayout = "a5", requestedMode?: ReceiptMode, stampPng?: Buffer) {
+  try {
   const mode = requestedMode ?? (payment.voidedAt ? "voided" : "original");
   if (layout === "a4-two-copies") {
     const pages: PageSpec[] = [];
@@ -276,4 +297,8 @@ export function buildReceiptPdf(payment: ReceiptPayment, layout: ReceiptLayout =
     return renderPdf(pages, stampPng);
   }
   return renderPdf(drawA5Receipt(payment, "", 0, mode), stampPng);
+  } catch (error) {
+    if (error instanceof ReceiptGenerationError) throw error;
+    throw new ReceiptGenerationError("PDF_RENDER_FAILED", { cause: error });
+  }
 }

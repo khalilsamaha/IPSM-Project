@@ -1463,6 +1463,22 @@ export async function registerStudentWorkflow(formData: FormData) {
       };
     });
 
+    await prisma.registrationAttempt.upsert({
+      where: { id: parsed.registrationSubmissionId },
+      update: { familyId: result.familyId, primaryStudentId: result.primaryStudentId, enrollmentId: result.enrollmentId, paymentId: result.paymentId, lastFailureReason: null },
+      create: { id: parsed.registrationSubmissionId, familyId: result.familyId, primaryStudentId: result.primaryStudentId, enrollmentId: result.enrollmentId, paymentId: result.paymentId, createdById },
+    });
+
+    if (!parsed.scheduleNow) {
+      await prisma.$transaction(async (tx) => {
+        if (result.paymentId) await tx.payment.delete({ where: { id: result.paymentId } });
+        await tx.enrollment.delete({ where: { id: result.enrollmentId } });
+        await tx.registrationAttempt.update({ where: { id: parsed.registrationSubmissionId }, data: { status: "IDENTITY_SAVED", enrollmentId: null, paymentId: null } });
+        await tx.auditLog.create({ data: { action: "registration_identity_saved", entity: "RegistrationAttempt", entityId: parsed.registrationSubmissionId, createdById, actorId: session.userId, metadata: { familyId: result.familyId, primaryStudentId: result.primaryStudentId } } });
+      });
+      redirect(`/register-student?identitySaved=1&attemptId=${parsed.registrationSubmissionId}&familyId=${result.familyId}`);
+    }
+
     let sessionId: string | null = null;
     let patternCount = 0;
     let generatedSessionCount = 0;
@@ -1476,9 +1492,17 @@ export async function registerStudentWorkflow(formData: FormData) {
         const scheduled = await createPatternsAndGenerate(prisma, slots.map((slot) => ({ ...slot, enrollmentId: result.enrollmentId, teacherId: parsed.teacherId!, startsOn: enrollmentStartDate, endsOn: enrollmentEndDate })));
         patternCount = scheduled.patterns.length; generatedSessionCount = scheduled.generatedSessionCount; sessionId = scheduled.firstLessonId;
         await prisma.auditLog.create({ data: { action: "registration_schedule_completed", entity: "Enrollment", entityId: result.enrollmentId, createdById, actorId: session.userId, metadata: { enrollmentId: result.enrollmentId, patternCount, generatedSessionCount } } });
+        await prisma.registrationAttempt.update({ where: { id: parsed.registrationSubmissionId }, data: { status: "COMPLETED", enrollmentId: result.enrollmentId, paymentId: result.paymentId, lastFailureReason: null } });
       } catch (error) {
         scheduleError = error instanceof Error ? error.message : "The requested weekly lessons could not be scheduled.";
-        await prisma.auditLog.create({ data: { action: "registration_schedule_failed", entity: "Enrollment", entityId: result.enrollmentId, createdById, actorId: session.userId, metadata: { enrollmentId: result.enrollmentId, patternCount: 0, generatedSessionCount: 0, error: scheduleError.slice(0, 250) } } });
+        await prisma.$transaction(async (tx) => {
+          if (result.paymentId) await tx.payment.delete({ where: { id: result.paymentId } });
+          await tx.scheduleSession.deleteMany({ where: { enrollmentId: result.enrollmentId } });
+          await tx.schedulePattern.deleteMany({ where: { enrollmentId: result.enrollmentId } });
+          await tx.enrollment.delete({ where: { id: result.enrollmentId } });
+          await tx.registrationAttempt.update({ where: { id: parsed.registrationSubmissionId }, data: { status: "IDENTITY_SAVED", enrollmentId: null, paymentId: null, lastFailureReason: scheduleError!.slice(0, 250) } });
+          await tx.auditLog.create({ data: { action: "registration_schedule_failed", entity: "RegistrationAttempt", entityId: parsed.registrationSubmissionId, createdById, actorId: session.userId, metadata: { formerEnrollmentId: result.enrollmentId, familyId: result.familyId, primaryStudentId: result.primaryStudentId, patternCount: 0, generatedSessionCount: 0, error: scheduleError!.slice(0, 250) } } });
+        });
       }
     }
 
@@ -1486,7 +1510,7 @@ export async function registerStudentWorkflow(formData: FormData) {
     revalidatePath("/students");
     revalidatePath("/enrollments");
     revalidatePath("/schedule");
-    const successUrl = `/register-student?success=1&enrollmentId=${result.enrollmentId}&familyId=${result.familyId}&students=${result.createdStudentCount}&patterns=${patternCount}&generated=${generatedSessionCount}${sessionId ? `&sessionId=${sessionId}` : ""}${result.paymentId ? `&paymentId=${result.paymentId}` : ""}${scheduleError ? `&scheduleError=${encodeURIComponent(scheduleError)}` : ""}`;
+    const successUrl = scheduleError ? `/register-student?identitySaved=1&attemptId=${parsed.registrationSubmissionId}&familyId=${result.familyId}&scheduleError=${encodeURIComponent(scheduleError)}` : `/register-student?success=1&enrollmentId=${result.enrollmentId}&familyId=${result.familyId}&students=${result.createdStudentCount}&patterns=${patternCount}&generated=${generatedSessionCount}${sessionId ? `&sessionId=${sessionId}` : ""}${result.paymentId ? `&paymentId=${result.paymentId}` : ""}`;
     redirect(successUrl);
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT")
