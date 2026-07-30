@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildReceiptPdf } from "@/lib/payments/receipt-service";
+import { inspectOfficialStampAsset, OFFICIAL_STAMP_PATH } from "@/lib/payments/receipt-service";
+import { readFileSync, statSync } from "node:fs";
 
 // Transparent 1x1 test fixture. Production always reads the separately
 // provisioned authorized stamp; tests never substitute this fixture there.
@@ -20,6 +22,18 @@ function payment(itemCount = 3) {
 }
 
 describe("receipt PDF layout", () => {
+  it("decodes and embeds the real committed production stamp", () => {
+    expect(statSync(OFFICIAL_STAMP_PATH).size).toBeGreaterThan(0);
+    const productionStamp = readFileSync(OFFICIAL_STAMP_PATH);
+    const inspection = inspectOfficialStampAsset(productionStamp);
+    expect(inspection.width).toBeGreaterThan(1);
+    expect(inspection.height).toBeGreaterThan(1);
+    for (const [layout, mode] of [["a5", "original"], ["a4-two-copies", "original"], ["a5", "reprint"], ["a5", "voided"]] as const) {
+      const pdf = buildReceiptPdf(payment(2), layout, mode, productionStamp).toString("utf8");
+      expect(pdf).toContain("/Subtype /Image");
+      expect(pdf).toContain("/Stamp Do");
+    }
+  });
   it("uses A5 MediaBox by default", () => {
     expect(receipt(payment()).toString("utf8")).toContain("/MediaBox [0 0 420 595]");
   });

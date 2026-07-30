@@ -18,6 +18,8 @@ export default async function RegisterStudentPage({
     students?: string;
     familyId?: string;
     scheduleError?: string;
+    identitySaved?: string;
+    attemptId?: string;
   }>;
 }) {
   const session = await requireSession();
@@ -119,6 +121,7 @@ export default async function RegisterStudentPage({
           </Link>
         </div>
       ) : null}
+      {params.identitySaved ? <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900"><p className="font-black">Family and student saved.</p><p>No enrollment or payment was created.</p>{params.scheduleError ? <><p className="mt-3 font-bold">Enrollment was not created:</p><p>{params.scheduleError}</p><p className="mt-2">No payment was recorded.</p></> : null}<Link className="mt-3 inline-flex rounded bg-primary px-4 py-2 font-bold text-white" href={`/register-student?familyId=${params.familyId ?? ""}&attemptId=${params.attemptId ?? ""}`}>Complete enrollment</Link></div> : null}
       <RegisterStudentWorkflowForm
         students={students.map((student) => ({
           id: student.id,

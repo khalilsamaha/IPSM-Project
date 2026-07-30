@@ -42,14 +42,16 @@ export async function closeShift(formData: FormData) {
   const notes = [shift.notes, closeNote ? `Close note: ${closeNote}` : null].filter(Boolean).join("\n") || null;
   const receiptNumbers = await prisma.payment.findMany({ where: { shiftId, receiptNumber: { not: null } }, select: { receiptNumber: true }, orderBy: { receiptNumber: "asc" } });
   const closedAt = new Date();
-  const closingSnapshot = {
+  const finalSnapshot = {
     version: 1, openingCashCents: shift.openingCashCents, ...totals, declaredCashCents, differenceCents,
     receiptCount: receiptNumbers.length, firstReceiptNumber: receiptNumbers[0]?.receiptNumber ?? null,
     lastReceiptNumber: receiptNumbers.at(-1)?.receiptNumber ?? null, closedAt: closedAt.toISOString(), closedById: userId,
   };
   await prisma.$transaction(async (tx) => {
+    const prior = shift.closingSnapshot && typeof shift.closingSnapshot === "object" ? shift.closingSnapshot as Record<string, unknown> : {};
+    const closingSnapshot = shift.status === "AUTO_CLOSED" ? { ...prior, reconciliation: finalSnapshot } : finalSnapshot;
     await tx.cashierShift.update({ where: { id: shiftId }, data: { status: "CLOSED", closedAt, closedById: userId, expectedCashCents: totals.expectedCashCents, declaredCashCents, differenceCents, varianceReason: varianceReason || null, closingSnapshot, notes } });
-    await tx.auditLog.create({ data: { action: "close", entity: "CashierShift", entityId: shiftId, actorId: session.userId, createdById: userId, metadata: closingSnapshot } });
+    await tx.auditLog.create({ data: { action: shift.status === "AUTO_CLOSED" ? "reconcile_auto_close" : "close", entity: "CashierShift", entityId: shiftId, actorId: session.userId, createdById: userId, metadata: finalSnapshot } });
   });
   revalidatePath("/shifts"); revalidatePath(`/shifts/${shiftId}`);
   redirect(`/shifts/${shiftId}?success=closed`);

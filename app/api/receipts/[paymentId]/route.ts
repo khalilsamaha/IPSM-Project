@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { ensurePaymentReceiptWithRetry } from "@/lib/payments/receipt-repair";
-import { buildReceiptPdf, type ReceiptLayout } from "@/lib/payments/receipt-service";
+import { buildReceiptPdf, ReceiptGenerationError, type ReceiptLayout } from "@/lib/payments/receipt-service";
+import { logServerError } from "@/lib/server-log";
+
+export const runtime = "nodejs";
+const SAFE_RECEIPT_ERROR = "Receipt generation is temporarily unavailable. The payment remains recorded. Contact an administrator and provide the receipt number.";
 
 export async function GET(request: Request, { params }: { params: Promise<{ paymentId: string }> }) {
   const session = await requireSession();
@@ -17,6 +21,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ paym
   if (!payment?.receiptNumber) return NextResponse.json({ error: "Receipt metadata unavailable" }, { status: 500 });
   const mode = payment.voidedAt ? "voided" : requestedMode === "reprint" ? "reprint" : "original";
   await prisma.auditLog.create({ data: { action: mode === "voided" ? "voided_copy_download" : mode === "reprint" ? "reprint" : "download", entity: "Receipt", entityId: payment.id, actorId: session.userId, metadata: { receiptNumber: payment.receiptNumber, layout, mode } } });
-  const pdf = buildReceiptPdf(payment, layout, mode);
-  return new NextResponse(pdf, { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${payment.receiptNumber}.pdf"` } });
+  try {
+    const pdf = buildReceiptPdf(payment, layout, mode);
+    return new NextResponse(pdf, { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${payment.receiptNumber}.pdf"` } });
+  } catch (error) {
+    logServerError("receipt.generate", error, { failureCode: error instanceof ReceiptGenerationError ? error.code : "PDF_RENDER_FAILED", paymentId, receiptNumber: payment.receiptNumber });
+    return NextResponse.json({ error: SAFE_RECEIPT_ERROR, receiptNumber: payment.receiptNumber }, { status: 500 });
+  }
 }

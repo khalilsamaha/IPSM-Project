@@ -26,9 +26,12 @@ export function formatDateForInput(value: Date | string) {
  * Two digit years use a documented 1970-2069 window (00-69 => 2000-2069,
  * 70-99 => 1970-1999). Four digit years are accepted from 1900 through 2099.
  */
-export function parseDisplayDate(value: string) {
-  const m = /^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/.exec(value.trim());
-  if (!m) throw new Error("Enter a valid date in dd/mm/yy format.");
+export type LocalizedDateFormat = "dd/mm/yy" | "dd/mm/yyyy";
+export function parseDisplayDate(value: string, displayFormat: LocalizedDateFormat = "dd/mm/yy") {
+  const yearPattern = displayFormat === "dd/mm/yyyy" ? "\\d{4}" : "\\d{2}";
+  const m = new RegExp(`^(\\d{2})\\/(\\d{2})\\/(${yearPattern})$`).exec(value.trim());
+  const formatError = `Enter a valid date in ${displayFormat} format.`;
+  if (!m) throw new Error(formatError);
   const shortYear = Number(m[3]);
   const year =
     m[3].length === 2
@@ -46,14 +49,14 @@ export function parseDisplayDate(value: string) {
     d.getUTCMonth() !== month - 1 ||
     d.getUTCDate() !== day
   )
-    throw new Error("Enter a valid calendar date.");
+    throw new Error(displayFormat === "dd/mm/yyyy" ? formatError : "Enter a valid calendar date.");
   return formatDateForInput(d);
 }
-export function displayDateFromIso(value: string) {
+export function displayDateFromIso(value: string, displayFormat: LocalizedDateFormat = "dd/mm/yy") {
   if (!value) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!m) throw new Error("Invalid ISO date.");
-  return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+  return `${m[3]}/${m[2]}/${displayFormat === "dd/mm/yyyy" ? m[1] : m[1].slice(2)}`;
 }
 /** Parse an ISO date-only value as UTC, rejecting rollover dates such as 2024-02-31. */
 export function parseIsoDateOnly(value: string) {

@@ -1,6 +1,6 @@
 "use client";
 import { useId, useState } from "react";
-import { displayDateFromIso, parseDisplayDate } from "@/lib/date-time";
+import { displayDateFromIso, parseDisplayDate, type LocalizedDateFormat } from "@/lib/date-time";
 
 type Props = {
   name: string;
@@ -9,6 +9,7 @@ type Props = {
   required?: boolean;
   className?: string;
   onChange?: (iso: string) => void;
+  displayFormat?: LocalizedDateFormat;
 };
 export function LocalizedDateInput({
   name,
@@ -17,10 +18,11 @@ export function LocalizedDateInput({
   required = false,
   className = "input",
   onChange,
+  displayFormat = "dd/mm/yy",
 }: Props) {
   const id = useId(),
     [visible, setVisible] = useState(() =>
-      defaultValue ? displayDateFromIso(defaultValue) : "",
+      defaultValue ? displayDateFromIso(defaultValue, displayFormat) : "",
     ),
     [iso, setIso] = useState(defaultValue),
     [error, setError] = useState("");
@@ -35,9 +37,9 @@ export function LocalizedDateInput({
       return;
     }
     try {
-      const next = parseDisplayDate(visible);
+      const next = parseDisplayDate(visible, displayFormat);
       update(next);
-      setVisible(displayDateFromIso(next));
+      setVisible(displayDateFromIso(next, displayFormat));
       setError("");
     } catch (e) {
       update("");
@@ -59,7 +61,7 @@ export function LocalizedDateInput({
         id={id}
         className={className}
         inputMode="numeric"
-        placeholder="dd/mm/yy"
+        placeholder={displayFormat}
         value={visible}
         onChange={(e) => setVisible(e.target.value)}
         onBlur={validate}
