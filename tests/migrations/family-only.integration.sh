@@ -158,6 +158,79 @@ failure_case "INSERT INTO payment_items VALUES (gen_random_uuid(),gen_random_uui
 
 echo "PostgreSQL family-only migration integration tests passed"
 
+# PR80 fixture: apply the integrity migration to the physical schema that existed
+# immediately before PR80, then verify every enum, relation, foreign key, and index.
+PR80_MIGRATION=prisma/migrations/20260730000000_registration_attempts_shift_integrity/migration.sql
+"${PSQL[@]}" <<'SQL'
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+CREATE TYPE "ShiftStatus" AS ENUM ('OPEN', 'CLOSED', 'REOPENED');
+CREATE TABLE public.users(id uuid PRIMARY KEY);
+CREATE TABLE public.families(id uuid PRIMARY KEY);
+CREATE TABLE public.students(id uuid PRIMARY KEY);
+CREATE TABLE public.enrollments(id uuid PRIMARY KEY);
+CREATE TABLE public.payments(id uuid PRIMARY KEY);
+SQL
+"${PSQL[@]}" -f "$PR80_MIGRATION"
+"${PSQL[@]}" <<'SQL'
+DO $$
+DECLARE
+  actual_count integer;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = 'registration_attempts' AND c.relkind = 'r'
+  ) THEN RAISE EXCEPTION 'PR80 migration failed: public.registration_attempts does not exist'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public' AND t.typname = 'RegistrationAttemptStatus'
+  ) THEN RAISE EXCEPTION 'PR80 migration failed: public.RegistrationAttemptStatus does not exist'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace JOIN pg_enum e ON e.enumtypid = t.oid
+    WHERE n.nspname = 'public' AND t.typname = 'ShiftStatus' AND e.enumlabel = 'AUTO_CLOSED'
+  ) THEN RAISE EXCEPTION 'PR80 migration failed: ShiftStatus does not contain AUTO_CLOSED'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint con
+    JOIN pg_class child ON child.oid = con.conrelid
+    JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
+    JOIN pg_class parent ON parent.oid = con.confrelid
+    JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
+    WHERE con.contype = 'f' AND child_ns.nspname = 'public' AND child.relname = 'registration_attempts'
+      AND parent_ns.nspname = 'public' AND parent.relname = 'users'
+      AND con.conkey = ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid = child.oid AND attname = 'created_by_id')]
+      AND con.confkey = ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid = parent.oid AND attname = 'id')]
+  ) THEN RAISE EXCEPTION 'PR80 migration failed: registration_attempts.created_by_id does not reference public.users(id)'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint con JOIN pg_class parent ON parent.oid = con.confrelid
+    JOIN pg_namespace n ON n.oid = parent.relnamespace
+    WHERE con.contype = 'f' AND n.nspname = 'public' AND parent.relname = 'user_profiles'
+  ) THEN RAISE EXCEPTION 'PR80 migration failed: a foreign key incorrectly references public.user_profiles'; END IF;
+
+  SELECT count(*) INTO actual_count
+  FROM pg_constraint con
+  JOIN pg_class child ON child.oid = con.conrelid
+  JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
+  JOIN pg_class parent ON parent.oid = con.confrelid
+  JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
+  WHERE con.contype = 'f' AND child_ns.nspname = 'public' AND child.relname = 'registration_attempts'
+    AND parent_ns.nspname = 'public' AND parent.relname IN ('families', 'students', 'enrollments', 'payments');
+  IF actual_count <> 4 THEN RAISE EXCEPTION 'PR80 migration failed: expected family, student, enrollment, and payment foreign keys; found %', actual_count; END IF;
+
+  SELECT count(*) INTO actual_count FROM pg_indexes
+  WHERE schemaname = 'public' AND tablename = 'registration_attempts'
+    AND indexname IN ('registration_attempts_family_id_idx', 'registration_attempts_primary_student_id_idx', 'registration_attempts_status_idx');
+  IF actual_count <> 3 THEN RAISE EXCEPTION 'PR80 migration failed: expected all three registration-attempt indexes; found %', actual_count; END IF;
+END
+$$;
+SELECT 'pr80-migration-ok';
+SQL
+
+echo "PostgreSQL PR80 migration integration tests passed"
+
 SESSION_PRICING_MIGRATION="prisma/migrations/20260729010000_session_pricing_registration/migration.sql"
 SUPABASE_SESSION_PRICING_MIGRATION="supabase/migrations/20260729010000_session_pricing_registration.sql"
 cmp "$SESSION_PRICING_MIGRATION" "$SUPABASE_SESSION_PRICING_MIGRATION"

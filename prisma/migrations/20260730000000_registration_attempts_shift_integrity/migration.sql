@@ -9,7 +9,7 @@ CREATE TABLE "registration_attempts" (
   "enrollment_id" UUID REFERENCES "enrollments"("id") ON DELETE SET NULL,
   "payment_id" UUID REFERENCES "payments"("id") ON DELETE SET NULL,
   "last_failure_reason" TEXT,
-  "created_by_id" UUID REFERENCES "user_profiles"("id") ON DELETE SET NULL,
+  "created_by_id" UUID REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
