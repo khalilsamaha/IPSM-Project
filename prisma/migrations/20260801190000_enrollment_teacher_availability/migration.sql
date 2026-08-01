@@ -73,16 +73,15 @@ BEGIN
        AND ta.archived_at IS NULL
        AND (ta.season_id IS NULL OR ta.season_id = NEW.season_id)
        AND (ta.course_id IS NULL OR ta.course_id = NEW.course_id)
-       AND generate_series(
+       AND EXISTS (
+         SELECT 1
+           FROM generate_series(
              greatest(NEW.enrollment_start_date, coalesce(ta.effective_from, season_start)),
              least(NEW.enrollment_end_date, coalesce(ta.effective_to, season_end)),
              interval '1 day'
-           )::date IS NOT NULL
-       AND extract(dow FROM generate_series(
-             greatest(NEW.enrollment_start_date, coalesce(ta.effective_from, season_start)),
-             least(NEW.enrollment_end_date, coalesce(ta.effective_to, season_end)),
-             interval '1 day'
-           ))::integer = ta.day_of_week
+           ) AS occurrence(day)
+          WHERE extract(dow FROM occurrence.day)::integer = ta.day_of_week
+       )
   ) THEN
     RAISE EXCEPTION 'No teacher availability occurrence exists inside the enrollment period.';
   END IF;
