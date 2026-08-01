@@ -9,7 +9,7 @@ import { isAdminOrHigher } from "@/lib/auth/roles";
 import { dollarsToCents } from "@/lib/records/format";
 import { calculateCompensationAmountCents, calculateGrossPayrollCents, minutesBetween } from "@/lib/payroll/calculations";
 import { Prisma } from "@prisma/client";
-import { defaultPayableLessonPolicy, isPayableLesson, payrollItemTypeFor } from "@/lib/payroll/policy";
+import { buildPayableLessonPolicy, isPayableLesson, payrollItemTypeFor } from "@/lib/payroll/policy";
 import { payrollMonthBounds, isCompletePayrollMonth } from "@/lib/payroll/month";
 import { finalizeElapsedScheduledLessons } from "@/lib/attendance/auto-finalize";
 
@@ -49,7 +49,10 @@ export async function generateTeacherPayroll(formData: FormData) {
     if (scheduled) throw new Error(`${scheduled} lesson${scheduled === 1 ? "" : "s"} in this period ${scheduled === 1 ? "is" : "are"} still Scheduled. Finalize attendance before generating payroll.`);
     const sessions = await tx.scheduleSession.findMany({ where: { id: { in: [...includeIds] }, teacherId, sessionDate: { gte: periodStart, lte: periodEnd }, archivedAt: null, payrollItems: { none: {} } }, orderBy: [{ sessionDate: "asc" }, { startTime: "asc" }] });
     const settings = await tx.operationalSettings.upsert({ where: { id: "school-default" }, create: { id: "school-default" }, update: {} });
-    const policy = { ...defaultPayableLessonPolicy, payMissedLessons: settings.allowPayableMissedLessons, approvedMissedSessionIds: missedApprovedIds };
+    const policy = buildPayableLessonPolicy({
+      allowPayableMissedLessons: settings.allowPayableMissedLessons,
+      approvedMissedSessionIds: missedApprovedIds,
+    });
     const basis = teacher.compensationBasis;
     const rateCents = basis === "SESSION_UNIT" ? teacher.sessionRateCents ?? 0 : teacher.hourlyRateCents;
     const unitMinutes = basis === "SESSION_UNIT" ? teacher.sessionUnitMinutes : 60;
