@@ -105,6 +105,9 @@ export function RegisterStudentWorkflowFormV2(props: Props) {
   const selectedLevel = props.levels.find((level) => level.id === levelId);
   const selectedTeacher = props.teachers.find((teacher) => teacher.id === teacherId);
   const selectedExistingStudent = props.students.find((student) => student.id === studentId);
+  const selectedNewStudent = students[Number(primaryStudentIndex)];
+  const reviewStudentLabel = selectedExistingStudent?.label ??
+    ([selectedNewStudent?.firstName, selectedNewStudent?.lastName].filter(Boolean).join(" ") || "New student");
   const eligibleTeachers = useMemo(
     () =>
       props.teachers.filter((teacher) =>
@@ -437,7 +440,7 @@ export function RegisterStudentWorkflowFormV2(props: Props) {
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <LocalizedDateInput name="visibleEnrollmentStart" label="Enrollment start" displayFormat="dd/mm/yyyy" value={enrollmentStartDate} onChange={(value) => { setEnrollmentStartDate(value); setSelectedSlots([]); }} min={plan?.availableFrom ?? selectedSeason?.startDate} max={plan?.availableTo ?? selectedSeason?.endDate} disabled={!plan?.availableFrom} required helpText="Limited to the selected teacher's effective availability." />
-            <LocalizedDateInput name="visibleEnrollmentEnd" label="Enrollment end" displayFormat="dd/mm/yyyy" value={enrollmentEndDate} onChange={(value) => { setEnrollmentEndDate(value); setSelectedSlots([]); }} min={enrollmentStartDate || plan?.availableFrom ?? selectedSeason?.startDate} max={plan?.availableTo ?? selectedSeason?.endDate} disabled={!plan?.availableTo} required helpText="The recurring schedule stops on or before this date." />
+            <LocalizedDateInput name="visibleEnrollmentEnd" label="Enrollment end" displayFormat="dd/mm/yyyy" value={enrollmentEndDate} onChange={(value) => { setEnrollmentEndDate(value); setSelectedSlots([]); }} min={enrollmentStartDate || (plan?.availableFrom ?? selectedSeason?.startDate)} max={plan?.availableTo ?? selectedSeason?.endDate} disabled={!plan?.availableTo} required helpText="The recurring schedule stops on or before this date." />
             <TextField label="Calculated fee" type="number" value={fee} set={setFee} readOnly={!props.isAdmin} required />
             <TextField label="Discount" type="number" value={discount} set={setDiscount} />
             {props.isAdmin && suggestedPrice && fee !== suggestedPrice ? <TextField label="Pricing override reason" value={pricingOverrideReason} set={setPricingOverrideReason} required /> : null}
@@ -501,7 +504,7 @@ export function RegisterStudentWorkflowFormV2(props: Props) {
             <h3 className="font-black">Registration review</h3>
             <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
               <p><b>Family:</b> {registrationType === "existing_family" ? props.families.find((row) => row.id === family.familyId)?.name : family.familyName}</p>
-              <p><b>Student:</b> {selectedExistingStudent?.label ?? students[Number(primaryStudentIndex)] ? `${students[Number(primaryStudentIndex)]?.firstName} ${students[Number(primaryStudentIndex)]?.lastName}` : "New student"}</p>
+              <p><b>Student:</b> {reviewStudentLabel}</p>
               <p><b>Course:</b> {selectedCourse?.name} / {selectedLevel?.name}</p>
               <p><b>Teacher:</b> {selectedTeacher?.fullName}</p>
               <p><b>Enrollment:</b> {displayDate(activeStart)}–{displayDate(activeEnd)}</p>
