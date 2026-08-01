@@ -76,7 +76,7 @@ export default async function TeacherAvailabilityPage({
   const selectedSeason = seasons.find((season) => season.id === seasonId);
   const seasonStart = selectedSeason?.startDate.toISOString().slice(0, 10) ?? "";
   const seasonEnd = selectedSeason?.endDate.toISOString().slice(0, 10) ?? "";
-  const requestedWeek = params.weekStart ?? seasonStart || new Date().toISOString().slice(0, 10);
+  const requestedWeek = params.weekStart ?? (seasonStart || new Date().toISOString().slice(0, 10));
   const weekStart = mondayOfIsoWeek(requestedWeek);
   const status = params.status === "archived" ? "ARCHIVED" : "ACTIVE";
 
