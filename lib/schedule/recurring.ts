@@ -33,7 +33,20 @@ export async function previewRecurringSchedule(db: Db, input: RecurringScheduleI
   const [closures, sessions, availability] = await Promise.all([
     db.schoolClosure.findMany({ where: { archivedAt: null, startDate: { lte: last }, endDate: { gte: first } } }),
     db.scheduleSession.findMany({ where: { archivedAt: null, sessionDate: { in: candidateDates }, status: { in: ["SCHEDULED", "COMPLETED", "MISSED"] } }, select: { id: true, sessionDate: true, startTime: true, endTime: true, teacherId: true, studentId: true, roomId: true, schedulePatternId: true } }),
-    db.teacherAvailability.findMany({ where: { teacherId: input.teacherId, dayOfWeek: input.dayOfWeek, status: "ACTIVE", archivedAt: null, OR: [{ seasonId: null }, { seasonId: enrollment.seasonId }] } }),
+    db.teacherAvailability.findMany({
+      where: {
+        teacherId: input.teacherId,
+        dayOfWeek: input.dayOfWeek,
+        status: "ACTIVE",
+        archivedAt: null,
+        AND: [
+          { OR: [{ seasonId: null }, { seasonId: enrollment.seasonId }] },
+          enrollment.courseId
+            ? { OR: [{ courseId: null }, { courseId: enrollment.courseId }] }
+            : { courseId: null },
+        ],
+      },
+    }),
   ]);
   const closureDatesSkipped: Date[] = []; const existingDatesSkipped: Date[] = []; const conflicts: ScheduleConflict[] = [];
   for (const date of candidateDates) {
@@ -41,7 +54,7 @@ export async function previewRecurringSchedule(db: Db, input: RecurringScheduleI
     if (sessions.some((session) => session.schedulePatternId === patternId && sameDay(session.sessionDate, date))) { existingDatesSkipped.push(date); continue; }
     const window = { startTime: input.startTime, endTime: input.endTime };
     const available = availability.some((rule) => (!rule.effectiveFrom || date >= dateOnly(rule.effectiveFrom)) && (!rule.effectiveTo || date <= dateOnly(rule.effectiveTo)) && minutesFromTime(rule.startTime) <= minutesFromTime(input.startTime) && minutesFromTime(rule.endTime) >= minutesFromTime(input.endTime));
-    if (!available) conflicts.push({ date, type: "availability", message: "Teacher is not available for the full lesson window." });
+    if (!available) conflicts.push({ date, type: "availability", message: "Teacher is not available for the enrollment course and full lesson window." });
     for (const session of sessions.filter((row) => sameDay(row.sessionDate, date) && timeWindowsOverlap(window, row))) {
       if (session.schedulePatternId === patternId) continue;
       if (session.teacherId === input.teacherId) conflicts.push({ date, type: "teacher", message: "Teacher is already booked.", conflictingSessionId: session.id });
