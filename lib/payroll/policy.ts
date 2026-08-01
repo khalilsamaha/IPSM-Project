@@ -17,6 +17,17 @@ export const defaultPayableLessonPolicy: PayableLessonPolicy = {
   payMissed: false,
 };
 
+export function buildPayableLessonPolicy(input: {
+  allowPayableMissedLessons: boolean;
+  approvedMissedSessionIds?: Set<string>;
+}): PayableLessonPolicy {
+  return {
+    ...defaultPayableLessonPolicy,
+    payMissed: input.allowPayableMissedLessons,
+    approvedMissedSessionIds: input.approvedMissedSessionIds,
+  };
+}
+
 export function isPayableLesson(status: ScheduleSessionStatus | string, sessionId: string, policy: PayableLessonPolicy = defaultPayableLessonPolicy) {
   if (status === "COMPLETED") return policy.payCompleted;
   if (status === "SCHEDULED") return policy.payScheduled;
