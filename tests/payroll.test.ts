@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calculateGrossPayrollCents, calculatePayrollItemAmountCents, minutesBetween } from "@/lib/payroll/calculations";
-import { defaultPayableLessonPolicy, isPayableLesson } from "@/lib/payroll/policy";
+import { buildPayableLessonPolicy, defaultPayableLessonPolicy, isPayableLesson } from "@/lib/payroll/policy";
 
 describe("teacher payroll policy", () => {
   it("only pays completed lessons by default", () => {
@@ -13,6 +13,12 @@ describe("teacher payroll policy", () => {
   it("allows missed lessons by configurable policy or manual approval", () => {
     expect(isPayableLesson("MISSED", "m1", { ...defaultPayableLessonPolicy, payMissed: true })).toBe(true);
     expect(isPayableLesson("MISSED", "m2", { ...defaultPayableLessonPolicy, approvedMissedSessionIds: new Set(["m2"]) })).toBe(true);
+  });
+
+  it("maps the operational missed-lesson setting to the payroll policy", () => {
+    const policy = buildPayableLessonPolicy({ allowPayableMissedLessons: true });
+    expect(policy.payMissed).toBe(true);
+    expect(isPayableLesson("MISSED", "m3", policy)).toBe(true);
   });
 });
 
