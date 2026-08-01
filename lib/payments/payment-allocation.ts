@@ -12,6 +12,20 @@ export type FamilyEnrollmentBalance = {
 
 export type FamilyAllocation = { enrollmentId: string; amountCents: number };
 
+export function isPayableFamilyEnrollment(
+  row: Pick<FamilyEnrollmentBalance, "archivedAt" | "remainingCents">,
+) {
+  return !row.archivedAt && row.remainingCents > 0;
+}
+
+export function payableFamilyOutstandingCents(
+  enrollments: Array<Pick<FamilyEnrollmentBalance, "archivedAt" | "remainingCents">>,
+) {
+  return enrollments
+    .filter(isPayableFamilyEnrollment)
+    .reduce((sum, row) => sum + row.remainingCents, 0);
+}
+
 /** Deterministic, cents-only allocation used by both previews and authoritative writes. */
 export function allocateFamilyPaymentAutomatically(
   familyId: string,
@@ -20,11 +34,11 @@ export function allocateFamilyPaymentAutomatically(
 ): FamilyAllocation[] {
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error("Payment amount must be greater than zero");
   const eligible = enrollments
-    .filter((row) => row.familyId === familyId && !row.archivedAt && row.remainingCents > 0)
+    .filter((row) => row.familyId === familyId && isPayableFamilyEnrollment(row))
     .sort((a, b) => a.startDate.getTime() - b.startDate.getTime()
       || a.createdAt.getTime() - b.createdAt.getTime()
       || a.id.localeCompare(b.id));
-  const outstandingCents = eligible.reduce((sum, row) => sum + row.remainingCents, 0);
+  const outstandingCents = payableFamilyOutstandingCents(eligible);
   if (amountCents > outstandingCents) throw new Error("Payment cannot exceed the family's remaining balance");
   let unallocated = amountCents;
   const allocations: FamilyAllocation[] = [];
@@ -54,7 +68,7 @@ export function validateManualFamilyAllocations(
     seen.add(allocation.enrollmentId);
     const enrollment = balances.get(allocation.enrollmentId);
     if (!enrollment || enrollment.familyId !== familyId) throw new Error("Every allocation must belong to the selected family");
-    if (enrollment.archivedAt || enrollment.remainingCents <= 0) throw new Error("Settled or archived enrollments cannot receive an allocation");
+    if (!isPayableFamilyEnrollment(enrollment)) throw new Error("Settled or archived enrollments cannot receive an allocation");
     if (!Number.isInteger(allocation.amountCents) || allocation.amountCents < 0) throw new Error("Allocation amounts must be valid cents");
     if (allocation.amountCents > enrollment.remainingCents) throw new Error("Payment cannot exceed remaining enrollment balance");
     allocatedCents += allocation.amountCents;
