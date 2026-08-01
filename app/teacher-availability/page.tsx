@@ -86,8 +86,14 @@ export default async function TeacherAvailabilityPage({
           where: {
             teacherId,
             status,
-            ...(params.courseId ? { OR: [{ courseId: null }, { courseId: params.courseId }] } : {}),
-            ...(seasonId ? { OR: [{ seasonId: null }, { seasonId }] } : {}),
+            AND: [
+              ...(params.courseId
+                ? [{ OR: [{ courseId: null }, { courseId: params.courseId }] }]
+                : []),
+              ...(seasonId
+                ? [{ OR: [{ seasonId: null }, { seasonId }] }]
+                : []),
+            ],
           },
           include: { teacher: true, season: true, course: true },
           orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
