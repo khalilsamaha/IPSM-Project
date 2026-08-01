@@ -281,12 +281,18 @@ export function RegisterStudentWorkflowFormV2(props: Props) {
   }
 
   const visibleSlots = plan?.slots.filter((slot) => selectedDay === null || slot.dayOfWeek === selectedDay) ?? [];
+  const submittedStudentId =
+    registrationType === "existing_family" &&
+    existingStudentMode === "existing" &&
+    studentId
+      ? studentId
+      : "new";
 
   return (
     <form id="registration-wizard-v2" action={registerStudentWorkflow} className="grid gap-5">
       <input type="hidden" name="registrationSubmissionId" value={submissionId} />
       <input type="hidden" name="registrationType" value={registrationType} />
-      <input type="hidden" name="studentId" value={studentId || "new"} />
+      <input type="hidden" name="studentId" value={submittedStudentId} />
       <input type="hidden" name="primaryStudentIndex" value={primaryStudentIndex} />
       {Object.entries(family).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
