@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allocateFamilyPaymentAutomatically, applyPaymentBalance, reversePaymentBalance, validateManualFamilyAllocations, validatePaymentAllocations } from "@/lib/payments/payment-allocation";
+import { allocateFamilyPaymentAutomatically, applyPaymentBalance, isPayableFamilyEnrollment, payableFamilyOutstandingCents, reversePaymentBalance, validateManualFamilyAllocations, validatePaymentAllocations } from "@/lib/payments/payment-allocation";
 import { nextReceiptNumber, parseReceiptNumber } from "@/lib/payments/receipt-number";
 
 describe("payment calculations", () => {
@@ -48,6 +48,10 @@ describe("family allocation", () => {
     { id: "settled", familyId: "family", remainingCents: 0, startDate: date("2025-01-01"), createdAt: date("2025-01-01") },
     { id: "archived", familyId: "family", remainingCents: 9000, archivedAt: date("2026-01-01"), startDate: date("2024-01-01"), createdAt: date("2024-01-01") },
   ];
+  it("uses one eligibility rule for displayed and allocated balances", () => {
+    expect(rows.filter(isPayableFamilyEnrollment).map((row) => row.id)).toEqual(["later", "oldest"]);
+    expect(payableFamilyOutstandingCents(rows)).toBe(6000);
+  });
   it("allocates oldest-first and spans balances", () => {
     expect(allocateFamilyPaymentAutomatically("family", 3000, rows)).toEqual([
       { enrollmentId: "oldest", amountCents: 2000 }, { enrollmentId: "later", amountCents: 1000 },
