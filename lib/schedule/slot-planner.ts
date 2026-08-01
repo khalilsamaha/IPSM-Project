@@ -233,7 +233,7 @@ export function buildRecurringSlotPlan(input: {
 
   const cards: RecurringSlotCard[] = [...slots.entries()]
     .filter(([, slot]) => slot.dates.size > 0)
-    .map(([key, slot]) => {
+    .map<RecurringSlotCard>(([key, slot]) => {
       const conflicts = new Map<string, SlotConflict>();
       for (const date of slot.dates) {
         for (const booking of input.bookings) {
