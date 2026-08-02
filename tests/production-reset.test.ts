@@ -1,23 +1,94 @@
 import { describe, expect, it } from "vitest";
-import { getProductionResetPlan, hasProductionResetSelection, type ProductionResetSelection } from "@/lib/production-reset";
+import {
+  emptyProductionResetSelection,
+  getProductionResetPlan,
+  hasProductionResetSelection,
+  type ProductionResetSelection,
+} from "@/lib/production-reset";
 
-const empty: ProductionResetSelection = { operationalData: false, financialData: false, scheduleData: false, studentsFamilies: false, teachers: false, seasons: false };
+function selection(
+  patch: Partial<ProductionResetSelection>,
+): ProductionResetSelection {
+  return { ...emptyProductionResetSelection, ...patch };
+}
 
 describe("production reset planning", () => {
   it("requires at least one selected scope", () => {
-    expect(hasProductionResetSelection(empty)).toBe(false);
-    expect(hasProductionResetSelection({ ...empty, financialData: true })).toBe(true);
+    expect(hasProductionResetSelection(emptyProductionResetSelection)).toBe(false);
+    expect(hasProductionResetSelection(selection({ financialData: true }))).toBe(true);
   });
 
-  it("deletes financial records in dependency-safe order", () => {
-    expect(getProductionResetPlan({ ...empty, financialData: true })).toEqual(["receipt", "paymentItem", "payment", "expense"]);
+  it("deletes every blocker before enrollments, teachers, students, families, and seasons", () => {
+    const plan = getProductionResetPlan(selection({
+      operationalData: true,
+      financialData: true,
+      scheduleData: true,
+      studentsFamilies: true,
+      teachers: true,
+      seasons: true,
+    }));
+
+    expect(plan).toEqual([
+      "receipt",
+      "paymentItem",
+      "payment",
+      "expense",
+      "cashierShift",
+      "teacherPayrollItem",
+      "teacherPayroll",
+      "scheduleSession",
+      "schedulePattern",
+      "registrationAttempt",
+      "enrollment",
+      "teacherAvailability",
+      "teacherCourse",
+      "teacher",
+      "student",
+      "family",
+      "coursePricingSeasonScoped",
+      "season",
+    ]);
+    expect(plan.indexOf("schedulePattern")).toBeLessThan(plan.indexOf("enrollment"));
+    expect(plan.indexOf("teacherPayrollItem")).toBeLessThan(plan.indexOf("scheduleSession"));
+    expect(plan.indexOf("registrationAttempt")).toBeLessThan(plan.indexOf("student"));
+    expect(plan.indexOf("registrationAttempt")).toBeLessThan(plan.indexOf("family"));
   });
 
-  it("adds dependent records before deleting students and families", () => {
-    expect(getProductionResetPlan({ ...empty, studentsFamilies: true })).toEqual(["receipt", "paymentItem", "payment", "scheduleSession", "enrollment", "student", "family"]);
+  it("deletes complete financial records in dependency-safe order", () => {
+    expect(getProductionResetPlan(selection({ financialData: true }))).toEqual([
+      "receipt",
+      "paymentItem",
+      "payment",
+      "expense",
+      "cashierShift",
+      "teacherPayrollItem",
+      "teacherPayroll",
+    ]);
   });
 
-  it("removes teacher and season dependencies before parent records", () => {
-    expect(getProductionResetPlan({ ...empty, teachers: true, seasons: true })).toEqual(["scheduleSession", "enrollment", "teacherAvailability", "teacherCourse", "teacher", "season"]);
+  it("removes payroll dependencies when schedule data is reset", () => {
+    expect(getProductionResetPlan(selection({ scheduleData: true }))).toEqual([
+      "teacherPayrollItem",
+      "teacherPayroll",
+      "scheduleSession",
+      "schedulePattern",
+    ]);
+  });
+
+  it("removes season-scoped configuration instead of converting it to global data", () => {
+    expect(getProductionResetPlan(selection({ seasons: true }))).toEqual([
+      "receipt",
+      "paymentItem",
+      "payment",
+      "teacherPayrollItem",
+      "teacherPayroll",
+      "scheduleSession",
+      "schedulePattern",
+      "registrationAttempt",
+      "enrollment",
+      "teacherAvailabilitySeasonScoped",
+      "coursePricingSeasonScoped",
+      "season",
+    ]);
   });
 });
