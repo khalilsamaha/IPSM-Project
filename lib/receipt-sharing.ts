@@ -22,6 +22,9 @@ export function normalizeWhatsAppPhone(phone?: string | null) {
   return digits;
 }
 
+// Compatibility alias for existing callers and tests.
+export const normalizeWhatsappPhone = normalizeWhatsAppPhone;
+
 export function whatsappShareUrl(message: string, phone?: string | null) {
   const recipient = normalizeWhatsAppPhone(phone);
   return recipient
