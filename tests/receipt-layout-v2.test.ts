@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildReceiptPdfV2,
-  receiptFamilyBalanceTotals,
-} from "@/lib/payments/receipt-service-v2";
+import { buildReceiptPdfV3 } from "@/lib/payments/receipt-service-v3";
+import { receiptFamilyBalanceTotals } from "@/lib/payments/receipt-service-v2";
 
 const testStamp = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAHnOcQAAAAABJRU5ErkJggg==",
@@ -73,15 +71,12 @@ function payment() {
 }
 
 describe("redesigned receipt PDF", () => {
-  it("shows every family student and a family totals row", () => {
-    const pdf = buildReceiptPdfV2(
-      payment(),
-      "a5",
-      "original",
-      testStamp,
-    ).toString("utf8");
-    expect(pdf).toContain("Maria Germanos");
-    expect(pdf).toContain("Charbel Germanos");
+  it("shows every family student on a separate header line and a family totals row", () => {
+    const pdf = buildReceiptPdfV3(payment(), "a5", "original", testStamp).toString("utf8");
+    expect(pdf).toContain("(Students:) Tj");
+    expect(pdf).toContain("(- STU-2026-000001 - Maria Germanos) Tj");
+    expect(pdf).toContain("(- STU-2026-000002 - Charbel Germanos) Tj");
+    expect(pdf).not.toContain("Maria Germanos, STU-2026-000002");
     expect(pdf).toContain("FAMILY TOTALS");
     expect(pdf).toContain("Family remaining");
 
@@ -92,13 +87,17 @@ describe("redesigned receipt PDF", () => {
     });
   });
 
+  it("keeps summary text in the separate right column", () => {
+    const pdf = buildReceiptPdfV3(payment(), "a5", "original", testStamp).toString("utf8");
+    const receivedBy = /BT \/F1 7 Tf (\d+) (\d+) Td \(Received by: Administrator\)/.exec(pdf);
+    const maria = /BT \/F1 7 Tf (\d+) (\d+) Td \(- STU-2026-000001 - Maria Germanos\)/.exec(pdf);
+    expect(receivedBy).not.toBeNull();
+    expect(maria).not.toBeNull();
+    expect(Number(receivedBy?.[1])).toBeGreaterThan(Number(maria?.[1]));
+  });
+
   it("moves totals into the header and leaves the stamp unboxed", () => {
-    const pdf = buildReceiptPdfV2(
-      payment(),
-      "a5",
-      "original",
-      testStamp,
-    ).toString("utf8");
+    const pdf = buildReceiptPdfV3(payment(), "a5", "original", testStamp).toString("utf8");
     expect(pdf).toContain("OFFICIAL PAYMENT RECEIPT");
     expect(pdf).toContain("TOTAL PAID");
     expect(pdf).toContain("Official stamp");
@@ -107,12 +106,7 @@ describe("redesigned receipt PDF", () => {
   });
 
   it("keeps customer and school copies on A4", () => {
-    const pdf = buildReceiptPdfV2(
-      payment(),
-      "a4-two-copies",
-      "original",
-      testStamp,
-    ).toString("utf8");
+    const pdf = buildReceiptPdfV3(payment(), "a4-two-copies", "original", testStamp).toString("utf8");
     expect(pdf).toContain("/MediaBox [0 0 595 842]");
     expect(pdf).toContain("Customer Copy");
     expect(pdf).toContain("School Copy");
@@ -120,7 +114,7 @@ describe("redesigned receipt PDF", () => {
   });
 
   it("preserves voided marking and the original receipt number", () => {
-    const pdf = buildReceiptPdfV2(
+    const pdf = buildReceiptPdfV3(
       { ...payment(), voidedAt: new Date("2026-08-02T00:00:00Z") },
       "a5",
       "voided",
