@@ -7,7 +7,8 @@ describe("reports production loading", () => {
 
   it("loads only lookups, dashboard aggregates, and the selected detailed report", () => {
     expect(page).toContain("getReportDashboardSummary(params)");
-    expect(page).toContain("loadReport(report, params, { skip, take })");
+    expect(page).toContain("loadReport(report, params, { skip, take }, dashboard)");
+    expect(page).toContain("getShiftClosureReport(params, { skip, take })");
     expect(page).not.toContain("getRevenueReport(params), getOutstandingReport(params)");
   });
 
@@ -22,7 +23,7 @@ describe("reports production loading", () => {
   it("renders nullable report relations with safe fallbacks", () => {
     expect(page).toContain('"No season"');
     expect(page).toContain('"No activity"');
-    expect(page).toContain('"Unassigned"');
+    expect(page).toContain('row.teacher?.fullName ?? "—"');
     expect(page).not.toContain('"Independent"');
   });
 });

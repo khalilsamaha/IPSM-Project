@@ -1,4 +1,15 @@
-export const reportTypes = ["revenue", "expenses", "profit-loss", "outstanding", "season-closing", "course-enrollment", "teacher-schedule", "room-utilization", "payroll"] as const;
+export const reportTypes = [
+  "revenue",
+  "expenses",
+  "profit-loss",
+  "outstanding",
+  "season-closing",
+  "course-enrollment",
+  "teacher-schedule",
+  "room-utilization",
+  "payroll",
+  "shift-closures",
+] as const;
 export type ReportType = (typeof reportTypes)[number];
 
 export const reportDescriptions: Record<ReportType, string> = {
@@ -11,6 +22,7 @@ export const reportDescriptions: Record<ReportType, string> = {
   "teacher-schedule": "Teacher schedules and availability for the selected period.",
   "room-utilization": "Room usage by schedule, teacher and date range.",
   payroll: "Teacher payroll totals by teacher, period and status.",
+  "shift-closures": "Cashier shift closures including receipts, teacher payroll, other expenses and variances.",
 };
 
 export const reportFilters: Record<ReportType, readonly string[]> = {
@@ -23,10 +35,19 @@ export const reportFilters: Record<ReportType, readonly string[]> = {
   "teacher-schedule": ["seasonId", "teacherId", "dateFrom", "dateTo", "roomId"],
   "room-utilization": ["seasonId", "roomId", "dateFrom", "dateTo", "teacherId"],
   payroll: ["teacherId", "dateFrom", "dateTo", "payrollStatus"],
+  "shift-closures": ["dateFrom", "dateTo", "userId", "shiftStatus"],
 };
 
-export function filtersForReport(report: ReportType) { return reportFilters[report]; }
-export function sanitizeReportQuery(report: ReportType, params: Record<string, string | undefined>) {
+export function filtersForReport(report: ReportType) {
+  return reportFilters[report];
+}
+
+export function sanitizeReportQuery(
+  report: ReportType,
+  params: Record<string, string | undefined>,
+) {
   const allowed = new Set(["report", ...reportFilters[report], "page"]);
-  return Object.fromEntries(Object.entries(params).filter(([key, value]) => allowed.has(key) && value));
+  return Object.fromEntries(
+    Object.entries(params).filter(([key, value]) => allowed.has(key) && value),
+  );
 }

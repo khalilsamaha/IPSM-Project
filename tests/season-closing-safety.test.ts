@@ -16,19 +16,22 @@ describe("season closing safety", () => {
 
   it("does not render season closing unless the summary is valid", () => {
     expect(reportsPage).toContain("isSeasonClosingSummary");
-    expect(reportsPage).toContain("seasonClosing?.season?.id && seasonClosing?.totals");
-    expect(reportsPage).toContain("seasonClosing.season?.name ?? \"Unknown season\"");
+    expect(reportsPage).toContain('report === "season-closing" && seasonClosing');
+    expect(reportsPage).toContain("seasonClosing.season.name");
+    expect(reportsPage).toContain("seasonClosing.totals");
   });
 
-  it("has distinct no-selection, failure, invalid-id, and missing-season friendly states", () => {
+  it("has distinct no-selection, load-failure, invalid-id, and missing-season states", () => {
     expect(reportsPage).toContain("Select a season to generate the closing report.");
-    expect(reportsPage).toContain("We could not generate the season closing report. Please try again.");
+    expect(reportsPage).toContain("We could not load this report right now.");
+    expect(reportsPage).toContain("seasonClosingError");
     expect(reportData).toContain("uuidPattern.test(seasonId)");
     expect(reportData).toContain("The selected season could not be found. It may have been deleted.");
   });
 
-  it("preserves the selected season on retry links", () => {
-    expect(reportsPage).toContain('next.set("seasonId", params.seasonId)');
+  it("preserves selected filters, including season, on retry and pagination links", () => {
+    expect(reportsPage).toContain("Object.entries(params)");
+    expect(reportsPage).toContain('if (value && key !== "page") next.set(key, value)');
     expect(fullPage).toContain("report=season-closing&seasonId=");
   });
 
