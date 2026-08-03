@@ -10,7 +10,9 @@ export function attendanceBlockReason(status: ScheduleSessionStatus, payrollStat
   if (payrollStatus === "PAID") return "Paid payroll is immutable.";
   if (payrollStatus === "APPROVED") return "Attendance is locked by an approved payroll.";
   if (payrollStatus === "DRAFT") return "Cancel or recalculate the draft payroll first.";
-  if (action === "complete" && status !== "SCHEDULED") return "Only scheduled lessons can be completed.";
+  if (action === "complete" && status !== "SCHEDULED" && status !== "CANCELLED") {
+    return "Only scheduled or cancelled lessons can be completed.";
+  }
   if (action === "revert" && status === "SCHEDULED") return "Lesson is already scheduled.";
   if (action !== "revert" && action !== "complete" && status === attendanceTarget(action)) return `Lesson is already ${status.toLowerCase()}.`;
   return null;
