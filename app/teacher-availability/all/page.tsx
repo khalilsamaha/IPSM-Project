@@ -13,16 +13,22 @@ import {
 } from "@/lib/schedule/slot-planner";
 
 const DAY_MS = 86_400_000;
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const dayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
-type Params = {
-  seasonId?: string;
-  courseId?: string;
-  weekStart?: string;
-};
+type Params = { seasonId?: string; courseId?: string; weekStart?: string };
 
 function addDays(value: string, amount: number) {
-  return new Date(new Date(`${value}T00:00:00.000Z`).getTime() + amount * DAY_MS)
+  return new Date(
+    new Date(`${value}T00:00:00.000Z`).getTime() + amount * DAY_MS,
+  )
     .toISOString()
     .slice(0, 10);
 }
@@ -37,7 +43,7 @@ function displayDate(value: string) {
   }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
-function queryString(input: {
+function calendarHref(input: {
   seasonId: string;
   courseId?: string;
   weekStart: string;
@@ -47,7 +53,7 @@ function queryString(input: {
     weekStart: input.weekStart,
   });
   if (input.courseId) query.set("courseId", input.courseId);
-  return query.toString();
+  return `/teacher-availability/all?${query}`;
 }
 
 export default async function AllTeacherAvailabilityPage({
@@ -77,7 +83,7 @@ export default async function AllTeacherAvailabilityPage({
   const seasonStart = selectedSeason?.startDate.toISOString().slice(0, 10) ?? "";
   const seasonEnd = selectedSeason?.endDate.toISOString().slice(0, 10) ?? "";
   const requestedWeek =
-    params.weekStart ?? seasonStart || new Date().toISOString().slice(0, 10);
+    (params.weekStart ?? seasonStart) || new Date().toISOString().slice(0, 10);
   const weekStart = mondayOfIsoWeek(requestedWeek);
 
   const [availability, sessions, closures] = selectedSeason
@@ -95,11 +101,7 @@ export default async function AllTeacherAvailabilityPage({
             ],
           },
           include: { course: { select: { name: true } } },
-          orderBy: [
-            { teacher: { fullName: "asc" } },
-            { dayOfWeek: "asc" },
-            { startTime: "asc" },
-          ],
+          orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
         }),
         prisma.scheduleSession.findMany({
           where: {
@@ -111,11 +113,7 @@ export default async function AllTeacherAvailabilityPage({
             },
             status: { in: ["SCHEDULED", "COMPLETED", "MISSED"] },
             ...(params.courseId
-              ? {
-                  enrollment: {
-                    courseId: params.courseId,
-                  },
-                }
+              ? { enrollment: { courseId: params.courseId } }
               : {}),
           },
           include: {
@@ -123,11 +121,7 @@ export default async function AllTeacherAvailabilityPage({
             enrollment: { include: { course: true, level: true } },
             room: true,
           },
-          orderBy: [
-            { teacher: { fullName: "asc" } },
-            { sessionDate: "asc" },
-            { startTime: "asc" },
-          ],
+          orderBy: [{ sessionDate: "asc" }, { startTime: "asc" }],
         }),
         prisma.schoolClosure.findMany({
           where: {
@@ -182,28 +176,30 @@ export default async function AllTeacherAvailabilityPage({
           const teacherBookings = bookings.filter(
             (booking) => booking.teacherId === teacher.id,
           );
-          const week = buildTeacherWeekCapacity({
-            teacherId: teacher.id,
-            weekStart,
-            seasonStart,
-            seasonEnd,
-            rules: teacherRules,
-            bookings: teacherBookings,
-            closures: closureRows,
-          });
-          const capacity = buildTeacherSeasonCapacity({
-            teacherId: teacher.id,
-            seasonStart,
-            seasonEnd,
-            rules: teacherRules,
-            bookings: teacherBookings,
-            closures: closureRows,
-          });
-          return { teacher, teacherRules, teacherBookings, week, capacity };
+          return {
+            teacher,
+            ruleCount: teacherRules.length,
+            week: buildTeacherWeekCapacity({
+              teacherId: teacher.id,
+              weekStart,
+              seasonStart,
+              seasonEnd,
+              rules: teacherRules,
+              bookings: teacherBookings,
+              closures: closureRows,
+            }),
+            capacity: buildTeacherSeasonCapacity({
+              teacherId: teacher.id,
+              seasonStart,
+              seasonEnd,
+              rules: teacherRules,
+              bookings: teacherBookings,
+              closures: closureRows,
+            }),
+            relevant: teacherRules.length > 0 || teacherBookings.length > 0,
+          };
         })
-        .filter(
-          (row) => row.teacherRules.length > 0 || row.teacherBookings.length > 0,
-        )
+        .filter((row) => row.relevant)
     : [];
 
   const totals = teacherRows.reduce(
@@ -222,7 +218,7 @@ export default async function AllTeacherAvailabilityPage({
     <AppShell session={session}>
       <PageHeader
         title="All Teachers — Weekly Availability"
-        description="Review every active teacher in one 30-minute weekly calendar. Green slots are available, red slots are booked, and gray slots are school closures."
+        description="Review every active teacher in one 30-minute weekly calendar. Green is available, red is booked, and gray is a school closure."
         action={
           <Link className="btn-secondary" href="/teacher-availability">
             Single teacher and rule editor
@@ -233,15 +229,9 @@ export default async function AllTeacherAvailabilityPage({
       <form className="mb-5 grid gap-3 rounded-[1.5rem] border bg-white p-4 shadow-sm md:grid-cols-4">
         <label className="text-sm font-bold">
           Season
-          <select
-            name="seasonId"
-            defaultValue={seasonId}
-            className="input mt-1"
-          >
+          <select name="seasonId" defaultValue={seasonId} className="input mt-1">
             {seasons.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name}
-              </option>
+              <option key={season.id} value={season.id}>{season.name}</option>
             ))}
           </select>
         </label>
@@ -254,9 +244,7 @@ export default async function AllTeacherAvailabilityPage({
           >
             <option value="">All courses</option>
             {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.name}
-              </option>
+              <option key={course.id} value={course.id}>{course.name}</option>
             ))}
           </select>
         </label>
@@ -275,56 +263,32 @@ export default async function AllTeacherAvailabilityPage({
       {selectedSeason ? (
         <>
           <section className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric
-              label="Teachers shown"
-              value={String(teacherRows.length)}
-              detail={selectedSeason.name}
-            />
-            <Metric
-              label="Season capacity"
-              value={`${totals.capacity} sessions`}
-              detail="30-minute units across all teachers"
-            />
-            <Metric
-              label="Booked"
-              value={`${totals.booked} sessions`}
-              detail={`${utilization.toFixed(1)}% utilized`}
-            />
-            <Metric
-              label="Available"
-              value={`${totals.available} sessions`}
-              detail="Unbooked season capacity"
-            />
+            <Metric label="Teachers shown" value={String(teacherRows.length)} detail={selectedSeason.name} />
+            <Metric label="Season capacity" value={`${totals.capacity} sessions`} detail="30-minute units across all teachers" />
+            <Metric label="Booked" value={`${totals.booked} sessions`} detail={`${utilization.toFixed(1)}% utilized`} />
+            <Metric label="Available" value={`${totals.available} sessions`} detail="Unbooked season capacity" />
           </section>
 
           <section className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm">
             <div>
               <h2 className="font-black">Week of {displayDate(weekStart)}</h2>
               <p className="text-sm text-slate-600">
-                Each teacher uses the same seven-day 30-minute calendar scale.
+                Each teacher is shown against the same seven-day calendar.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900">Available</span>
-              <span className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-900">Booked</span>
-              <span className="rounded-xl border border-slate-300 bg-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Closed</span>
+              <Legend className="border-emerald-300 bg-emerald-50 text-emerald-900">Available</Legend>
+              <Legend className="border-red-300 bg-red-50 text-red-900">Booked</Legend>
+              <Legend className="border-slate-300 bg-slate-200 text-slate-700">Closed</Legend>
               <Link
                 className="btn-secondary"
-                href={`/teacher-availability/all?${queryString({
-                  seasonId,
-                  courseId: params.courseId,
-                  weekStart: addDays(weekStart, -7),
-                })}`}
+                href={calendarHref({ seasonId, courseId: params.courseId, weekStart: addDays(weekStart, -7) })}
               >
                 Previous week
               </Link>
               <Link
                 className="btn-secondary"
-                href={`/teacher-availability/all?${queryString({
-                  seasonId,
-                  courseId: params.courseId,
-                  weekStart: addDays(weekStart, 7),
-                })}`}
+                href={calendarHref({ seasonId, courseId: params.courseId, weekStart: addDays(weekStart, 7) })}
               >
                 Next week
               </Link>
@@ -332,37 +296,28 @@ export default async function AllTeacherAvailabilityPage({
           </section>
 
           <div className="space-y-6">
-            {teacherRows.map(({ teacher, week, capacity, teacherRules }) => (
-              <section
-                key={teacher.id}
-                className="rounded-[1.5rem] border bg-white p-5 shadow-sm"
-              >
+            {teacherRows.map((row) => (
+              <section key={row.teacher.id} className="rounded-[1.5rem] border bg-white p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-black">{teacher.fullName}</h2>
+                    <h2 className="text-lg font-black">{row.teacher.fullName}</h2>
                     <p className="text-sm text-slate-600">
-                      {capacity.bookedSlots}/{capacity.totalSlots} booked · {capacity.availableSlots} available · {capacity.utilizationPercent.toFixed(1)}% utilized · {teacherRules.length} rule{teacherRules.length === 1 ? "" : "s"}
+                      {row.capacity.bookedSlots}/{row.capacity.totalSlots} booked · {row.capacity.availableSlots} available · {row.capacity.utilizationPercent.toFixed(1)}% utilized · {row.ruleCount} rule{row.ruleCount === 1 ? "" : "s"}
                     </p>
                   </div>
                   <Link
                     className="btn-secondary"
-                    href={`/teacher-availability?teacherId=${teacher.id}&seasonId=${seasonId}&courseId=${params.courseId ?? ""}&weekStart=${weekStart}`}
+                    href={`/teacher-availability?teacherId=${row.teacher.id}&seasonId=${seasonId}&courseId=${params.courseId ?? ""}&weekStart=${weekStart}`}
                   >
                     Open teacher details
                   </Link>
                 </div>
-
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
-                  {week.map((day) => (
-                    <article
-                      key={`${teacher.id}-${day.date}`}
-                      className="rounded-2xl border bg-slate-50 p-3"
-                    >
+                  {row.week.map((day) => (
+                    <article key={`${row.teacher.id}-${day.date}`} className="rounded-2xl border bg-slate-50 p-3">
                       <div className="mb-3">
-                        <p className="font-black">{days[day.dayOfWeek]}</p>
-                        <p className="text-xs text-slate-500">
-                          {displayDate(day.date)}
-                        </p>
+                        <p className="font-black">{dayNames[day.dayOfWeek]}</p>
+                        <p className="text-xs text-slate-500">{displayDate(day.date)}</p>
                       </div>
                       <div className="space-y-2">
                         {day.slots.map((slot) => (
@@ -376,9 +331,7 @@ export default async function AllTeacherAvailabilityPage({
                                   : "border-slate-300 bg-slate-200 text-slate-700"
                             }`}
                           >
-                            <p className="font-black">
-                              {slot.startTime}–{slot.endTime}
-                            </p>
+                            <p className="font-black">{slot.startTime}–{slot.endTime}</p>
                             <p className="mt-1 font-bold">
                               {slot.status === "AVAILABLE"
                                 ? "Available"
@@ -387,29 +340,14 @@ export default async function AllTeacherAvailabilityPage({
                                   : "Booked"}
                             </p>
                             {slot.status === "AVAILABLE" ? (
-                              <p className="mt-1">
-                                {slot.courseLabels.join(", ")}
-                              </p>
+                              <p className="mt-1">{slot.courseLabels.join(", ")}</p>
                             ) : null}
                             {slot.bookings.map((booking) => (
-                              <div
-                                key={booking.id}
-                                className="mt-2 border-t border-red-200 pt-2"
-                              >
-                                <b>{booking.studentName}</b>
-                                <br />
-                                {booking.familyName}
-                                <br />
-                                {booking.courseName}
-                                {booking.levelName
-                                  ? ` / ${booking.levelName}`
-                                  : ""}
-                                {booking.roomName ? (
-                                  <>
-                                    <br />
-                                    {booking.roomName}
-                                  </>
-                                ) : null}
+                              <div key={booking.id} className="mt-2 border-t border-red-200 pt-2">
+                                <b>{booking.studentName}</b><br />
+                                {booking.familyName}<br />
+                                {booking.courseName}{booking.levelName ? ` / ${booking.levelName}` : ""}
+                                {booking.roomName ? <><br />{booking.roomName}</> : null}
                               </div>
                             ))}
                           </div>
@@ -442,22 +380,20 @@ export default async function AllTeacherAvailabilityPage({
   );
 }
 
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
+function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
     <article className="rounded-2xl border bg-white p-4 shadow-sm">
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-        {label}
-      </p>
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-2xl font-black">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{detail}</p>
     </article>
+  );
+}
+
+function Legend({ className, children }: { className: string; children: React.ReactNode }) {
+  return (
+    <span className={`rounded-xl border px-3 py-2 text-xs font-bold ${className}`}>
+      {children}
+    </span>
   );
 }
