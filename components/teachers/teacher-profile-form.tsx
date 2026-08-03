@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { saveTeacherProfile } from "@/actions/teacher-profile";
 
@@ -26,7 +26,7 @@ function Field({
 }: {
   label: string;
   help?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
