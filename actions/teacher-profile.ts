@@ -30,13 +30,15 @@ function teacherPath(id: string, kind: "success" | "error", message: string) {
 
 export async function saveTeacherProfile(formData: FormData) {
   const session = await requireSession();
+  const rawId = String(formData.get("id") ?? "");
   if (!hasPermission(session.role, "records:write")) {
-    redirect(teacherPath(String(formData.get("id") ?? ""), "error", "You are not authorized to update teacher profiles."));
+    redirect(teacherPath(rawId, "error", "You are not authorized to update teacher profiles."));
   }
 
-  const rawId = String(formData.get("id") ?? "");
+  let savedId = rawId;
   try {
     const parsed = teacherProfileSchema.parse(Object.fromEntries(formData));
+    savedId = parsed.id;
     const user = await prisma.userProfile.findUnique({
       where: { authId: session.userId },
       select: { id: true },
@@ -76,10 +78,6 @@ export async function saveTeacherProfile(formData: FormData) {
         },
       });
     });
-
-    revalidatePath(`/teachers/${parsed.id}/edit`);
-    revalidatePath("/teachers");
-    redirect(teacherPath(parsed.id, "success", "Teacher profile saved successfully."));
   } catch (error) {
     logServerError("teacher.profile.save", error, { teacherId: rawId });
     const message = error instanceof z.ZodError
@@ -89,4 +87,8 @@ export async function saveTeacherProfile(formData: FormData) {
         : "Unable to save the teacher profile.";
     redirect(teacherPath(rawId, "error", message));
   }
+
+  revalidatePath(`/teachers/${savedId}/edit`);
+  revalidatePath("/teachers");
+  redirect(teacherPath(savedId, "success", "Teacher profile saved successfully."));
 }
