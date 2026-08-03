@@ -87,6 +87,15 @@ describe("redesigned receipt PDF", () => {
     });
   });
 
+  it("keeps student codes in the header but removes them from balance-table rows", () => {
+    const pdf = buildReceiptPdfV3(payment(), "a5", "original", testStamp).toString("utf8");
+    expect(pdf).toContain("(- STU-2026-000001 - Maria Germanos) Tj");
+    expect(pdf).toContain("(Maria Germanos - Piano / Beginner - Summer 2026) Tj");
+    expect(pdf).toContain("(Charbel Germanos - Saxophone / Beginner - Summer 2026) Tj");
+    expect(pdf).not.toContain("(STU-2026-000001 Maria Germanos - Piano");
+    expect(pdf).not.toContain("(STU-2026-000002 Charbel Germanos - Saxophone");
+  });
+
   it("keeps summary text in the separate right column", () => {
     const pdf = buildReceiptPdfV3(payment(), "a5", "original", testStamp).toString("utf8");
     const receivedBy = /BT \/F1 7 Tf (\d+) (\d+) Td \(Received by: Administrator\)/.exec(pdf);
