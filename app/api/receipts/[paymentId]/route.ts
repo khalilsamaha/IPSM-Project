@@ -3,10 +3,10 @@ import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { ensurePaymentReceiptWithRetry } from "@/lib/payments/receipt-repair";
 import {
-  buildReceiptPdfV2,
+  buildReceiptPdfV3,
   ReceiptGenerationError,
   type ReceiptLayout,
-} from "@/lib/payments/receipt-service-v2";
+} from "@/lib/payments/receipt-service-v3";
 import { buildReceiptFamilyBalanceRows } from "@/lib/payments/receipt-family-balances";
 import { logServerError } from "@/lib/server-log";
 
@@ -113,7 +113,7 @@ export async function GET(
         },
       })),
     });
-    const pdf = buildReceiptPdfV2(
+    const pdf = buildReceiptPdfV3(
       { ...payment, familyBalances },
       layout,
       mode,
