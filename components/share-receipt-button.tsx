@@ -98,10 +98,8 @@ export function ShareReceiptButton({
       });
       setPreparedFile(file);
 
-      const mobile = isLikelyMobileBrowser(navigator.userAgent);
       const nativeFileShare = Boolean(
-        mobile &&
-        navigator.share &&
+        isLikelyMobileBrowser(navigator.userAgent) &&
         navigator.canShare?.({ files: [file] }),
       );
 
@@ -118,7 +116,7 @@ export function ShareReceiptButton({
   }
 
   async function openNativeShare() {
-    if (!preparedFile || !navigator.share) {
+    if (!preparedFile) {
       await prepareReceipt();
       return;
     }
@@ -146,7 +144,6 @@ export function ShareReceiptButton({
     preparedFile &&
     typeof navigator !== "undefined" &&
     isLikelyMobileBrowser(navigator.userAgent) &&
-    navigator.share &&
     navigator.canShare?.({ files: [preparedFile] }),
   );
 
