@@ -7,15 +7,30 @@ const paymentPages = [
   "app/payments/[id]/page.tsx",
 ] as const;
 
-describe("payment page module structure", () => {
-  it.each(paymentPages)("keeps imports at the top and a single default export in %s", (filePath) => {
-    const source = readFileSync(filePath, "utf8");
-    const lines = source.split("\n");
-    const defaultExports = source.match(/export default async function/g) ?? [];
-    expect(defaultExports).toHaveLength(1);
+function sourceAfterLeadingImports(source: string) {
+  let cursor = 0;
+  while (cursor < source.length) {
+    const remaining = source.slice(cursor);
+    const whitespace = /^\s*/.exec(remaining)?.[0].length ?? 0;
+    cursor += whitespace;
+    if (!source.startsWith("import ", cursor)) break;
+    const semicolon = source.indexOf(";", cursor);
+    if (semicolon < 0) throw new Error("Import statement is missing a semicolon.");
+    cursor = semicolon + 1;
+  }
+  return source.slice(cursor);
+}
 
-    const firstNonImportLine = lines.findIndex((line) => line.trim() !== "" && !line.startsWith("import "));
-    const importAfterCode = lines.slice(firstNonImportLine + 1).find((line) => line.startsWith("import "));
-    expect(importAfterCode).toBeUndefined();
-  });
+describe("payment page module structure", () => {
+  it.each(paymentPages)(
+    "keeps imports at the top and a single default export in %s",
+    (filePath) => {
+      const source = readFileSync(filePath, "utf8");
+      const defaultExports = source.match(/export default async function/g) ?? [];
+      expect(defaultExports).toHaveLength(1);
+
+      const sourceAfterImports = sourceAfterLeadingImports(source);
+      expect(sourceAfterImports).not.toMatch(/^import\s/m);
+    },
+  );
 });
