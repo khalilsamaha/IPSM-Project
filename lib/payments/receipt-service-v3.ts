@@ -169,9 +169,9 @@ function drawCopy(
   let rowY = tableTop - 16;
   const pageRows = rows.slice(rowStart, rowStart + rowLimit);
   for (const row of pageRows) {
-    const student = `${row.student.studentCode} ${row.student.firstName} ${row.student.lastName}`;
+    const student = `${row.student.firstName} ${row.student.lastName}`;
     addRect(commands, left, rowY - 10, area.width, 20);
-    addText(commands, colStudent, rowY + 2, truncate(`${student} - ${row.activity}`, area.width > 500 ? 65 : 43), { size: 6.5 });
+    addText(commands, colStudent, rowY + 2, truncate(`${student} - ${row.activity}`, area.width > 500 ? 72 : 54), { size: 6.5 });
     addText(commands, colBefore, rowY + 2, money(row.balanceBeforePaymentCents), { size: 6.5 });
     addText(commands, colPaid, rowY + 2, money(row.paidNowCents), { size: 6.5 });
     addText(commands, colRemaining, rowY + 2, money(row.remainingCents), { size: 6.5 });
