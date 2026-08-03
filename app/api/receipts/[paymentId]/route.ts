@@ -7,6 +7,7 @@ import {
   ReceiptGenerationError,
   type ReceiptLayout,
 } from "@/lib/payments/receipt-service-v2";
+import { buildReceiptFamilyBalanceRows } from "@/lib/payments/receipt-family-balances";
 import { logServerError } from "@/lib/server-log";
 
 export const runtime = "nodejs";
@@ -19,10 +20,12 @@ export async function GET(
 ) {
   const session = await requireSession();
   const { paymentId } = await params;
-  const requestedLayout = new URL(request.url).searchParams.get("layout");
-  const requestedMode = new URL(request.url).searchParams.get("mode");
+  const url = new URL(request.url);
+  const requestedLayout = url.searchParams.get("layout");
+  const requestedMode = url.searchParams.get("mode");
   const layout: ReceiptLayout =
     requestedLayout === "a4-two-copies" ? "a4-two-copies" : "a5";
+
   const existing = await prisma.payment.findUnique({
     where: { id: paymentId },
     select: { id: true },
@@ -30,13 +33,29 @@ export async function GET(
   if (!existing) {
     return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
   }
+
   await ensurePaymentReceiptWithRetry(prisma, paymentId);
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
       family: {
         include: {
-          students: { orderBy: [{ lastName: "asc" }, { firstName: "asc" }] },
+          students: {
+            include: {
+              enrollments: {
+                include: {
+                  season: true,
+                  course: true,
+                  level: true,
+                },
+                orderBy: [
+                  { enrollmentStartDate: "asc" },
+                  { createdAt: "asc" },
+                ],
+              },
+            },
+            orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+          },
         },
       },
       createdBy: true,
@@ -54,17 +73,20 @@ export async function GET(
       },
     },
   });
+
   if (!payment?.receiptNumber) {
     return NextResponse.json(
       { error: "Receipt metadata unavailable" },
       { status: 500 },
     );
   }
+
   const mode = payment.voidedAt
     ? "voided"
     : requestedMode === "reprint"
       ? "reprint"
       : "original";
+
   await prisma.auditLog.create({
     data: {
       action:
@@ -79,8 +101,23 @@ export async function GET(
       metadata: { receiptNumber: payment.receiptNumber, layout, mode },
     },
   });
+
   try {
-    const pdf = buildReceiptPdfV2(payment, layout, mode);
+    const familyBalances = buildReceiptFamilyBalanceRows({
+      students: payment.family.students,
+      allocations: payment.items.map((item) => ({
+        amountCents: item.amountCents,
+        enrollment: {
+          ...item.enrollment,
+          studentId: item.enrollment.studentId,
+        },
+      })),
+    });
+    const pdf = buildReceiptPdfV2(
+      { ...payment, familyBalances },
+      layout,
+      mode,
+    );
     return new NextResponse(pdf, {
       headers: {
         "content-type": "application/pdf",
