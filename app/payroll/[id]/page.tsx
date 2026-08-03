@@ -5,6 +5,7 @@ import {
   cancelTeacherPayroll,
   markTeacherPayrollPaid,
 } from "@/actions/payroll";
+import { reconcilePaidPayrollToShift } from "@/actions/payroll-shift-reconciliation";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import {
   AppShell,
@@ -47,7 +48,11 @@ export default async function PayrollDetailPage({
       },
     }),
     prisma.auditLog.findFirst({
-      where: { entity: "TeacherPayroll", entityId: id, action: "mark_paid" },
+      where: {
+        entity: "TeacherPayroll",
+        entityId: id,
+        action: { in: ["mark_paid", "payroll_shift_reconciled"] },
+      },
       orderBy: { createdAt: "desc" },
     }),
   ]);
@@ -137,11 +142,38 @@ export default async function PayrollDetailPage({
             </form>
           ) : null}
         </div>
+
         {row.status === "APPROVED" ? (
           <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
             Marking payroll paid requires an open shift. The payment is recorded as a <b>Teacher Payroll</b> expense, so cash or Whish totals and the shift closing report remain consistent.
           </p>
         ) : null}
+
+        {row.status === "PAID" && !paidShiftId ? (
+          <form action={reconcilePaidPayrollToShift} className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <input type="hidden" name="id" value={row.id} />
+            <p className="font-black text-amber-950">This legacy paid payroll is not attached to a shift.</p>
+            <p className="mt-1 text-sm text-amber-900">
+              The old payment action did not capture Cash versus Whish. Select the actual method to add it once to your current open shift with an audit entry.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <label className="text-sm font-bold text-amber-950">
+                Actual payment method
+                <select name="paymentMethod" className="ml-2 rounded border bg-white p-2" defaultValue="cash">
+                  <option value="cash">Cash</option>
+                  <option value="whish">Whish</option>
+                </select>
+              </label>
+              <ConfirmSubmitButton
+                className="rounded-xl bg-amber-600 px-3 py-2 text-sm font-bold text-white"
+                message="Attach this already-paid payroll to the current open shift using the selected payment method?"
+              >
+                Attach paid payroll to current shift
+              </ConfirmSubmitButton>
+            </div>
+          </form>
+        ) : null}
+
         {row.notes ? <p className="mt-3 text-sm text-slate-600">{row.notes}</p> : null}
       </section>
 
