@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { ShiftStatus, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculateShiftTotals } from "@/lib/shifts/calculations";
 
@@ -37,15 +37,23 @@ function validDate(value?: string) {
   return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
 }
 
+function validShiftStatus(value?: string): value is ShiftStatus {
+  return Boolean(value && Object.values(ShiftStatus).includes(value as ShiftStatus));
+}
+
 function shiftWhere(filters: ShiftClosureFilters): Prisma.CashierShiftWhereInput {
   const businessDate: Prisma.DateTimeFilter = {};
-  if (validDate(filters.dateFrom)) businessDate.gte = new Date(`${filters.dateFrom}T00:00:00.000Z`);
-  if (validDate(filters.dateTo)) businessDate.lte = new Date(`${filters.dateTo}T00:00:00.000Z`);
+  if (validDate(filters.dateFrom)) {
+    businessDate.gte = new Date(`${filters.dateFrom}T00:00:00.000Z`);
+  }
+  if (validDate(filters.dateTo)) {
+    businessDate.lte = new Date(`${filters.dateTo}T00:00:00.000Z`);
+  }
 
   return {
     ...(Object.keys(businessDate).length ? { businessDate } : {}),
     ...(filters.userId ? { userId: filters.userId } : {}),
-    ...(filters.shiftStatus ? { status: filters.shiftStatus as Prisma.EnumShiftStatusFilter } : {}),
+    ...(validShiftStatus(filters.shiftStatus) ? { status: filters.shiftStatus } : {}),
   };
 }
 
@@ -68,8 +76,21 @@ export async function getShiftClosureReport(
       where,
       include: {
         user: { select: { name: true } },
-        payments: { select: { paymentMethod: true, totalAmountCents: true, voidedAt: true } },
-        expenses: { select: { paymentMethod: true, amountCents: true, category: true, archivedAt: true } },
+        payments: {
+          select: {
+            paymentMethod: true,
+            totalAmountCents: true,
+            voidedAt: true,
+          },
+        },
+        expenses: {
+          select: {
+            paymentMethod: true,
+            amountCents: true,
+            category: true,
+            archivedAt: true,
+          },
+        },
       },
       orderBy: [{ businessDate: "desc" }, { openedAt: "desc" }],
       skip: pagination.skip ?? 0,
