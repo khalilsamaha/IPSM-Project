@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/cron/finalize-attendance", "schedule": "15 23 * * *" },
-    { "path": "/api/cron/close-stale-shifts", "schedule": "0 1 * * *" }
+    { "path": "/api/cron/close-stale-shifts", "schedule": "0 21 * * *" },
+    { "path": "/api/cron/close-stale-shifts-late", "schedule": "0 22 * * *" }
   ]
 }

@@ -1,8 +1,13 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   calculateShiftTotals,
   assertMutableShiftTransaction,
 } from "@/lib/shifts/calculations";
+import {
+  businessDateCutoff,
+  currentBusinessDate,
+} from "@/lib/shifts/service";
 
 describe("shift integrity", () => {
   it("supports one open shift policy queries", () => {
@@ -19,7 +24,9 @@ describe("shift integrity", () => {
   });
 
   it("Reception is blocked without an open shift", () => {
-    expect("Open your shift before recording payments or expenses.").toMatch(/Open your shift/);
+    expect("Open your shift before recording payments, expenses, or payroll.").toMatch(
+      /Open your shift/,
+    );
   });
 
   it("calculates expected cash from opening plus posted cash payments minus cash expenses", () => {
@@ -66,6 +73,58 @@ describe("shift integrity", () => {
     );
     expect(() => assertMutableShiftTransaction({ shift: { status: "AUTO_CLOSED" } })).toThrow(
       "This transaction belongs to a closed shift and can no longer be modified.",
+    );
+  });
+
+  it("resolves Beirut midnight correctly during summer daylight time", () => {
+    expect(
+      currentBusinessDate(new Date("2026-08-03T20:59:59.000Z"), "Asia/Beirut"),
+    ).toBe("2026-08-03");
+    expect(
+      currentBusinessDate(new Date("2026-08-03T21:00:00.000Z"), "Asia/Beirut"),
+    ).toBe("2026-08-04");
+  });
+
+  it("resolves Beirut midnight correctly during winter standard time", () => {
+    expect(
+      currentBusinessDate(new Date("2026-01-03T21:59:59.000Z"), "Asia/Beirut"),
+    ).toBe("2026-01-03");
+    expect(
+      currentBusinessDate(new Date("2026-01-03T22:00:00.000Z"), "Asia/Beirut"),
+    ).toBe("2026-01-04");
+    expect(businessDateCutoff(new Date("2026-01-03T22:00:00.000Z"))).toEqual(
+      new Date("2026-01-04T00:00:00.000Z"),
+    );
+  });
+
+  it("schedules both Beirut UTC midnight windows as daily cron jobs", () => {
+    const config = JSON.parse(readFileSync("vercel.json", "utf8")) as {
+      crons: Array<{ path: string; schedule: string }>;
+    };
+    expect(config.crons).toContainEqual({
+      path: "/api/cron/close-stale-shifts",
+      schedule: "0 21 * * *",
+    });
+    expect(config.crons).toContainEqual({
+      path: "/api/cron/close-stale-shifts-late",
+      schedule: "0 22 * * *",
+    });
+  });
+
+  it("submits the shift id required by the close action and shows errors on the page", () => {
+    const page = readFileSync("app/shifts/[id]/page.tsx", "utf8");
+    const action = readFileSync("actions/shifts.ts", "utf8");
+    expect(page).toContain('<input type="hidden" name="id" value={shift.id} />');
+    expect(page).toContain('role="alert"');
+    expect(action).toContain('id.safeParse(String(formData.get("id") ?? ""))');
+    expect(action).toContain('logServerError("shift.close"');
+  });
+
+  it("keeps a missed cron from blocking the next business-day shift", () => {
+    const action = readFileSync("actions/shifts.ts", "utf8");
+    expect(action).toContain("await closeStaleShifts(prisma, new Date(), userId)");
+    expect(action.indexOf("await closeStaleShifts")).toBeLessThan(
+      action.indexOf("await getCurrentOpenShift"),
     );
   });
 
