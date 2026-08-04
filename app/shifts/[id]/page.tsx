@@ -6,6 +6,7 @@ import { isAdminOrHigher } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import {
   formatCurrency,
+  formatCurrencyInput,
   formatFormalDate,
   formatFormalDateTime,
 } from "@/lib/records/format";
@@ -56,7 +57,7 @@ export default async function ShiftDetail({
     where: {
       entity: "CashierShift",
       entityId: id,
-      action: { in: ["reopen", "close", "open"] },
+      action: { in: ["reopen", "close", "open", "auto_close", "reconcile_auto_close"] },
     },
     include: { createdBy: true },
     orderBy: { createdAt: "asc" },
@@ -78,12 +79,12 @@ export default async function ShiftDetail({
       ) : null}
       {query?.success ? (
         <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 p-3 font-bold text-emerald-800 print:hidden" role="status">
-          Shift operation completed successfully.
+          {query.success}
         </div>
       ) : null}
       {shift.status === "AUTO_CLOSED" ? (
         <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 font-bold text-amber-900">
-          Automatically closed — reconciliation pending
+          Automatically closed at the business-day boundary — enter the counted cash below to reconcile it.
         </div>
       ) : null}
       {["CLOSED", "AUTO_CLOSED"].includes(shift.status) ? (
@@ -140,9 +141,18 @@ export default async function ShiftDetail({
 
       {shift.status !== "CLOSED" ? (
         <form action={closeShift} className="my-4 grid gap-3 rounded-xl border bg-white p-4 print:hidden">
+          <input type="hidden" name="id" value={shift.id} />
           <label className="font-bold">
             Declared cash
-            <input className="ml-2 rounded border p-2" type="number" min="0" step="0.01" name="declaredCash" required />
+            <input
+              className="ml-2 rounded border p-2"
+              type="number"
+              min="0"
+              step="0.01"
+              name="declaredCash"
+              defaultValue={formatCurrencyInput(totals.expectedCashCents)}
+              required
+            />
           </label>
           <label className="font-bold">
             Explain the cash difference
@@ -155,7 +165,9 @@ export default async function ShiftDetail({
           <p className="text-sm text-muted-foreground">
             Expected cash already deducts cash teacher payroll and other cash expenses. A variance reason is required whenever declared cash differs from expected cash.
           </p>
-          <button className="w-fit rounded bg-primary px-4 py-2 text-white">Review and close shift</button>
+          <button className="w-fit rounded bg-primary px-4 py-2 text-white">
+            {shift.status === "AUTO_CLOSED" ? "Reconcile and finalize shift" : "Review and close shift"}
+          </button>
         </form>
       ) : null}
 
