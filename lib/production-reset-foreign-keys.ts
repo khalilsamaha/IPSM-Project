@@ -48,4 +48,30 @@ export const productionResetForeignKeys: ReadonlySet<string> = new Set([
   "public.cashier_shifts.closed_by_id->public.users.id:nc",
   "public.cashier_shifts.reopened_by_id->public.users.id:nc",
   "public.expenses.payroll_id->public.teacher_payrolls.id:rc",
+  // Exact live variants reviewed from administrator metadata, 2026-11-07.
+  // Only these 22 column-identical DELETE-identical relationships accept
+  // ON UPDATE NO ACTION as well as Prisma's CASCADE. Reset never changes IDs.
+  // Keep rejecting all other column/action changes; see the evidence manifest.
+  "public.audit_logs.created_by_id->public.users.id:na",
+  "public.enrollments.season_id->public.seasons.id:ra",
+  "public.enrollments.student_id->public.students.id:ca",
+  "public.enrollments.teacher_id->public.teachers.id:na",
+  "public.expenses.created_by_id->public.users.id:na",
+  "public.payment_items.enrollment_id->public.enrollments.id:ra",
+  "public.payment_items.payment_id->public.payments.id:ca",
+  "public.payments.created_by_id->public.users.id:na",
+  "public.payments.family_id->public.families.id:ra",
+  "public.receipts.payment_id->public.payments.id:ca",
+  "public.schedule_patterns.enrollment_id->public.enrollments.id:ra",
+  "public.schedule_patterns.room_id->public.rooms.id:na",
+  "public.schedule_patterns.teacher_id->public.teachers.id:ra",
+  "public.schedule_sessions.enrollment_id->public.enrollments.id:na",
+  "public.schedule_sessions.room_id->public.rooms.id:na",
+  "public.schedule_sessions.schedule_pattern_id->public.schedule_patterns.id:na",
+  "public.schedule_sessions.season_id->public.seasons.id:na",
+  "public.schedule_sessions.student_id->public.students.id:ra",
+  "public.schedule_sessions.teacher_id->public.teachers.id:ra",
+  "public.students.family_id->public.families.id:ra",
+  "public.teacher_availability.season_id->public.seasons.id:na",
+  "public.teacher_availability.teacher_id->public.teachers.id:ca",
 ]);

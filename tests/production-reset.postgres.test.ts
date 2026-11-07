@@ -1,6 +1,7 @@
 import { beforeAll, afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION, resetTables } from "@/lib/production-reset";
 import { createDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
 import { allocateBusinessIdentifier } from "@/lib/business-identifiers";
@@ -233,6 +234,37 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
     } finally {
       await db!.$executeRawUnsafe("ALTER TABLE public.registration_attempts DROP CONSTRAINT registration_attempts_payment_id_fkey, ADD CONSTRAINT registration_attempts_payment_id_fkey FOREIGN KEY(payment_id) REFERENCES public.payments(id) ON DELETE SET NULL ON UPDATE CASCADE");
     }
+  });
+  it("preserves reset behavior with all 22 reviewed live ON UPDATE NO ACTION variants", async () => {
+    const evidence = JSON.parse(readFileSync("docs/evidence/production-reset-2026-11-07.json", "utf8")) as {
+      foreign_keys: Array<{ child: string; parent: string; child_columns: string[]; parent_columns: string[]; constraint_name: string; delete_action: string; update_action: string }>;
+    };
+    const variants = evidence.foreign_keys.filter(row => row.update_action === "a");
+    const identifier = (value: string) => {
+      if (!/^[a-z_]+$/.test(value)) throw new Error("Invalid fixture identifier");
+      return `"${value}"`;
+    };
+    const table = (value: string) => value.split(".").map(identifier).join(".");
+    const replace = async (row: (typeof variants)[number], update: "CASCADE" | "NO ACTION") => {
+      const deletion = ({ n: "SET NULL", c: "CASCADE", r: "RESTRICT" } as Record<string, string>)[row.delete_action];
+      if (!deletion) throw new Error("Unreviewed fixture delete action");
+      await db!.$executeRawUnsafe(`ALTER TABLE ${table(row.child)} DROP CONSTRAINT ${identifier(row.constraint_name)}, ADD CONSTRAINT ${identifier(row.constraint_name)} FOREIGN KEY (${row.child_columns.map(identifier).join(",")}) REFERENCES ${table(row.parent)} (${row.parent_columns.map(identifier).join(",")}) ON DELETE ${deletion} ON UPDATE ${update}`);
+    };
+    const changed: typeof variants = [];
+    try {
+      for (const row of variants) { await replace(row, "NO ACTION"); changed.push(row); }
+      const f = await enrollmentFixture();
+      const financial = await previewProductionReset(db!, actor, selection({ financialData: true }));
+      expect(financial.preview.blocked).toEqual([]);
+      await run(financial.id);
+      expect(await db!.enrollment.findUniqueOrThrow({ where: { id: f.enrollment.id } })).toMatchObject({ paidCents: 0, remainingCents: 10000, feeCents: 12000, discountCents: 2000 });
+      const academic = await previewProductionReset(db!, actor, selection({ studentsFamilies: true }));
+      expect(academic.preview.blocked).toEqual([]);
+      await run(academic.id);
+      expect(await db!.family.count()).toBe(0);
+      expect(await db!.student.count()).toBe(0);
+      expect(await db!.userProfile.count()).toBe(1);
+    } finally { for (const row of changed) await replace(row, "CASCADE"); }
   });
   it("retains issued receipt numbers during repair and prevents clearing or transferring them", async () => {
     const f = await enrollmentFixture();

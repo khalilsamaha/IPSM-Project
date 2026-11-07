@@ -24,10 +24,34 @@ ALTER TABLE public.expenses ADD COLUMN payroll_id uuid;
 CREATE UNIQUE INDEX expenses_payroll_id_key ON public.expenses(payroll_id);
 ALTER TABLE public.expenses ADD CONSTRAINT expenses_payroll_id_fkey
   FOREIGN KEY (payroll_id) REFERENCES public.teacher_payrolls(id) ON DELETE RESTRICT ON UPDATE CASCADE;
+-- Orphaned audit history remains immutable. Existing financial records,
+-- however, must agree before an audit link becomes a durable relationship.
+DO $$
+BEGIN
+  IF EXISTS (
+    WITH links AS (
+      SELECT entity_id AS payroll_id,
+        CASE WHEN metadata->>'expenseId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          THEN (metadata->>'expenseId')::uuid END AS expense_id
+      FROM public.audit_logs
+      WHERE entity='TeacherPayroll' AND action IN ('mark_paid','payroll_shift_reconciled')
+    )
+    SELECT 1 FROM links l
+    JOIN public.teacher_payrolls p ON p.id=l.payroll_id
+    JOIN public.expenses e ON e.id=l.expense_id
+    WHERE p.status<>'PAID' OR p.gross_amount_cents IS DISTINCT FROM e.amount_cents
+      OR lower(e.category) IS DISTINCT FROM 'teacher payroll' OR e.archived_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'Payroll audit links reference inconsistent live postings; reconcile before migration';
+  END IF;
+END $$;
+
 -- Only backfill unambiguous, existing audit links. Legacy ambiguous postings remain
 -- visible and prevent non-financial reset; never guess from a person's name.
 WITH links AS (
-  SELECT entity_id AS payroll_id, (metadata->>'expenseId')::uuid AS expense_id
+  SELECT entity_id AS payroll_id,
+    CASE WHEN metadata->>'expenseId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      THEN (metadata->>'expenseId')::uuid END AS expense_id
   FROM public.audit_logs
   WHERE entity = 'TeacherPayroll' AND action IN ('mark_paid', 'payroll_shift_reconciled')
     AND metadata->>'expenseId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'

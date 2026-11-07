@@ -1,0 +1,309 @@
+# PR 90 — production preflight reconciliation
+
+**Overall: NO-GO for migration, reset, merge or production deployment.** The FK
+compatibility blocker has an evidence-based correction. Guard semantics, payroll
+classification, identifier history, migration provenance and actual database
+roles remain unresolved. PR 90 stays draft; PR 2 is untouched.
+
+## Evidence and limits
+
+The [metadata-only administrator evidence](evidence/production-reset-2026-11-07.json)
+records project `rakzehtbpzseetldbohm`, reports at 2026-11-07 22:02:24.628833 UTC
+(schema) and 22:02:52.844139 UTC (guards), all 45 validated FKs, source filename
+and SHA-256. It contains no records, credentials or function bodies. The connector
+again denied the read-only IPSM catalog request; no other project was accessed.
+These are supplied observations, not an independently repeated live inspection.
+
+The administrator also confirmed all 25 core tables, absent Prisma history,
+exactly three Supabase history versions, absent PR90 infrastructure/payroll column,
+zero registration/availability/rate and receipt/balance findings, payroll counts
+2/3, and recoverable 2026 receipt/student maxima 14/5. Source-population, actual-role
+and detailed financial-classification evidence is still missing.
+
+## GO / NO-GO matrix
+
+| Gate | Decision | Evidence / required resolution |
+| --- | --- | --- |
+| Core table presence | GO for this check | All 25 reported present; not a full schema/permissions certificate. |
+| FK deletion compatibility | GO with this correction | 23 original matches plus 22 exact NO ACTION variants; ordered columns and delete actions unchanged. New payroll FK remains separately proposed. |
+| Availability guard | GO for body/trigger/config parity | All hashes match the PostgreSQL 17 reference; other parity DDL/grants still require review. |
+| Schedule guard | NO-GO | Body differs; private semantic comparison and an explicit preserve/change decision required. |
+| Enrollment guard | NO-GO pending baseline review | Body differs from repository and checked history. PR90 parity does not replace it; confirm intended behavior in isolated staging. |
+| Registration uniqueness | GO for duplicate check; migration pending | Zero duplicate groups. Missing unique indexes require the separately approved canonical rollout. |
+| Payroll | NO-GO | Two invalid events and three inconsistent distinct links may overlap. Run query 14; distinguish unresolved history from actual posting inconsistencies. |
+| Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
+| Identifier history | NO-GO | 14/5 are recoverable lower bounds. No FAM floor and source emptiness unconfirmed. Run 15 and reconcile older history. |
+| Migration provenance | NO-GO | Three Supabase versions name no repository file. Query 16 plus private statement/object review; no invented applied rows. |
+| Runtime/migration permissions | NO-GO | Placeholder report cannot establish privileges. Identify actual connection roles and rerun 10. |
+| PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
+| Deployment readiness | NO-GO | Resolve above gates, Preview isolation, backup/restore/load checks and human acceptance. CI is not production authorization. |
+
+## FK assessment
+
+The correction adds only the 22 supplied column-identical, DELETE-identical
+NO ACTION signatures alongside the existing Prisma CASCADE variants. It does
+not change production FKs or accept arbitrary update-action/column changes,
+unvalidated constraints or unknown relationships.
+
+Reset deletes records and updates balances/registration payment references; it
+does not change referenced primary-key IDs. ON UPDATE NO ACTION therefore does
+not alter these deletion paths. This is not approval for other code to rewrite
+IDs. [PostgreSQL 17 referential-action documentation](https://www.postgresql.org/docs/17/sql-createtable.html).
+
+The exact 22 differences, individual deletion assessments and complete 45-FK
+comparison appear below. [Query 12](sql/production-reset-dashboard/12_foreign_key_reconciliation.sql)
+retains the original baseline so those differences remain visible while
+distinguishing reviewed variants from new drift.
+
+## Teacher guards and parity migration
+
+The [PostgreSQL 17 reference](evidence/production-reset-guard-reference-pg17.json)
+establishes that all three supplied trigger-definition hashes and configuration
+hashes match, as do enabled state O, type bits 23, zero argument counts and
+SECURITY INVOKER flags. Production owner `postgres` does not identify Prisma's
+runtime role. The body comparison appears below.
+
+Before this correction, the parity migration was the historical Supabase teacher
+consistency SQL wrapped in a transaction. It replaces availability and schedule
+functions/triggers, adds/checks compensation columns and constraints, availability
+course FK/index, payroll snapshots and NULL-level assignment uniqueness, and
+revokes function execution from public client roles. It does **not** replace the
+enrollment guard. Presence alone does not make this entire migration redundant;
+IF NOT EXISTS does not verify preexisting definitions.
+
+Availability's body is identical. Schedule would be replaced with different text.
+Hashes cannot establish whether the difference is semantic or just formatting,
+so replacement cannot be approved from this evidence. Neither different live
+body matched the relevant historical revisions checked: schedule `2e441047`;
+enrollment `630408b1`, `6009207f`, `d4e13ab3`, `da89cc3f`, `32237ea1`.
+
+The **unapplied** parity migration now rejects an existing target function with
+different body/attributes/configuration or a target trigger with different
+function, timing/events, update columns, condition or enabled state. The known
+live schedule body will deliberately abort it before DDL. Both migration copies
+remain identical; this is a rollout blocker, not a guard to bypass.
+
+Required resolution: privately compare schedule/enrollment course/season scope,
+time-window containment, NULL-enrollment behavior, active course/level assignment,
+season bounds and the occurrence test within enrollment dates. Supply a sanitized
+business-rule diff or authorized equivalence assessment. Query 13 exposes only
+hashes/attributes. If live behavior should remain, prepare a reviewed
+validate-and-preserve migration; if it should change, approve and test that change
+explicitly. **Do not add the different hash to an exception list and then overwrite
+it.** Review other parity columns/indexes/checks/grants separately.
+
+## Payroll classification and backfill safety
+
+Query 07 counts audit **events** for invalid references and distinct
+(payroll ID, expense ID) **pairs** for inconsistent links. Two and three are not
+necessarily five independent problems. Four zero counters do not establish that
+payroll tables are empty or that malformed audits are harmless.
+
+[Query 14](sql/production-reset-dashboard/14_payroll_classification.sql) distinguishes:
+
+- Both referenced records absent: historical deletion **or unresolved bad
+  reference**; absence cannot prove legitimate deletion.
+- Old invalid reference on a payroll with one consistent current posting:
+  unresolved audit context, distinguished from a broken current posting.
+- Existing payroll missing expense, or expense missing payroll: current
+  financial context needing investigation.
+- Existing pair with status/amount/category/archive mismatch: live inconsistency.
+- Consistent existing pair: no finding for that pair.
+
+Results contain aggregate event/pair counts and flags, no names, IDs, amounts,
+descriptions or audit payloads. Query 07's ambiguity checks remain mandatory;
+one healthy posting does not waive conflicting references. Preserve all audits.
+
+The previous integrity migration could backfill an unambiguous existing pair even
+when its status, amount, category or archive state disagreed. The **unapplied**
+migration now aborts transactionally on such live inconsistencies before backfill,
+with CASE-guarded UUID casts. Malformed and absent historical references remain
+unchanged; no posting is invented. Passing this guard does not waive missing
+postings or ambiguous history: classify query 07/14 findings and approve any
+separate remediation explicitly. No production repair was executed.
+
+## Identifier retention and deleted history
+
+Current source emptiness remains **unknown**. [Query 15](sql/production-reset-dashboard/15_identifier_sources.sql)
+returns explicit counts for families, students, payments and receipts, audit-only
+high-water marks and creation-event coverage, without individual identifiers.
+
+The migration reserves current codes with owners and recoverable audit codes
+without owners, seeds per-kind/year counters, and retains both ledgers through
+reset. Allocator/immutability triggers protect those **known** values. INTEGER
+exhaustion and nonstandard formats require review.
+
+For 2026, the supplied evidence implies minimum next receipt **15** and student
+**6**, subject to higher unrecovered issuance. There is **no defensible family
+minimum**. Family/Student creation audits in `actions/records.ts` can omit codes;
+the old generators used maxima from surviving tables. Empty tables and no FAM
+regex match cannot prove that FAM-2026-000001 was never issued.
+
+Before rollout, reconcile older receipts, exports and backups privately for every
+relevant year. Approve a reservation/floor manifest with ownership where recoverable.
+If history cannot be recovered, do not silently start at 1 or claim guaranteed
+non-reuse: obtain an explicitly reviewed disjoint namespace/range strategy and
+test it. Counter floors alone do not reserve manually imported old values; the
+issuance ledger/import rules must implement the chosen policy. Any backfill or
+namespace change requires separate authorization and is not performed here.
+
+## One canonical migration path
+
+Confirmed Supabase records are `20260731171613`, `20260801163840` and
+`20260801165129`. None names a repository migration. There is no Prisma ledger.
+Dates, similar function names and object presence cannot prove that specific
+repository files ran. Missing Prisma history is consistent with a different
+migration mechanism; do not fabricate Prisma records to satisfy tooling. Both
+committed trees have original-schema bootstrap gaps.
+
+**Recommend Supabase as the single canonical deployment/history path**, subject
+to provenance reconciliation. Query 16 returns only versions, statement counts,
+hashes and known guard-name mentions; a mention does not prove application.
+An administrator must privately reconcile the three actual migration contents
+and current schema. Prepare an isolated release directory/history matching those
+actual records and only the reviewed future delta; verify pending migrations and
+restore testing before separate deployment approval. Do not push the entire
+repository history, mark unrelated files applied, use Prisma migrate deploy
+against invented history, or apply the mirrored copies twice.
+[Supabase deployment/history documentation](https://supabase.com/docs/guides/deployment/database-migrations).
+
+## Confirming database roles without credential disclosure
+
+Use an existing authorized client bound to the **actual application's configured
+connection**, and separately the intended canonical migration connection:
+
+```sql
+BEGIN TRANSACTION READ ONLY;
+SET LOCAL statement_timeout = '10s';
+SELECT current_user AS effective_database_role, session_user AS login_database_role;
+ROLLBACK;
+```
+
+Share only the role names and which connection context produced them. Do not
+paste URLs/passwords, dump environment variables, pull Vercel secrets, expose
+Auth identities, create a diagnostic endpoint or deploy code for this check.
+A Dashboard run identifies its selected SQL role, not Prisma's role. Application
+roles such as SUPER_ADMIN are unrelated; pooler usernames can include routing
+suffixes. If no authorized runtime-context connection is available, retain the
+blocker rather than guess.
+
+Rerun 10 with confirmed roles. Verify ownership for ALTER/replacement/revokes,
+schema usage/create, allocator EXECUTE, protected-table access, generation-guard
+SELECT/FOR SHARE privileges and RLS visibility. Table grants alone do not bypass
+RLS. Do not grant DELETE on protected users/audits simply because a report lists
+the privilege. No grants or role changes are authorized by this review.
+
+## PostgreSQL 17 and release requirements
+
+Actual validation uses PostgreSQL **17.6**. The migrations use supported catalogs,
+transactional DDL, FK/unique constraints, JSONB and guarded UUID casts. Tests cover
+rollback on misleading registration indexes, receipt ownership conflicts and
+inconsistent payroll postings, refusal to replace unknown guard bodies, preserved
+orphan audits, and financial/academic resets with the 22 exact live FK variants.
+No historical migration is rewritten or production FK changed to match Prisma.
+
+Before approval: resolve the two guard bodies and all other parity DDL; classify
+payroll findings; establish identifier source/history coverage; reconcile the
+three migration records; verify actual roles/RLS; and validate a live-compatible
+isolated PostgreSQL 17 staging restore with representative load, lock timeouts and
+backup/restore procedures. Keep schema deployments separate from resets.
+Green CI and the FK correction alone do not make PR90 merge-ready.
+
+## Exact comparisons
+
+Local validation for this reconciliation passed: Prisma generation, TypeScript,
+404 unit tests, all existing migration fixtures plus 27 Dashboard/reconciliation
+checks before and after fixture migration, 18 reset integration tests, and the
+production build. Database validation used PostgreSQL 17.6 on fresh owned loopback
+clusters. The build retains the previously documented ESLint compatibility warning
+and expected static-read errors against an intentionally unavailable dummy DB.
+Only the two PR90 migrations (and their mirrors), not historical applied files,
+changed. CI results and the published commit are recorded in the draft PR.
+
+<!-- Generated metadata tables follow; no personal or financial records. -->
+
+All 22 update differences are **CASCADE (expected) → NO ACTION (live)**.
+
+| Relationship | Unchanged ON DELETE | Reset-deletion assessment |
+| --- | --- | --- |
+| public.audit_logs.created_by_id → public.users.id | SET NULL | Users protected; referenced IDs never changed. |
+| public.enrollments.season_id → public.seasons.id | RESTRICT | Balance updates do not change IDs; academic dependencies deleted or blocked. |
+| public.enrollments.student_id → public.students.id | CASCADE | Balance updates do not change IDs; academic dependencies deleted or blocked. |
+| public.enrollments.teacher_id → public.teachers.id | SET NULL | Balance updates do not change IDs; academic dependencies deleted or blocked. |
+| public.expenses.created_by_id → public.users.id | SET NULL | Users protected; referenced IDs never changed. |
+| public.payment_items.enrollment_id → public.enrollments.id | RESTRICT | Children deleted first with explicit Financial Data only. |
+| public.payment_items.payment_id → public.payments.id | CASCADE | Children deleted first with explicit Financial Data only. |
+| public.payments.created_by_id → public.users.id | SET NULL | Users protected; referenced IDs never changed. |
+| public.payments.family_id → public.families.id | RESTRICT | Retained payments block family deletion; explicit financial scope deletes first. |
+| public.receipts.payment_id → public.payments.id | CASCADE | Children deleted first with explicit Financial Data only. |
+| public.schedule_patterns.enrollment_id → public.enrollments.id | RESTRICT | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.schedule_patterns.room_id → public.rooms.id | SET NULL | Rooms protected in PR1; no room ID update/deletion. |
+| public.schedule_patterns.teacher_id → public.teachers.id | RESTRICT | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.schedule_sessions.enrollment_id → public.enrollments.id | SET NULL | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.schedule_sessions.room_id → public.rooms.id | SET NULL | Rooms protected in PR1; no room ID update/deletion. |
+| public.schedule_sessions.schedule_pattern_id → public.schedule_patterns.id | SET NULL | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.schedule_sessions.season_id → public.seasons.id | SET NULL | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.schedule_sessions.student_id → public.students.id | RESTRICT | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.schedule_sessions.teacher_id → public.teachers.id | RESTRICT | Dependent schedules removed before parents, or retained enrollment/payroll dependencies block. |
+| public.students.family_id → public.families.id | RESTRICT | Operational dependencies and students removed before families. |
+| public.teacher_availability.season_id → public.seasons.id | SET NULL | Seasonal rows deleted before seasons; no conversion to global availability. |
+| public.teacher_availability.teacher_id → public.teachers.id | CASCADE | Availability deleted before teachers; delete cascade unchanged. |
+
+| Teacher function | Live body MD5 | Repository body MD5 | Result |
+| --- | --- | --- | --- |
+| validate_enrollment_teacher_availability | 2e995c04ca6865d8160d798ee9e5099f | e85ba87b42cfa5e5b60c2d3aaa0ccfc1 | Differs; semantics unresolved |
+| validate_schedule_teacher_availability | 8bf0ff83d02322ec49fb6500f794a74e | e9d829cecb69aedc692d7b1a5fdaaf07 | Differs; semantics unresolved |
+| validate_teacher_availability_scope | ce495851f4dce1da05f507f4af587a61 | ce495851f4dce1da05f507f4af587a61 | Matches |
+
+<details>
+<summary>All 45 live FK signatures (suffix: DELETE, UPDATE)</summary>
+
+| Constraint | Live signature | Comparison with ef53ed5 |
+| --- | --- | --- |
+| audit_logs_created_by_id_fkey | public.audit_logs.created_by_id->public.users.id:na | Reviewed 22-set correction |
+| cashier_shifts_closed_by_id_fkey | public.cashier_shifts.closed_by_id->public.users.id:nc | Exact original match |
+| cashier_shifts_reopened_by_id_fkey | public.cashier_shifts.reopened_by_id->public.users.id:nc | Exact original match |
+| cashier_shifts_user_id_fkey | public.cashier_shifts.user_id->public.users.id:rc | Exact original match |
+| course_pricings_course_id_fkey | public.course_pricings.course_id->public.courses.id:cc | Exact original match |
+| course_pricings_level_id_fkey | public.course_pricings.level_id->public.course_levels.id:cc | Exact original match |
+| course_pricings_season_id_fkey | public.course_pricings.season_id->public.seasons.id:nc | Exact original match |
+| enrollments_course_id_fkey | public.enrollments.course_id->public.courses.id:nc | Exact original match |
+| enrollments_level_id_fkey | public.enrollments.level_id->public.course_levels.id:nc | Exact original match |
+| enrollments_season_id_fkey | public.enrollments.season_id->public.seasons.id:ra | Reviewed 22-set correction |
+| enrollments_student_id_fkey | public.enrollments.student_id->public.students.id:ca | Reviewed 22-set correction |
+| enrollments_teacher_id_fkey | public.enrollments.teacher_id->public.teachers.id:na | Reviewed 22-set correction |
+| expenses_created_by_id_fkey | public.expenses.created_by_id->public.users.id:na | Reviewed 22-set correction |
+| expenses_shift_id_fkey | public.expenses.shift_id->public.cashier_shifts.id:nc | Exact original match |
+| payment_items_enrollment_id_fkey | public.payment_items.enrollment_id->public.enrollments.id:ra | Reviewed 22-set correction |
+| payment_items_payment_id_fkey | public.payment_items.payment_id->public.payments.id:ca | Reviewed 22-set correction |
+| payments_created_by_id_fkey | public.payments.created_by_id->public.users.id:na | Reviewed 22-set correction |
+| payments_family_id_fkey | public.payments.family_id->public.families.id:ra | Reviewed 22-set correction |
+| payments_shift_id_fkey | public.payments.shift_id->public.cashier_shifts.id:nc | Exact original match |
+| receipts_payment_id_fkey | public.receipts.payment_id->public.payments.id:ca | Reviewed 22-set correction |
+| registration_attempts_created_by_id_fkey | public.registration_attempts.created_by_id->public.users.id:nc | Exact original match |
+| registration_attempts_enrollment_id_fkey | public.registration_attempts.enrollment_id->public.enrollments.id:nc | Exact original match |
+| registration_attempts_family_id_fkey | public.registration_attempts.family_id->public.families.id:rc | Exact original match |
+| registration_attempts_payment_id_fkey | public.registration_attempts.payment_id->public.payments.id:nc | Exact original match |
+| registration_attempts_primary_student_id_fkey | public.registration_attempts.primary_student_id->public.students.id:rc | Exact original match |
+| schedule_patterns_enrollment_id_fkey | public.schedule_patterns.enrollment_id->public.enrollments.id:ra | Reviewed 22-set correction |
+| schedule_patterns_room_id_fkey | public.schedule_patterns.room_id->public.rooms.id:na | Reviewed 22-set correction |
+| schedule_patterns_teacher_id_fkey | public.schedule_patterns.teacher_id->public.teachers.id:ra | Reviewed 22-set correction |
+| schedule_sessions_enrollment_id_fkey | public.schedule_sessions.enrollment_id->public.enrollments.id:na | Reviewed 22-set correction |
+| schedule_sessions_room_id_fkey | public.schedule_sessions.room_id->public.rooms.id:na | Reviewed 22-set correction |
+| schedule_sessions_schedule_pattern_id_fkey | public.schedule_sessions.schedule_pattern_id->public.schedule_patterns.id:na | Reviewed 22-set correction |
+| schedule_sessions_season_id_fkey | public.schedule_sessions.season_id->public.seasons.id:na | Reviewed 22-set correction |
+| schedule_sessions_student_id_fkey | public.schedule_sessions.student_id->public.students.id:ra | Reviewed 22-set correction |
+| schedule_sessions_teacher_id_fkey | public.schedule_sessions.teacher_id->public.teachers.id:ra | Reviewed 22-set correction |
+| students_family_id_fkey | public.students.family_id->public.families.id:ra | Reviewed 22-set correction |
+| teacher_availability_course_id_fkey | public.teacher_availability.course_id->public.courses.id:rc | Exact original match |
+| teacher_availability_season_id_fkey | public.teacher_availability.season_id->public.seasons.id:na | Reviewed 22-set correction |
+| teacher_availability_teacher_id_fkey | public.teacher_availability.teacher_id->public.teachers.id:ca | Reviewed 22-set correction |
+| teacher_courses_course_id_fkey | public.teacher_courses.course_id->public.courses.id:rc | Exact original match |
+| teacher_courses_level_id_fkey | public.teacher_courses.level_id->public.course_levels.id:nc | Exact original match |
+| teacher_courses_teacher_id_fkey | public.teacher_courses.teacher_id->public.teachers.id:cc | Exact original match |
+| teacher_payroll_items_payroll_id_fkey | public.teacher_payroll_items.payroll_id->public.teacher_payrolls.id:cc | Exact original match |
+| teacher_payroll_items_schedule_session_id_fkey | public.teacher_payroll_items.schedule_session_id->public.schedule_sessions.id:rc | Exact original match |
+| teacher_payrolls_approved_by_id_fkey | public.teacher_payrolls.approved_by_id->public.users.id:nc | Exact original match |
+| teacher_payrolls_teacher_id_fkey | public.teacher_payrolls.teacher_id->public.teachers.id:rc | Exact original match |
+
+</details>

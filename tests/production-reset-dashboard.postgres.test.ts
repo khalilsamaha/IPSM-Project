@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -61,14 +61,75 @@ describe.skipIf(!url)("SQL Editor preflight on the owned PostgreSQL fixture", ()
     expect(cleanup.status, cleanup.stderr).toBe(0);
     await db?.$disconnect();
   });
-  it.each(files.slice(0, 10))("executes the entire %s and returns exactly one complete report", file => {
+  it.each(files.filter(file => !file.startsWith("11")))("executes the entire %s and returns exactly one complete report", file => {
     const value = report(file.slice(0, 2));
     if (file.startsWith("10")) expect(value.items.find(item => item.section === "role_input")?.status).toBe("REVIEW_REQUIRED");
+    if (file.startsWith("13") && installed) {
+      expect(value.items.every(item => item.details.function_matches && item.details.trigger_matches)).toBe(true);
+      writeFileSync("/tmp/ipsm-reviewed-teacher-guards.json", JSON.stringify(value, null, 2));
+    }
   });
   it("reports proposed-object absence or existing-installation collisions explicitly", () => {
     const items = report("01").items.filter(item => item.section === "proposed_object");
     expect(items).toHaveLength(5);
     expect(items.every(item => item.status === (installed ? "BLOCKER" : "EXPECTED_ABSENT_BEFORE_PR90"))).toBe(true);
+  });
+  it("refuses to replace an existing teacher guard with an unreviewed body", () => {
+    if (installed) return;
+    const create = run("CREATE FUNCTION public.validate_schedule_teacher_availability() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$ BEGIN RETURN NEW; END $$;");
+    expect(create.status, create.stderr).toBe(0);
+    try {
+      const result = run(readFileSync("prisma/migrations/20261107000000_teacher_guard_parity/migration.sql", "utf8"));
+      expect(result.status).toBe(3);
+      expect(result.stderr).toContain("Teacher guard differs from reviewed parity migration");
+      const unchanged = run("SELECT prosrc FROM pg_proc WHERE oid='public.validate_schedule_teacher_availability()'::regprocedure;");
+      expect(unchanged.stdout.trim()).toBe("BEGIN RETURN NEW; END");
+      expect(report("13").items.find(item => item.details.function_name === "validate_schedule_teacher_availability")?.status).toBe("BLOCKER");
+    } finally { expect(run("DROP FUNCTION public.validate_schedule_teacher_availability();").status).toBe(0); }
+  });
+  it("refuses to overwrite a changed existing teacher trigger", () => {
+    if (!installed) return;
+    expect(run("ALTER TABLE public.teacher_availability DISABLE TRIGGER teacher_availability_scope_guard;").status).toBe(0);
+    try {
+      const result = run(readFileSync("prisma/migrations/20261107000000_teacher_guard_parity/migration.sql", "utf8"));
+      expect(result.status).toBe(3);
+      expect(result.stderr).toContain("Teacher guard trigger differs from reviewed parity migration");
+      expect(report("13").items.find(item => item.details.function_name === "validate_teacher_availability_scope")?.details.tgenabled).toBe("D");
+    } finally { expect(run("ALTER TABLE public.teacher_availability ENABLE TRIGGER teacher_availability_scope_guard;").status).toBe(0); }
+  });
+  it("distinguishes three unresolved historical pairs from an existing inconsistent financial posting", async () => {
+    const auditIds = [randomUUID(), randomUUID(), randomUUID(), randomUUID(), randomUUID()];
+    const missingPayrolls = [randomUUID(), randomUUID(), randomUUID()];
+    const teacher = await db!.teacher.create({ data: { fullName: "Reconciliation fixture" } });
+    const payroll = await db!.teacherPayroll.create({ data: { teacherId: teacher.id, periodStart: new Date("2096-01-01"), periodEnd: new Date("2096-01-31"), hourlyRateSnapshotCents: 1000, grossAmountCents: 500, status: "PAID" } });
+    const expenseId = randomUUID();
+    try {
+      for (let i = 0; i < 3; i++) await db!.auditLog.create({ data: { id: auditIds[i], entity: "TeacherPayroll", action: "mark_paid", entityId: missingPayrolls[i], metadata: i === 0 ? {} : { expenseId: i === 1 ? "invalid" : randomUUID() } } });
+      const historical = report("14").items.find(item => item.section === "summary")!;
+      expect(historical.details).toMatchObject({ invalid_audit_expense_references: 2, missing_or_inconsistent_posting_links: 3, both_absent_events: 3, live_financial_issue_events: 0 });
+      await db!.$executeRaw`INSERT INTO public.expenses(id,category,description,amount_cents,payment_method) VALUES(${expenseId}::uuid,'Teacher Payroll','Reconciliation fixture',400,'cash')`;
+      await db!.auditLog.create({ data: { id: auditIds[3], entity: "TeacherPayroll", action: "mark_paid", entityId: payroll.id, metadata: { expenseId, privateData: sentinel } } });
+      const live = report("14");
+      expect(live.items.find(item => item.section === "summary")?.details.live_financial_issue_events).toBe(1);
+      expect(live.items.find(item => item.details.classification === "LIVE_POSTING_MISMATCH")?.details.amount_mismatch).toBe(true);
+      expect(JSON.stringify(live)).not.toContain(payroll.id);
+      expect(JSON.stringify(live)).not.toContain(expenseId);
+      await db!.$executeRaw`UPDATE public.expenses SET amount_cents=500 WHERE id=${expenseId}::uuid`;
+      await db!.auditLog.create({ data: { id: auditIds[4], entity: "TeacherPayroll", action: "mark_paid", entityId: payroll.id, metadata: {} } });
+      const reconciled = report("14");
+      expect(reconciled.items.find(item => item.section === "summary")?.details).toMatchObject({ live_financial_issue_events: 0, old_references_with_current_posting: 1 });
+      expect(reconciled.items.find(item => item.details.classification === "UNRESOLVED_OLD_REFERENCE_WITH_CURRENT_POSTING")?.status).toBe("REVIEW_REQUIRED");
+    } finally {
+      await db!.auditLog.deleteMany({ where: { id: { in: auditIds } } });
+      await db!.$executeRaw`DELETE FROM public.expenses WHERE id=${expenseId}::uuid`;
+      await db!.teacherPayroll.delete({ where: { id: payroll.id } });
+      await db!.teacher.delete({ where: { id: teacher.id } });
+    }
+  });
+  it("reports all four source populations even when identifier tables are empty", () => {
+    const sources = report("15").items.filter(item => item.section === "current_source_population");
+    expect(sources).toHaveLength(4);
+    expect(sources.every(item => item.details.total_rows === 0 && item.details.currently_empty === true)).toBe(true);
   });
   it("checks existing reset objects only when present; missing objects cannot produce a success report", () => {
     if (installed) { report("11"); return; }

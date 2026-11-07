@@ -1,10 +1,13 @@
 # IPSM Dashboard preflight — PR 90
 
-These eleven numbered SQL files are the **SQL Editor alternative** to
+Files 01–11 are the initial **SQL Editor alternative** to
 [`../production-reset-preflight.sql`](../production-reset-preflight.sql).
 They collect evidence for review; they do not certify compatibility or authorize
 a migration, reset, merge or deployment. The live IPSM schema remains unverified
 until an authorized administrator supplies and reviewers assess these results.
+Files **12–16** are the targeted follow-ups to the administrator's November 7
+reports; see the [reconciliation matrix](../../PRODUCTION_RESET_RECONCILIATION.md).
+The initial reports need not be repeated merely to collect these follow-ups.
 
 ## Administrator procedure
 
@@ -82,6 +85,18 @@ last nonempty result is unambiguous even though ROLLBACK follows it.
 | [09_identifiers.sql](09_identifiers.sql) | Duplicate/null family/student codes; missing/nonstandard code counts; recovered FAM/STU/RCPT high-water marks by kind/year from current rows and historical audit metadata, next minimum and INTEGER exhaustion. No individual business identifiers or owner IDs are returned. Compare privately with older receipts/backups; deleted history is unknowable from these queries. |
 | [10_role_permissions.sql](10_role_permissions.sql) | Explicit runtime/migration roles; required Supabase role existence; effective schema/table/function privileges, ownership inheritance, RLS bypass flags and migration-role default ACLs. Unknown roles block verification. Missing required grants/ownership or possible RLS filtering of reset tables block approval; SELECT grants alone do not prove full visibility. Never grant DELETE on protected users/audit logs merely to satisfy a report. |
 | [11_existing_reset_objects.sql](11_existing_reset_objects.sql) | Conditional existing-installation diagnostics: counter kind/year/value, malformed/exhausted counters, reservation counts and historical-only counts, existing durable payroll links. Counter keys outside documented formats are counted, not disclosed. Presence never authorizes replaying either migration. Compare counters with 09; reconcile partial installs first. |
+| [12_foreign_key_reconciliation.sql](12_foreign_key_reconciliation.sql) | Exact comparison against the original 46-signature baseline, including the 22 explicitly reviewed live NO ACTION variants. Reports each original mismatch, new drift, validation/deferral properties and the expected absent payroll FK. No FK changes or wildcard acceptance. |
+| [13_teacher_guard_parity.sql](13_teacher_guard_parity.sql) | Exact repository body hashes, function attributes/configuration, trigger columns/events and hashes. Supplied availability body matches; schedule and enrollment bodies differ. No function bodies are disclosed or executed. |
+| [14_payroll_classification.sql](14_payroll_classification.sql) | Explains the 2 invalid-event / 3 inconsistent-pair findings without adding overlapping counts. Distinguishes absent historical/unresolved pairs, old invalid audit references with a consistent current posting, and live financial mismatches. Counts/flags only; no automatic cleanup. |
+| [15_identifier_sources.sql](15_identifier_sources.sql) | Explicit current row/code counts for all four identifier source tables, including empty ones, plus audit-only recoverable maxima and create-event coverage. No family floor or empty-source conclusion is assumed. |
+| [16_migration_provenance.sql](16_migration_provenance.sql) | Checks the exact three reported Supabase versions, statement counts/hashes and known guard mentions. No statements/credentials are returned. Missing history columns or denied access remain blockers; hashes do not invent provenance. |
+
+For this reconciliation, run 12–16 as complete independent files, with the same
+project, transaction, timeout and result-completeness checks above. Rerun 10 only
+after confirming actual runtime/migration database roles using the existing
+connection-context procedure in the reconciliation document. Share each full
+JSON report and any sanitized errors. Do not run 11 on the confirmed pre-PR90
+schema or apply migrations to make it runnable.
 
 FK action codes: `a` NO ACTION, `r` RESTRICT, `c` CASCADE, `n` SET NULL,
 `d` SET DEFAULT. Hash equality is evidence of matching text, not proof of safe

@@ -40,11 +40,31 @@ INSERT INTO public.teacher_payrolls(id,teacher_id,period_start,period_end,hourly
 INSERT INTO public.expenses(id,category,description,amount_cents,payment_method) VALUES('90000000-0000-4000-8000-000000000007','Teacher Payroll','Upgrade fixture',5000,'whish');
 INSERT INTO public.audit_logs(id,action,entity,entity_id,metadata) VALUES('90000000-0000-4000-8000-000000000008','mark_paid','TeacherPayroll','90000000-0000-4000-8000-000000000006','{"expenseId":"90000000-0000-4000-8000-000000000007","historicalReceipt":"RCPT-2099-000099"}');
 SQL
+# Model the reported 2 malformed references / 3 inconsistent pairs without
+# assuming these synthetic historical orphans describe the live population.
+"${PSQL[@]}" <<'SQL'
+INSERT INTO public.audit_logs(id,action,entity,entity_id,metadata) VALUES
+ ('90000000-0000-4000-8000-000000000009','mark_paid','TeacherPayroll','90000000-0000-4000-8000-000000000099','{}'),
+ ('90000000-0000-4000-8000-000000000010','mark_paid','TeacherPayroll','90000000-0000-4000-8000-000000000098','{"expenseId":"not-a-uuid"}'),
+ ('90000000-0000-4000-8000-000000000011','mark_paid','TeacherPayroll','90000000-0000-4000-8000-000000000097','{"expenseId":"90000000-0000-4000-8000-000000000096"}');
+SQL
+"${PSQL[@]}" -c "UPDATE public.expenses SET amount_cents=4999 WHERE id='90000000-0000-4000-8000-000000000007'"
+expect_rollback 'Payroll audit links reference inconsistent live postings'
+"${PSQL[@]}" -c "UPDATE public.expenses SET amount_cents=5000,archived_at=now() WHERE id='90000000-0000-4000-8000-000000000007'"
+expect_rollback 'Payroll audit links reference inconsistent live postings'
+"${PSQL[@]}" -c "UPDATE public.expenses SET archived_at=NULL WHERE id='90000000-0000-4000-8000-000000000007'"
+"${PSQL[@]}" -c "UPDATE public.teacher_payrolls SET status='APPROVED' WHERE id='90000000-0000-4000-8000-000000000006'"
+expect_rollback 'Payroll audit links reference inconsistent live postings'
+"${PSQL[@]}" -c "UPDATE public.teacher_payrolls SET status='PAID' WHERE id='90000000-0000-4000-8000-000000000006'"
+
 expect_rollback 'Receipt identifier has conflicting payment owners'
 "${PSQL[@]}" -c "UPDATE public.receipts SET payment_id='90000000-0000-4000-8000-000000000002' WHERE id='90000000-0000-4000-8000-000000000004'"
 "${PSQL[@]}" -f "$MIGRATION"
 "${PSQL[@]}" <<'SQL'
 DO $$ BEGIN
+  IF (SELECT count(*) FROM public.audit_logs WHERE id IN ('90000000-0000-4000-8000-000000000009','90000000-0000-4000-8000-000000000010','90000000-0000-4000-8000-000000000011')) <> 3 THEN
+    RAISE EXCEPTION 'Historical audit references were modified by migration';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM public.expenses WHERE id='90000000-0000-4000-8000-000000000007' AND payroll_id='90000000-0000-4000-8000-000000000006' AND amount_cents=5000 AND payment_method='whish') THEN
     RAISE EXCEPTION 'Legacy payroll backfill lost its posting or failed to link it';
   END IF;
@@ -59,6 +79,6 @@ DELETE FROM public.teachers WHERE id='90000000-0000-4000-8000-000000000005';
 DELETE FROM public.receipts WHERE id='90000000-0000-4000-8000-000000000004';
 DELETE FROM public.payments WHERE family_id='90000000-0000-4000-8000-000000000001';
 DELETE FROM public.families WHERE id='90000000-0000-4000-8000-000000000001';
-DELETE FROM public.audit_logs WHERE id='90000000-0000-4000-8000-000000000008';
+DELETE FROM public.audit_logs WHERE id IN ('90000000-0000-4000-8000-000000000008','90000000-0000-4000-8000-000000000009','90000000-0000-4000-8000-000000000010','90000000-0000-4000-8000-000000000011');
 SELECT 'reset-upgrade-migration-ok';
 SQL

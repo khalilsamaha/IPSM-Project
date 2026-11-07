@@ -1,5 +1,41 @@
 BEGIN;
 
+-- An existing production guard may intentionally differ from the repository.
+-- Never replace unknown live behavior merely because its function name matches.
+DO $$
+DECLARE expected record;
+BEGIN
+  FOR expected IN SELECT * FROM (VALUES
+    ('validate_teacher_availability_scope', 'ce495851f4dce1da05f507f4af587a61', 'teacher_availability', 'teacher_availability_scope_guard', ARRAY['course_id','effective_from','effective_to','season_id','teacher_id']::text[]),
+    ('validate_schedule_teacher_availability', 'e9d829cecb69aedc692d7b1a5fdaaf07', 'schedule_sessions', 'schedule_teacher_availability_guard', ARRAY['end_time','enrollment_id','session_date','start_time','teacher_id']::text[])
+  ) AS reviewed(name, body_md5, table_name, trigger_name, columns) LOOP
+    IF EXISTS (
+      SELECT 1 FROM pg_catalog.pg_proc p
+      JOIN pg_catalog.pg_language l ON l.oid=p.prolang
+      WHERE p.oid=to_regprocedure('public.' || expected.name || '()')
+        AND (md5(p.prosrc)<>expected.body_md5 OR p.prosecdef
+          OR p.provolatile<>'v' OR p.prokind<>'f' OR l.lanname<>'plpgsql'
+          OR p.prorettype<>'trigger'::regtype
+          OR p.proconfig IS DISTINCT FROM ARRAY['search_path=""']::text[])
+    ) THEN
+      RAISE EXCEPTION 'Teacher guard differs from reviewed parity migration: %; reconcile before deployment', expected.name;
+    END IF;
+    IF EXISTS (
+      SELECT 1 FROM pg_catalog.pg_trigger t
+      WHERE t.tgrelid=to_regclass('public.' || expected.table_name)
+        AND t.tgname=expected.trigger_name
+        AND (t.tgisinternal OR t.tgenabled<>'O' OR t.tgtype<>23 OR t.tgnargs<>0
+          OR t.tgqual IS NOT NULL OR t.tgdeferrable OR t.tginitdeferred
+          OR t.tgfoid IS DISTINCT FROM to_regprocedure('public.' || expected.name || '()')::oid
+          OR (SELECT array_agg(a.attname::text ORDER BY a.attname)
+              FROM unnest(t.tgattr) k(num) JOIN pg_catalog.pg_attribute a
+                ON a.attrelid=t.tgrelid AND a.attnum=k.num) IS DISTINCT FROM expected.columns)
+    ) THEN
+      RAISE EXCEPTION 'Teacher guard trigger differs from reviewed parity migration: %; reconcile before deployment', expected.trigger_name;
+    END IF;
+  END LOOP;
+END $$;
+
 -- Keep the Supabase migration path aligned with the teacher lifecycle schema
 -- and enforce teacher availability scope for every database write.
 

@@ -85,6 +85,14 @@ identifier high-water marks and full-table lock/scan costs require attention.
 
 ## Follow-up review
 
+The subsequent [production reconciliation](PRODUCTION_RESET_RECONCILIATION.md)
+uses administrator-supplied metadata and tests on PostgreSQL 17.6. It adds exactly
+22 reviewed NO ACTION signatures and hardens the two still-unapplied migrations:
+unknown teacher guards are not overwritten, and inconsistent live payroll
+postings abort before backfill. Historical files remain unchanged. See that
+document for the current GO/NO-GO matrix; earlier counts and PostgreSQL 18 results
+below are historical validation records.
+
 See [preview isolation, Vercel configuration evidence and administrator preflight](PRODUCTION_RESET_PREFLIGHT.md).
 Preview now uses repeatable-read with ACCESS SHARE locks; execution retains the
 serializable write barrier. The expanded suite has 16 PostgreSQL tests and checks

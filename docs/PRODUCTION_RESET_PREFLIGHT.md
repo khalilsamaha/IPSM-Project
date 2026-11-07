@@ -35,6 +35,14 @@ changes separately; do not execute a reset during a schema deployment.
 
 ## Production schema compatibility remains unverified
 
+Update after the administrator's live read-only reports: see the
+[production reconciliation and exact 45-FK comparison](PRODUCTION_RESET_RECONCILIATION.md).
+The supplied evidence now establishes all core tables, the exact 22 ON UPDATE
+differences and the teacher-guard hash comparison. Production rollout remains
+NO-GO for the unresolved guard bodies, payroll classification, identifier history,
+migration provenance and actual roles. Earlier connector-only limitations below
+describe the prior investigation, not an absence of the newly supplied evidence.
+
 The Supabase connector denied a read-only query to **only** IPSM project
 `rakzehtbpzseetldbohm`. No other Supabase project was queried. Passing isolated
 tests demonstrates compatibility with the repository-derived fixture, not the
