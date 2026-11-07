@@ -285,3 +285,21 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] An unused archived record deletes and redirects to its archived list without a deleted-record 404.
 - [ ] Teacher configuration-only rows are disclosed and removed transactionally.
 - [ ] Lessons Table is the default; combined filters, inclusive dates, sort, pagination, archive state, payroll state, and specialized tabs work.
+
+## Production Reset (disposable fixtures only)
+
+- [ ] Active SUPER_ADMIN only; direct preview/execution calls reject other roles and inactive users.
+- [ ] All 64 preset combinations have valid plans or explicit blockers; no implicit financial selection.
+- [ ] Preview counts, direct/dependent effects, updates, protected records and financial amounts are accurate.
+- [ ] Wrong phrase, missing review/financial acknowledgement, unknown keys, cross-user, expired and stale previews are rejected.
+- [ ] Partial/full/voided payments reset balances without changing original fees or discounts.
+- [ ] Closed/auto-closed/reopened shift history is preserved or explicitly deleted together, never rewritten.
+- [ ] Paid payroll and legacy postings block academic-only resets; unique expense links prevent duplicate posting.
+- [ ] Meaningful teacher/enrollment/schedule relationships are preserved or explicitly included, never silently detached.
+- [ ] Seasonal configuration is deleted before seasons; global configuration and standalone unscoped lessons survive.
+- [ ] Business codes remain reserved; reset registration submissions cannot be replayed.
+- [ ] Failure during deletion or audit insertion rolls back every change and preview consumption.
+- [ ] Competing resets and concurrent registration/payment/payroll/job writers are tested in disposable PostgreSQL.
+- [ ] Unknown live incoming FKs block preflight; protected users/audits/schema/Auth/Storage remain untouched.
+- [ ] Run all five validation commands; review additive migrations and rehearse recovery before any authorized rollout.
+- [ ] PR 1 approved and validated before implementing the eight PR 2 categories.

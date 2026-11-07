@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ ${IPSM_DISPOSABLE_TEST_DATABASE:-} != 1 || ${DATABASE_URL:-} != postgresql://*@127.0.0.1:*/ipsm_reset_integrity_test ]]; then
+  echo "Use npm run test:migration; this script only accepts the runner's disposable local database." >&2
+  exit 1
+fi
 : "${DATABASE_URL:?Set DATABASE_URL to an isolated PostgreSQL test database}"
 PSQL=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 MIGRATION=prisma/migrations/20260728000000_family_only_recurring_schedule/migration.sql

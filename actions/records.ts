@@ -163,7 +163,7 @@ export async function saveStudent(formData: FormData) {
   try {
     const row = studentId
       ? await prisma.student.update({ where: { id: studentId }, data })
-      : await createStudentWithCode(prisma.student, data);
+      : await createStudentWithCode(prisma, data);
     await audit(studentId ? "update" : "create", "Student", row.id, data);
     revalidatePath("/students");
   } catch (error) {
@@ -1228,6 +1228,9 @@ export async function registerStudentWorkflow(formData: FormData) {
 
 
   try {
+    if (await prisma.resetRegistrationSubmission.findUnique({ where: { id: parsed.registrationSubmissionId } })) {
+      registrationErrorRedirect("This registration was reset. Start a new registration instead of resubmitting the old form.");
+    }
     const prior = await prisma.enrollment.findUnique({
       where: { registrationSubmissionId: parsed.registrationSubmissionId },
       select: {
@@ -1336,7 +1339,7 @@ export async function registerStudentWorkflow(formData: FormData) {
           dateOfBirth: row.dateOfBirth ?? null,
           family: { connect: { id: resolvedFamilyId } },
         };
-        const student = await createStudentWithCode(tx.student, studentData);
+        const student = await createStudentWithCode(tx, studentData);
         createdStudentIds.push(student.id);
         await tx.auditLog.create({
           data: {

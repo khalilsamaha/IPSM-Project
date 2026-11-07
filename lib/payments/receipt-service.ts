@@ -13,7 +13,7 @@ export class ReceiptGenerationError extends Error {
   }
 }
 
-type PaymentStore = Pick<PrismaClient, "payment">;
+type PaymentStore = Pick<PrismaClient, "$queryRaw">;
 type ReceiptPayment = {
   voidedAt?: Date | null;
   receiptNumber: string | null;

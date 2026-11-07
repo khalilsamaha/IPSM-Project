@@ -33,10 +33,10 @@ export async function getSession(): Promise<AppSession | null> {
 
   const profile = await prisma.userProfile.findUnique({
     where: { authId: user.id },
-    select: { email: true, role: true, status: true },
+    select: { email: true, role: true, status: true, archivedAt: true },
   });
 
-  if (profile?.status === "INACTIVE") return null;
+  if (profile?.status === "INACTIVE" || profile?.archivedAt) return null;
 
   return {
     userId: user.id,

@@ -1,17 +1,14 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { Prisma as PrismaNamespace } from "@prisma/client";
-import { nextReceiptNumberFromExisting } from "@/lib/payments/receipt-number";
+import { allocateBusinessIdentifier, type IdentifierStore } from "@/lib/business-identifiers";
 import { receiptPdfPath } from "@/lib/payments/receipt-service";
-
-type PaymentStore = { payment: { findMany: (args: { where: { receiptNumber: { not: null } }; select: { receiptNumber: true } }) => Promise<{ receiptNumber: string | null }[]> } };
 
 export function isUniqueReceiptConflict(error: unknown) {
   return error instanceof PrismaNamespace.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-export async function generateUniqueReceiptNumber(store: PaymentStore, date = new Date()) {
-  const existing = await store.payment.findMany({ where: { receiptNumber: { not: null } }, select: { receiptNumber: true } });
-  return nextReceiptNumberFromExisting(existing.map((payment) => payment.receiptNumber), date);
+export async function generateUniqueReceiptNumber(store: IdentifierStore, date = new Date()) {
+  return allocateBusinessIdentifier(store, "RCPT", date);
 }
 
 export async function ensurePaymentReceipt(tx: Prisma.TransactionClient, paymentId: string, date = new Date()) {

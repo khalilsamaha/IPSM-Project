@@ -5,12 +5,12 @@ import { formatPaymentMethod, isNewPaymentMethod, newPaymentMethods } from "@/li
 
 describe("family code helpers", () => {
   it("generates the next yearly family code without using family name", async () => {
-    const family = { findFirst: async () => ({ familyCode: "FAM-2026-000041" }) } as any;
+    const family = { $queryRaw: async () => [{ value: "FAM-2026-000042" }] } as any;
     await expect(generateFamilyCode(family, new Date("2026-07-16T00:00:00Z"))).resolves.toBe("FAM-2026-000042");
   });
 
   it("starts a new year at sequence one", async () => {
-    const family = { findFirst: async () => null } as any;
+    const family = { $queryRaw: async () => [{ value: "FAM-2027-000001" }] } as any;
     await expect(generateFamilyCode(family, new Date("2027-01-01T00:00:00Z"))).resolves.toBe("FAM-2027-000001");
   });
 

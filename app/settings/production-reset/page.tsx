@@ -1,146 +1,71 @@
-import { ShieldAlert } from "lucide-react";
 import { AppShell, EmptyState, PageHeader } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
-import { isSuperAdmin } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
-import { getProductionResetCounts } from "@/lib/production-reset";
-import { runProductionReset } from "@/actions/production-reset";
+import { resetOptions, resetProtected, RESET_CONFIRMATION, type ResetPreview } from "@/lib/production-reset";
+import { previewReset, runProductionReset } from "@/actions/production-reset";
 
-const deleteOptions = [
-  [
-    "operationalData",
-    "Operational data",
-    "Enrollments, registration attempts, schedules, payroll, payments, expenses, and cashier shifts.",
-  ],
-  [
-    "financialData",
-    "Financial data",
-    "Payments, allocations, receipts, expenses, cashier shifts, and generated teacher payroll records.",
-  ],
-  [
-    "scheduleData",
-    "Schedule data",
-    "Lesson sessions, recurring patterns, and payroll records derived from those sessions.",
-  ],
-  [
-    "studentsFamilies",
-    "Students / families",
-    "Students and families plus dependent registration attempts, enrollments, schedules, payroll items, and payments.",
-  ],
-  [
-    "teachers",
-    "Teachers",
-    "Teachers plus assignments, availability, recurring patterns, lessons, and payroll records.",
-  ],
-  [
-    "seasons",
-    "Seasons",
-    "Seasons plus dependent enrollments, schedules, payroll records, payments, and season-scoped pricing and availability.",
-  ],
-] as const;
+export const dynamic = "force-dynamic";
+const messages: Record<string, string> = {
+  selection: "Invalid selection. Choose supported categories only.",
+  "not-authorized": "Authorization denied. Active SUPER_ADMIN access is required.",
+  confirmation: `Review the preview and type ${RESET_CONFIRMATION} exactly.`,
+  acknowledgement: "Explicit financial-history deletion acknowledgement is required.",
+  blocked: "Blocked by dependencies. Review a new preview and resolve its blockers.",
+  stale: "Data changed since preview, or the preview expired or was already used. Preview again.",
+  failed: "The database operation failed and was rolled back. No partial reset was saved. Review the server error log and preview again.",
+};
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default async function ProductionResetPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
+export default async function ProductionResetPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const [session, params] = await Promise.all([requireSession(), searchParams]);
-  if (!isSuperAdmin(session.role)) {
-    return (
-      <AppShell session={session}>
-        <PageHeader
-          title="Not authorized"
-          description="Production Reset is restricted to SUPER_ADMIN users."
-        />
-        <EmptyState
-          title="SUPER_ADMIN access required"
-          description="This destructive delivery-readiness tool is not available to Admin or Reception users."
-        />
-      </AppShell>
-    );
+  if (session.role !== "SUPER_ADMIN") return <AppShell session={session}><EmptyState title="SUPER_ADMIN access required" description="Authorization denied. Production Reset is restricted to an active SUPER_ADMIN." /></AppShell>;
+  let request = null;
+  let loadFailed = false;
+  const requestId = params.preview ?? params.result;
+  if (requestId && uuid.test(requestId)) {
+    try { request = await prisma.productionResetRequest.findFirst({ where: { id: requestId, actorId: session.userId } }); }
+    catch { loadFailed = true; }
   }
-
-  const counts = await getProductionResetCounts(prisma);
-  const errorMessage =
-    params.error === "confirmation"
-      ? "Type RESET exactly."
-      : params.error === "selection"
-        ? "Choose at least one data group."
-        : params.error === "not-authorized"
-          ? "You are not authorized to run this operation."
-          : params.error === "failed"
-            ? "The reset failed and was rolled back. No partial deletion was kept. Check the server log for the recorded failure."
-            : null;
-
-  return (
-    <AppShell session={session}>
-      <PageHeader
-        title="Production Reset"
-        description="SUPER_ADMIN-only tool to remove demo or test data before delivery without deleting users, roles, the academic catalogue, rooms, settings, or Supabase Auth users."
-      />
-      {params.success ? (
-        <div className="mb-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">
-          Production reset completed and audited.
-        </div>
-      ) : null}
-      {errorMessage ? (
-        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">
-          Reset blocked: {errorMessage}
-        </div>
-      ) : null}
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {Object.entries(counts).map(([label, value]) => (
-          <div className="rounded-2xl border bg-white p-4 shadow-sm" key={label}>
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {label.replace(/([A-Z])/g, " $1")}
-            </p>
-            <p className="mt-2 text-3xl font-black">{value}</p>
-          </div>
-        ))}
-      </section>
-
-      <form
-        action={runProductionReset}
-        className="mt-6 rounded-[1.5rem] border border-red-200 bg-white p-5 shadow-sm"
-      >
-        <div className="flex items-start gap-3">
-          <ShieldAlert className="mt-1 size-5 text-red-600" />
-          <div>
-            <h2 className="text-lg font-black">Choose data to delete</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Deletions run inside one transaction in foreign-key-safe order. Any failure rolls the complete reset back and writes a server error log.
-            </p>
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {deleteOptions.map(([name, label, help]) => (
-            <label className="rounded-2xl border bg-slate-50 p-4" key={name}>
-              <span className="flex gap-3">
-                <input className="mt-1" name={name} type="checkbox" />
-                <span>
-                  <span className="block font-bold">{label}</span>
-                  <span className="mt-1 block text-sm text-muted-foreground">{help}</span>
-                </span>
-              </span>
-            </label>
-          ))}
-        </div>
-        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <strong>Kept by default:</strong> users, roles, courses, course levels, global course pricing, rooms, school closures, operational settings, and Supabase Auth users.
-        </div>
-        <label className="mt-5 block text-sm font-bold">
-          Type RESET to execute
-          <input
-            className="mt-2 w-full rounded-xl border p-3"
-            name="confirmation"
-            placeholder="RESET"
-          />
-        </label>
-        <button className="mt-5 rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700">
-          Run Production Reset
-        </button>
-      </form>
-    </AppShell>
-  );
+  const preview = request?.preview as ResetPreview | undefined;
+  const result = request?.result as { deleted: Record<string, number>; updated: Record<string, number>; totals: { deleted: number; updated: number } } | undefined;
+  const expired = request && request.expiresAt.getTime() <= Date.now();
+  const canExecute = preview && !preview.blocked.length && !expired && !request?.consumedAt;
+  return <AppShell session={session}>
+    <PageHeader title="Production Reset" description="Preview the exact scope before deleting data. Every date and status is included. Users, authentication and audit history are protected." />
+    {(params.error || loadFailed || (requestId && !request)) && <p role="alert" className="my-4 rounded border border-red-300 bg-red-50 p-4">{loadFailed ? messages.failed : messages[params.error ?? "stale"] ?? messages.failed}</p>}
+    {request?.consumedAt && result && <section role="status" className="my-4 rounded border border-green-300 bg-green-50 p-4">
+      <h2 className="font-bold">Completed successfully</h2><p>{result.totals.deleted} records deleted; {result.totals.updated} records updated. Changes and the audit entry committed together.</p>
+      <ul>{Object.entries(result.deleted).map(([key,count]) => <li key={key}>{key}: {count} deleted</li>)}{Object.entries(result.updated).map(([key,count]) => <li key={key}>{key}: {count} updated</li>)}</ul>
+    </section>}
+    <form action={previewReset} className="my-6 rounded-xl border bg-white p-5">
+      <h2 className="text-lg font-bold">Select categories</h2>
+      <div className="my-4 grid gap-3 md:grid-cols-2">{resetOptions.map(option => <label key={option.key} className="flex gap-3 rounded border p-4">
+        <input type="checkbox" name={option.key} defaultChecked={preview?.selection[option.key]} className="mt-1" />
+        <span><strong className="block">{option.label}</strong><span className="text-sm">{option.description}</span></span>
+      </label>)}</div>
+      <button className="rounded bg-primary px-4 py-2 text-white">Generate deletion preview</button>
+    </form>
+    {preview && !request?.consumedAt && <section className="my-6 rounded-xl border bg-white p-5">
+      <h2 className="text-lg font-bold">Review the complete plan</h2>
+      <p>Selected: {resetOptions.filter(option => preview.selection[option.key]).map(option => option.label).join(", ")}</p>
+      <p>{preview.totals.deleted} deletions + {preview.totals.updated} updates = {preview.totals.affected} affected records.</p>
+      <div className="overflow-x-auto"><table className="my-4 w-full text-left"><thead><tr><th>Record / change</th><th>Count</th><th>Effect</th><th>Reason</th></tr></thead><tbody>
+        {preview.operations.map(row => <tr key={row.operation} className="border-t"><td className="p-2">{row.operation}</td><td>{row.count}</td><td>{row.effect} deletion</td><td>{row.reason}</td></tr>)}
+        {preview.updates.map(row => <tr key={row.operation} className="border-t"><td className="p-2">{row.operation}</td><td>{row.count}</td><td>update</td><td>{row.reason}</td></tr>)}
+      </tbody></table></div>
+      <h3 className="font-bold">Consequences</h3><ul className="list-disc pl-5">{preview.consequences.map(text => <li key={text}>{text}</li>)}</ul>
+      {preview.selection.financialData && <div className="my-4 rounded bg-amber-50 p-3"><h3 className="font-bold">Financial history being removed (amounts in cents)</h3><ul>{Object.entries(preview.financial).map(([key,value]) => <li key={key}>{key}: {value}</li>)}</ul><p>Cash, Whish and other methods are reported separately. Payment totals exclude voids; expense totals exclude archived expenses. All those records are still included in deletion counts.</p></div>}
+      {preview.blocked.length > 0 && <div role="alert" className="my-4 rounded bg-red-50 p-4"><h3 className="font-bold">Blocked by dependencies</h3><ul className="list-disc pl-5">{preview.blocked.map(text => <li key={text}>{text}</li>)}</ul></div>}
+      {expired && <p role="alert">This preview has expired. Generate a new preview.</p>}
+      {canExecute && <form action={runProductionReset} className="mt-5 space-y-4 border-t pt-4">
+        <input type="hidden" name="requestId" value={request!.id} />
+        <label className="block"><input type="checkbox" name="reviewed" required /> I reviewed all deletions, updates, dependencies and preserved records.</label>
+        {preview.selection.financialData && <label className="block"><input type="checkbox" name="financialAcknowledged" required /> I explicitly authorize deleting financial history, including paid payroll, closed shifts and reconciliation snapshots.</label>}
+        <label className="block">Type <strong>{RESET_CONFIRMATION}</strong><input name="confirmation" required autoComplete="off" className="mt-2 block w-full rounded border p-2" /></label>
+        <p className="text-sm">The server checks this preview again before execution. It expires after ten minutes.</p>
+        <button className="rounded bg-red-700 px-4 py-2 font-bold text-white">Execute reviewed reset</button>
+      </form>}
+    </section>}
+    <section className="rounded border bg-amber-50 p-4"><h2 className="font-bold">Always protected</h2><ul className="list-disc pl-5">{resetProtected.map(text => <li key={text}>{text}</li>)}</ul></section>
+  </AppShell>;
 }

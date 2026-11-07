@@ -529,6 +529,7 @@ model TeacherPayroll {
   approvedAt              DateTime?            @map("approved_at")
   paidAt                  DateTime?            @map("paid_at")
   notes                   String?
+  expense                 Expense?
   items                   TeacherPayrollItem[]
   createdAt               DateTime             @default(now()) @map("created_at")
   updatedAt               DateTime             @updatedAt @map("updated_at")
@@ -633,6 +634,8 @@ model Receipt {
 }
 
 model Expense {
+  payrollId     String?       @unique @map("payroll_id") @db.Uuid
+  payroll       TeacherPayroll? @relation(fields: [payrollId], references: [id], onDelete: Restrict)
   id            String        @id @default(uuid()) @db.Uuid
   createdById   String?       @map("created_by_id") @db.Uuid
   createdBy     UserProfile?  @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
@@ -681,4 +684,45 @@ model CashierShift {
   @@index([userId, status])
   @@index([businessDate])
   @@map("cashier_shifts")
+}
+
+// Protected reset infrastructure: never included in reset deletion plans.
+model ProductionResetRequest {
+  id        String @id @default(uuid()) @db.Uuid
+  actorId   String @map("actor_id") @db.Uuid
+  selection Json
+  fingerprint String
+  preview Json
+  expiresAt DateTime @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  result Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  @@index([actorId, createdAt])
+  @@map("production_reset_requests")
+}
+
+model ProductionResetState {
+  id String @id
+  changedAt DateTime @map("changed_at") @db.Timestamptz(6)
+  @@map("production_reset_state")
+}
+
+model BusinessIdentifierCounter {
+  key String @id
+  value Int
+  @@map("business_identifier_counters")
+}
+
+model IssuedBusinessIdentifier {
+  kind String
+  value String
+  ownerId String? @map("owner_id") @db.Uuid
+  @@id([kind, value])
+  @@map("issued_business_identifiers")
+}
+
+model ResetRegistrationSubmission {
+  id String @id @db.Uuid
+  resetAt DateTime @default(now()) @map("reset_at")
+  @@map("reset_registration_submissions")
 }
