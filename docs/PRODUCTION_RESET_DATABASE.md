@@ -54,15 +54,31 @@ transactional audit failure, competing resets, old concurrent writers, identifie
 retention and registration tombstones. Unit tests exercise all 64 existing preset
 combinations, executor effects, protected records and server-action authorization.
 
-During implementation, the sandbox denied TCP and Unix sockets, preventing the
-connection-based runner. PostgreSQL 18 single-user mode successfully applied the
-baseline/corrective migrations and ran `reset-integrity.sql`; this verifies SQL
-syntax and those assertions, **not** multi-connection isolation or Prisma/Postgres
-execution. Those integration checks remain a review/rollout gate until run in CI
-or another disposable environment supporting sockets.
+The initial sandbox-only attempt could not start PostgreSQL or the Prisma
+child generator. Validation was subsequently repeated in the primary Kali
+checkout with approved subprocess/socket access: normal `npm run prisma:generate`
+passed, and `npm run test:migration` passed against a fresh PostgreSQL 18 cluster,
+including all 15 connection-based executor tests. No existing database was used.
 
-The local `prisma:generate` command exited successfully, but the sandbox blocked
-its generator child process. The installed Prisma generator was invoked directly
-through its JSON-RPC interface to regenerate the client used for type checking
-and build validation. CI must also verify the normal generation command. No
-generated client or dependency changes are committed.
+The migration suite also tests rejection and complete DDL rollback for a misleading
+nonunique registration index and conflicting receipt ownership. A successful
+legacy upgrade retains the payroll posting amount/payment method, backfills its
+unambiguous audit link and seeds receipt counters from historical audit metadata.
+
+The review added coverage for pattern-only lessons, unexpected cascading FKs
+between known tables, changed FK actions, partial/settled/fully discounted
+balances, and receipt repair/immutability. The full unit suite has 328 passing
+tests; PostgreSQL tests are intentionally gated out of the ordinary unit command
+and run by the disposable migration runner.
+
+TypeScript checking and the production build also passed. The build reported
+ESLint patch compatibility and Supabase Edge-runtime warnings; its successful
+exit is not a clean standalone lint result. Next.js's automatic SWC lockfile
+edits were discarded, and no dependency versions or lockfile changes are included.
+
+Both new migrations are transactional. Changes made during this review are only
+to these new, unpublished migrations; historical files on `origin/main` remain
+byte-for-byte unchanged. Deployment still requires real IPSM schema/privilege
+verification and migration review. In particular, duplicate registration links,
+conflicting receipt owners, ambiguous payroll history, unrecoverable historical
+identifier high-water marks and full-table lock/scan costs require attention.

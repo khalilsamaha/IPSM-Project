@@ -30,12 +30,12 @@ function fixture(initial: Record<string, any[]> = {}) {
     auditLog: { create: async ({ data: value }: any) => { if (failure === "audit") throw new Error("audit unavailable"); audit.push(value); return value; } },
     $queryRawUnsafe: async (sql: string) => {
       const table = sql.match(/public\."(\w+)"/)![1];
-      const rows = (data[table] ?? []).filter(row => !sql.includes("season_id IS NOT NULL") || row.seasonId != null || (sql.includes("OR enrollment_id") && row.enrollmentId != null));
+      const rows = (data[table] ?? []).filter(row => !sql.includes("season_id IS NOT NULL") || row.seasonId != null || (sql.includes("OR enrollment_id") && row.enrollmentId != null) || (sql.includes("OR schedule_pattern_id") && row.schedulePatternId != null));
       return [{ count: rows.length, hash: createHash("sha256").update(canonical(rows)).digest("hex") }];
     },
     $queryRaw: async (strings: TemplateStringsArray) => {
       if (strings.join("").includes("pg_catalog.pg_constraint")) return data.unknownDependencies ?? [];
-      if (strings.join("").includes("AS invalid")) return [{ invalid: (data.enrollments ?? []).filter(e => e.finalFeeCents < 0 || e.finalFeeCents !== e.feeCents - e.discountCents).length, changed: (data.enrollments ?? []).filter(e => e.paidCents !== 0 || e.remainingCents !== e.finalFeeCents).length }];
+      if (strings.join("").includes("AS invalid")) return [{ invalid: (data.enrollments ?? []).filter(e => e.feeCents < 0 || e.discountCents < 0 || e.finalFeeCents !== Math.max(0, e.feeCents - e.discountCents)).length, changed: (data.enrollments ?? []).filter(e => e.paidCents !== 0 || e.remainingCents !== e.finalFeeCents).length }];
       return [{ cashPaymentsCents: 0, whishPaymentsCents: 0, otherPaymentsCents: 0, cashExpensesCents: 0, whishExpensesCents: 0, otherExpensesCents: 0, payrollCents: 0, closedShifts: 0 }];
     },
     $executeRawUnsafe: async (sql: string) => {
@@ -43,7 +43,7 @@ function fixture(initial: Record<string, any[]> = {}) {
       const table = sql.match(/public\."(\w+)"/)![1];
       if (failure === table) throw new Error("foreign key blocker");
       const before = data[table] ?? [];
-      const retained = sql.includes("season_id IS NOT NULL") ? before.filter(row => row.seasonId == null && (!sql.includes("OR enrollment_id") || row.enrollmentId == null)) : [];
+      const retained = sql.includes("season_id IS NOT NULL") ? before.filter(row => row.seasonId == null && (!sql.includes("OR enrollment_id") || row.enrollmentId == null) && (!sql.includes("OR schedule_pattern_id") || row.schedulePatternId == null)) : [];
       data[table] = retained;
       return before.length - retained.length;
     },
@@ -136,7 +136,7 @@ describe("reset executor and survivors", () => {
     await expect(execute(db,p.id)).rejects.toMatchObject({ code: "stale" });
   });
   it("preserves standalone lessons during a season reset", async () => {
-    const db = fixture({ schedule_sessions: [{ id: "standalone", seasonId: null, enrollmentId: null }, { id: "linked", seasonId: null, enrollmentId: "enrollment" }] });
+    const db = fixture({ schedule_sessions: [{ id: "standalone", seasonId: null, enrollmentId: null }, { id: "linked", seasonId: null, enrollmentId: "enrollment" }, { id: "pattern-linked", seasonId: null, enrollmentId: null, schedulePatternId: "pattern" }] });
     const p = await previewProductionReset(db.prisma, actorId, selection({ seasons: true }));
     await execute(db,p.id);
     expect(db.data().schedule_sessions).toEqual([{ id: "standalone", seasonId: null, enrollmentId: null }]);

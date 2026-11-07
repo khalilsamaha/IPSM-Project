@@ -52,6 +52,15 @@ CREATE TABLE public.reset_registration_submissions (id uuid PRIMARY KEY, reset_a
 CREATE TABLE public.business_identifier_counters (key text PRIMARY KEY, value integer NOT NULL CHECK (value >= 0));
 CREATE TABLE public.issued_business_identifiers (kind text NOT NULL, value text NOT NULL, owner_id uuid, PRIMARY KEY(kind, value));
 
+-- Do not silently assign a number to one owner if existing payment/receipt
+-- records disagree about ownership. Reconciliation must precede deployment.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM public.receipts r JOIN public.payments p
+             ON p.receipt_number = r.receipt_number WHERE p.id <> r.payment_id) THEN
+    RAISE EXCEPTION 'Receipt identifier has conflicting payment owners; reconcile before migration';
+  END IF;
+END $$;
+
 INSERT INTO public.issued_business_identifiers SELECT 'FAM', family_code, id FROM public.families;
 INSERT INTO public.issued_business_identifiers SELECT 'STU', student_code, id FROM public.students;
 INSERT INTO public.issued_business_identifiers SELECT 'RCPT', receipt_number, id FROM public.payments WHERE receipt_number IS NOT NULL;
@@ -85,14 +94,14 @@ LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
 DECLARE identifier text; previous_identifier text; record_owner uuid; existing_owner uuid; sequence_value integer;
 BEGIN
   identifier := to_jsonb(NEW)->>TG_ARGV[1];
-  IF identifier IS NULL THEN RETURN NEW; END IF;
   record_owner := CASE WHEN TG_TABLE_NAME = 'receipts' THEN (to_jsonb(NEW)->>'payment_id')::uuid ELSE NEW.id END;
   IF TG_OP = 'UPDATE' THEN
     previous_identifier := to_jsonb(OLD)->>TG_ARGV[1];
-    IF previous_identifier IS NOT NULL AND previous_identifier <> identifier THEN
+    IF previous_identifier IS NOT NULL AND previous_identifier IS DISTINCT FROM identifier THEN
       RAISE EXCEPTION 'Issued business identifiers are immutable';
     END IF;
   END IF;
+  IF identifier IS NULL THEN RETURN NEW; END IF;
   INSERT INTO public.issued_business_identifiers(kind, value, owner_id)
   VALUES(TG_ARGV[0], identifier, record_owner) ON CONFLICT DO NOTHING;
   SELECT owner_id INTO existing_owner FROM public.issued_business_identifiers
@@ -109,7 +118,7 @@ END $$;
 CREATE TRIGGER retain_family_identifier BEFORE INSERT OR UPDATE OF family_code ON public.families FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('FAM', 'family_code');
 CREATE TRIGGER retain_student_identifier BEFORE INSERT OR UPDATE OF student_code ON public.students FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('STU', 'student_code');
 CREATE TRIGGER retain_payment_identifier BEFORE INSERT OR UPDATE OF receipt_number ON public.payments FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('RCPT', 'receipt_number');
-CREATE TRIGGER retain_receipt_identifier BEFORE INSERT OR UPDATE OF receipt_number ON public.receipts FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('RCPT', 'receipt_number');
+CREATE TRIGGER retain_receipt_identifier BEFORE INSERT OR UPDATE OF receipt_number, payment_id ON public.receipts FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('RCPT', 'receipt_number');
 
 -- A writer that started before the reset must retry, rather than apply decisions
 -- based on the old database after the reset releases its table locks.

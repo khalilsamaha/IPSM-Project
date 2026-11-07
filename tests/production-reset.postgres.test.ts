@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION, resetTables } from "@/lib/production-reset";
 import { allocateBusinessIdentifier } from "@/lib/business-identifiers";
+import { ensurePaymentReceipt } from "@/lib/payments/receipt-repair";
 
 const url = process.env.RESET_TEST_DATABASE_URL;
 if (url && (process.env.IPSM_DISPOSABLE_TEST_DATABASE !== "1" || new URL(url).hostname !== "127.0.0.1" || new URL(url).pathname !== "/ipsm_reset_integrity_test")) throw new Error("Only the disposable migration runner may run PostgreSQL reset tests");
@@ -66,6 +67,21 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
       await db!.$executeRawUnsafe("DROP FUNCTION public.test_audit_failure()");
     }
   });
+  it.each([0, 4000, 10000])("restores a retained enrollment with %i cents paid", async paidCents => {
+    const f = await enrollmentFixture();
+    await db!.enrollment.update({ where: { id: f.enrollment.id }, data: { paidCents, remainingCents: 10000 - paidCents } });
+    const p = await previewProductionReset(db!, actor, selection({ financialData: true }));
+    await run(p.id);
+    expect(await db!.enrollment.findUniqueOrThrow({ where: { id: f.enrollment.id } })).toMatchObject({ feeCents: 12000, discountCents: 2000, finalFeeCents: 10000, paidCents: 0, remainingCents: 10000 });
+  });
+  it("preserves a fully discounted charge using the application's zero-floor calculation", async () => {
+    const f = await enrollmentFixture();
+    await db!.enrollment.update({ where: { id: f.enrollment.id }, data: { discountCents: 15000, finalFeeCents: 0, paidCents: 0, remainingCents: 0 } });
+    const p = await previewProductionReset(db!, actor, selection({ financialData: true }));
+    expect(p.preview.blocked).toEqual([]);
+    await run(p.id);
+    expect(await db!.enrollment.findUniqueOrThrow({ where: { id: f.enrollment.id } })).toMatchObject({ feeCents: 12000, discountCents: 15000, finalFeeCents: 0, paidCents: 0, remainingCents: 0 });
+  });
   it("serializes competing resets; only one reviewed request can commit", async () => {
     await enrollmentFixture();
     const p1 = await previewProductionReset(db!,actor,selection({ financialData: true }));
@@ -119,5 +135,54 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
     expect(await allocateBusinessIdentifier(db!,"RCPT")).not.toBe(f.payment.receiptNumber);
     expect(await db!.resetRegistrationSubmission.findUnique({ where: { id: f.enrollment.registrationSubmissionId! } })).not.toBeNull();
     await expect(db!.family.create({ data: { familyCode: f.family.familyCode, name: "Reuse" } })).rejects.toThrow(/already issued/);
+  });
+  it("counts and deletes pattern-only lessons while preserving standalone lessons", async () => {
+    const f = await enrollmentFixture();
+    const teacher = await db!.teacher.create({ data: { fullName: "Pattern fixture" } });
+    const pattern = await db!.schedulePattern.create({ data: { enrollmentId: f.enrollment.id, teacherId: teacher.id, dayOfWeek: 1, startTime: "10:00", endTime: "11:00", startsOn: f.season.startDate, endsOn: f.season.endDate } });
+    const lesson = { studentId: f.student.id, teacherId: teacher.id, sessionDate: new Date("2026-01-05"), startTime: "10:00", endTime: "11:00" };
+    await db!.scheduleSession.create({ data: { ...lesson, schedulePatternId: pattern.id } });
+    const standalone = await db!.scheduleSession.create({ data: { ...lesson, startTime: "11:00", endTime: "12:00" } });
+    const p = await previewProductionReset(db!, actor, selection({ seasons: true, financialData: true }));
+    expect(p.preview.blocked).toEqual([]);
+    expect(p.preview.operations.find(row => row.model === "scheduleSession")?.count).toBe(1);
+    const result = await run(p.id);
+    expect(result.deleted.scheduleSession).toBe(1);
+    expect(await db!.scheduleSession.findMany()).toEqual([standalone]);
+  });
+  it("blocks an unexpected cascading FK between known tables", async () => {
+    const f = await enrollmentFixture();
+    const teacher = await db!.teacher.create({ data: { fullName: "Unexpected dependency" } });
+    await db!.$executeRawUnsafe("ALTER TABLE public.payments ADD COLUMN reset_test_teacher_id uuid REFERENCES public.teachers(id) ON DELETE CASCADE");
+    try {
+      await db!.$executeRaw`UPDATE public.payments SET reset_test_teacher_id = ${teacher.id}::uuid WHERE id = ${f.payment.id}::uuid`;
+      const p = await previewProductionReset(db!, actor, selection({ teachers: true }));
+      expect(p.preview.blocked.join()).toMatch(/public.payments references teachers/);
+      await expect(run(p.id)).rejects.toMatchObject({ code: "blocked" });
+      expect(await db!.payment.count()).toBe(3);
+    } finally { await db!.$executeRawUnsafe("ALTER TABLE public.payments DROP COLUMN reset_test_teacher_id"); }
+  });
+  it("blocks changed referential actions even when FK columns are familiar", async () => {
+    await enrollmentFixture();
+    await db!.$executeRawUnsafe("ALTER TABLE public.registration_attempts DROP CONSTRAINT registration_attempts_payment_id_fkey, ADD CONSTRAINT registration_attempts_payment_id_fkey FOREIGN KEY(payment_id) REFERENCES public.payments(id) ON DELETE CASCADE ON UPDATE CASCADE");
+    try {
+      const p = await previewProductionReset(db!, actor, selection({ financialData: true }));
+      expect(p.preview.blocked.join()).toMatch(/registration_attempts references payments/);
+      await expect(run(p.id)).rejects.toMatchObject({ code: "blocked" });
+      expect(await db!.registrationAttempt.count()).toBe(1);
+    } finally {
+      await db!.$executeRawUnsafe("ALTER TABLE public.registration_attempts DROP CONSTRAINT registration_attempts_payment_id_fkey, ADD CONSTRAINT registration_attempts_payment_id_fkey FOREIGN KEY(payment_id) REFERENCES public.payments(id) ON DELETE SET NULL ON UPDATE CASCADE");
+    }
+  });
+  it("retains issued receipt numbers during repair and prevents clearing or transferring them", async () => {
+    const f = await enrollmentFixture();
+    await expect(db!.payment.update({ where: { id: f.payment.id }, data: { receiptNumber: null } })).rejects.toThrow(/immutable/);
+    const legacy = await db!.payment.create({ data: { familyId: f.family.id, totalAmountCents: 0, paymentMethod: "cash" } });
+    const number = await allocateBusinessIdentifier(db!, "RCPT");
+    await db!.receipt.create({ data: { paymentId: legacy.id, receiptNumber: number } });
+    expect(await db!.$transaction(tx => ensurePaymentReceipt(tx, legacy.id))).toBe(number);
+    expect((await db!.payment.findUniqueOrThrow({ where: { id: legacy.id } })).receiptNumber).toBe(number);
+    const other = await db!.payment.create({ data: { familyId: f.family.id, totalAmountCents: 0, paymentMethod: "cash" } });
+    await expect(db!.receipt.update({ where: { paymentId: legacy.id }, data: { paymentId: other.id } })).rejects.toThrow(/already issued/);
   });
 });

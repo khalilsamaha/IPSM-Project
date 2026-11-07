@@ -300,6 +300,6 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] Business codes remain reserved; reset registration submissions cannot be replayed.
 - [ ] Failure during deletion or audit insertion rolls back every change and preview consumption.
 - [ ] Competing resets and concurrent registration/payment/payroll/job writers are tested in disposable PostgreSQL.
-- [ ] Unknown live incoming FKs block preflight; protected users/audits/schema/Auth/Storage remain untouched.
+- [ ] Unknown live incoming FKs, changed referential actions and pattern-only lesson dependencies are checked; protected users/audits/schema/Auth/Storage remain untouched.
 - [ ] Run all five validation commands; review additive migrations and rehearse recovery before any authorized rollout.
 - [ ] PR 1 approved and validated before implementing the eight PR 2 categories.

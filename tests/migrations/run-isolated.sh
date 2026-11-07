@@ -29,6 +29,6 @@ PSQL=("$PG_BIN/psql" "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -f tests/migrations/reset-bootstrap.sql
 "${PSQL[@]}" -f prisma/migrations/20261107000000_teacher_guard_parity/migration.sql
 "${PSQL[@]}" -f prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql
-"${PSQL[@]}" -f prisma/migrations/20261107010000_reset_integrity/migration.sql
+bash tests/migrations/reset-upgrade.integration.sh
 "${PSQL[@]}" -f tests/migrations/reset-integrity.sql
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

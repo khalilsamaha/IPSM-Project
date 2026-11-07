@@ -16,9 +16,13 @@ There is no automatic demo-data detection.
 | Schedule Data | Lessons/attendance and patterns | Retained enrollment dependencies block; explicitly include enrollments. Payroll/postings block unless Financial Data is selected. |
 | Students / Families | Students, families and dependent enrollments, registrations, lessons and patterns | Family payments and enrollment allocations require Financial Data. |
 | Teachers | Teachers, assignments, all availability, lessons and patterns | Retained teacher-linked enrollments block, including archived records. Payroll/postings require Financial Data. No implicit teacher unassignment. |
-| Seasons | Seasons, enrollments, registrations, recurring patterns, season- or enrollment-linked lessons, seasonal pricing and availability | Global prices/availability and standalone lessons without a season or enrollment survive. Financial dependencies require Financial Data. |
+| Seasons | Seasons, enrollments, registrations, recurring patterns, season-, enrollment- or pattern-linked lessons, seasonal pricing and availability | Global prices/availability and standalone lessons without a season, enrollment or pattern survive. Financial dependencies require Financial Data. |
 
 ## Financial history
+
+Retained charges are checked against the existing application calculation
+`max(0, fee - discount)`, including fully discounted enrollments. Fees and
+discounts are never rewritten to make a reset pass.
 
 No academic selection silently deletes payments, payroll or posted expenses.
 The conservative policy blocks academic resets while payroll or teacher-payroll
@@ -49,8 +53,9 @@ The browser submits an opaque preview ID, never an executable deletion plan.
 The server reloads the selection and recomputes both the data fingerprint and
 policy effects. Same-count row edits invalidate a preview. Unsupported categories,
 malformed inputs, expired previews, cross-user references and reused previews
-are rejected. Blocked plans cannot execute. Unknown incoming database FKs from
-unmodeled tables block preflight, including cascading relationships.
+are rejected. Blocked plans cannot execute. Incoming FKs must match reviewed child/parent columns and referential actions.
+Unmodeled relationships, changed actions and unvalidated constraints block preflight,
+including unexpected cascading links between otherwise known tables.
 
 All affected records are counted once as deletions or updates. The audit entry,
 preview consumption, identifier retention and registration tombstones are system
@@ -84,7 +89,9 @@ Family, student and receipt allocation now uses protected, atomic yearly counter
 The migration reserves identifiers from existing rows, receipts and recoverable
 audit metadata. Retention triggers also reserve explicitly imported identifiers,
 advance counters and reject reuse by a different record. Issued identifiers are
-immutable. Counter gaps after failed creation are acceptable; reuse is not.
+immutable, including clearing a payment number or transferring a receipt to another
+payment. Repair of a missing payment number reuses its existing receipt number.
+Counter gaps after failed creation are acceptable; reuse is not.
 Existing mismatched receipt identifiers require reviewed reconciliation; automated repair may no longer rename an already issued identifier.
 Identifiers existing only in previously exported/deleted material cannot be
 recovered automatically: review historical high-water marks before migration.

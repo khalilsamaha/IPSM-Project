@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { productionResetForeignKeys } from "@/lib/production-reset-foreign-keys";
 import { Prisma, type PrismaClient } from "@prisma/client";
 
 export const productionResetScopes = ["operationalData", "financialData", "scheduleData", "studentsFamilies", "teachers", "seasons"] as const;
@@ -67,7 +68,7 @@ export function getProductionResetPlan(selection: ProductionResetSelection): Res
     add("scheduleSession", "Lessons and attendance in the selected operational scope", selection.scheduleData || selection.operationalData ? "direct" : "dependent");
     if (selection.seasons && !selection.operationalData && !selection.studentsFamilies && !selection.teachers && !selection.scheduleData) {
       result[result.length - 1].filter = "seasonalSessions";
-      result[result.length - 1].reason = "Season-linked or enrollment-linked lessons; standalone lessons without a season are preserved";
+      result[result.length - 1].reason = "Season-, enrollment- or pattern-linked lessons; standalone lessons are preserved";
     }
     add("schedulePattern", "Recurring patterns supporting the deleted lessons", selection.scheduleData || selection.operationalData ? "direct" : "dependent");
   }
@@ -124,8 +125,14 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
   const { counts, fingerprint } = await snapshot(tx);
   const deletes = new Set(plan.map(row => row.model));
   const blocked: string[] = [];
-  const unknownDependencies = await tx.$queryRaw<Array<{ child: string; parent: string }>>`
-    SELECT child_ns.nspname || '.' || child.relname AS child, parent.relname AS parent
+  const dependencies = await tx.$queryRaw<Array<{ child: string; parent: string; signature: string; validated: boolean }>>`
+    SELECT child_ns.nspname || '.' || child.relname AS child, parent.relname AS parent,
+      c.convalidated AS validated,
+      child_ns.nspname || '.' || child.relname || '.' ||
+        (SELECT string_agg(a.attname, ',' ORDER BY k.position) FROM unnest(c.conkey) WITH ORDINALITY k(attnum, position) JOIN pg_catalog.pg_attribute a ON a.attrelid=c.conrelid AND a.attnum=k.attnum) ||
+      '->' || parent_ns.nspname || '.' || parent.relname || '.' ||
+        (SELECT string_agg(a.attname, ',' ORDER BY k.position) FROM unnest(c.confkey) WITH ORDINALITY k(attnum, position) JOIN pg_catalog.pg_attribute a ON a.attrelid=c.confrelid AND a.attnum=k.attnum) ||
+      ':' || c.confdeltype::text || c.confupdtype::text AS signature
     FROM pg_catalog.pg_constraint c
     JOIN pg_catalog.pg_class child ON child.oid = c.conrelid
     JOIN pg_catalog.pg_namespace child_ns ON child_ns.oid = child.relnamespace
@@ -133,9 +140,8 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
     JOIN pg_catalog.pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
     WHERE c.contype = 'f' AND parent_ns.nspname = 'public'
       AND parent.relname IN (${Prisma.join(plan.map(row => resetTables[row.model]))})
-      AND (child_ns.nspname <> 'public' OR child.relname NOT IN (${Prisma.join(Object.values(resetTables))}))
   `;
-  for (const dependency of unknownDependencies) blocked.push(`Unmodeled database dependency: ${dependency.child} references ${dependency.parent}. Review the live schema before deleting either table.`);
+  for (const dependency of dependencies.filter(row => !row.validated || !productionResetForeignKeys.has(row.signature))) blocked.push(`Unmodeled database dependency: ${dependency.child} references ${dependency.parent}. Review the live schema before deleting either table.`);
   if (!selection.financialData) {
     if ((deletes.has("enrollment") && counts.payment_items) || (deletes.has("family") && counts.payments)) blocked.push("Retained payments reference the selected academic records. Select Financial Data explicitly, or preserve these records.");
     if (deletes.has("scheduleSession") || deletes.has("teacher")) {
@@ -150,7 +156,7 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
   }
   const updates: ResetPreview["updates"] = [];
   if (selection.financialData && !deletes.has("enrollment")) {
-    const [row] = await tx.$queryRaw<Array<{ invalid: number; changed: number }>>`SELECT count(*) FILTER (WHERE fee_cents < 0 OR discount_cents < 0 OR discount_cents > fee_cents OR final_fee_cents <> fee_cents - discount_cents)::integer AS invalid, count(*) FILTER (WHERE paid_cents <> 0 OR remaining_cents <> final_fee_cents)::integer AS changed FROM public.enrollments`;
+    const [row] = await tx.$queryRaw<Array<{ invalid: number; changed: number }>>`SELECT count(*) FILTER (WHERE fee_cents < 0 OR discount_cents < 0 OR final_fee_cents <> greatest(0, fee_cents - discount_cents))::integer AS invalid, count(*) FILTER (WHERE paid_cents <> 0 OR remaining_cents <> final_fee_cents)::integer AS changed FROM public.enrollments`;
     if (row.invalid) blocked.push(`${row.invalid} retained enrollments have inconsistent original charges. Resolve these charges before resetting payments.`);
     updates.push({ operation: "enrollmentBalances", count: row.changed, reason: "Set paid to zero and outstanding to the unchanged final fee; voided allocations are not subtracted twice." });
     updates.push({ operation: "registrationPaymentReferences", count: await tx.registrationAttempt.count({ where: { paymentId: { not: null } } }), reason: "Clear removed payment links; completed academic registrations and submission IDs remain intact." });
@@ -248,6 +254,6 @@ export function canonical(value: unknown): string {
 
 function resetPredicate(filter: ResetOperation["filter"]) {
   if (filter === "seasonal") return " WHERE season_id IS NOT NULL";
-  if (filter === "seasonalSessions") return " WHERE season_id IS NOT NULL OR enrollment_id IS NOT NULL";
+  if (filter === "seasonalSessions") return " WHERE season_id IS NOT NULL OR enrollment_id IS NOT NULL OR schedule_pattern_id IS NOT NULL";
   return "";
 }

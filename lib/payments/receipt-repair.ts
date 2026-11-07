@@ -19,7 +19,9 @@ export async function ensurePaymentReceipt(tx: Prisma.TransactionClient, payment
     else if (payment.receipt.receiptNumber !== payment.receiptNumber || payment.receipt.deletedAt) await tx.receipt.update({ where: { paymentId }, data: { receiptNumber: payment.receiptNumber, deletedAt: null, pdfPath: payment.receipt.pdfPath ?? receiptPdfPath(paymentId) } });
     return payment.receiptNumber;
   }
-  const receiptNumber = await generateUniqueReceiptNumber(tx, date);
+  // A surviving receipt already owns its issued number. Repair the missing
+  // payment link without assigning a second number to that historical receipt.
+  const receiptNumber = payment.receipt?.receiptNumber ?? await generateUniqueReceiptNumber(tx, date);
   await tx.payment.update({ where: { id: paymentId }, data: { receiptNumber } });
   if (payment.receipt) await tx.receipt.update({ where: { paymentId }, data: { receiptNumber, deletedAt: null, pdfPath: payment.receipt.pdfPath ?? receiptPdfPath(paymentId) } });
   else await tx.receipt.create({ data: { paymentId, receiptNumber, pdfPath: receiptPdfPath(paymentId) } });
