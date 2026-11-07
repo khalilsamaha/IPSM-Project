@@ -1,7 +1,7 @@
 import { AppShell, EmptyState, PageHeader } from "@/components/records/shell";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
-import { resetOptions, resetProtected, RESET_CONFIRMATION, type ResetPreview } from "@/lib/production-reset";
+import { resetOptions, resetProtected, RESET_CONFIRMATION, isProductionResetEnvironmentAllowed, type ResetPreview } from "@/lib/production-reset";
 import { previewReset, runProductionReset } from "@/actions/production-reset";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function ProductionResetPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const [session, params] = await Promise.all([requireSession(), searchParams]);
   if (session.role !== "SUPER_ADMIN") return <AppShell session={session}><EmptyState title="SUPER_ADMIN access required" description="Authorization denied. Production Reset is restricted to an active SUPER_ADMIN." /></AppShell>;
+  if (!isProductionResetEnvironmentAllowed()) return <AppShell session={session}><EmptyState title="Production Reset unavailable" description="Reset previews and execution are disabled in Vercel Preview and development deployments. These environments may share production data." /></AppShell>;
   let request = null;
   let loadFailed = false;
   const requestId = params.preview ?? params.result;

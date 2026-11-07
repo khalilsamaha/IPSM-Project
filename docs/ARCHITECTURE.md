@@ -26,7 +26,8 @@ Phase 3 should not add feature code until the database review is approved. The m
 ## Production Reset integrity
 
 The six Production Reset presets use an actor-bound, expiring server preview and
-an ordered table write barrier inside a serializable transaction. Explicit
+a repeatable-read preview snapshot. Execution rechecks that preview under an
+ordered table write barrier inside a serializable transaction. Explicit
 Financial Data is required for financial deletion. Protected identifier ledgers
 and registration tombstones survive resets. See [Production Reset](PRODUCTION_RESET.md)
 and [database verification](PRODUCTION_RESET_DATABASE.md) for scope, concurrency,

@@ -3,7 +3,9 @@
 Production Reset at `/settings/production-reset` requires an active, non-archived
 SUPER_ADMIN. Preview and execution each verify the profile in PostgreSQL; the
 server action also validates the authenticated session. ADMIN, RECEPTION,
-inactive and unauthenticated callers cannot preview or execute a reset.
+inactive and unauthenticated callers cannot preview or execute a reset. Vercel
+Preview/development deployments are blocked server-side even for SUPER_ADMIN
+because the current Preview connection configuration is shared with production.
 
 This release keeps six categories. Every selected category includes all dates
 and statuses, including archived, cancelled, voided and historical records.
@@ -65,10 +67,16 @@ including its audit entry and preview consumption.
 
 ## Transactions and writers
 
-Preview/execution acquire a short, ordered PostgreSQL write barrier across the
-observed application tables before taking their serializable snapshot. Normal
-reads remain possible; competing writers wait. Lock wait is limited to five
-seconds and the transaction to sixty seconds. Competing resets serialize.
+Preview uses a repeatable-read MVCC snapshot and ACCESS SHARE table locks.
+Counts and fingerprints describe one committed snapshot while normal writers
+continue. The read locks prevent concurrent DDL/TRUNCATE from changing table
+identities. Only the stored preview request is written.
+
+Execution acquires the ordered PostgreSQL write barrier before taking its
+serializable snapshot and recomputes the fingerprint and policy effects. It
+rejects previews made stale by concurrent writes or resets. Normal reads remain
+possible; competing writers wait during execution. Lock wait is limited to five
+seconds and either transaction to sixty seconds. Competing resets serialize.
 Application transactions use SERIALIZABLE isolation. An additional database
 statement trigger rejects old transactions crossing a reset generation boundary.
 Serialization/deadlock failures are surfaced for retry, never silently replayed.
@@ -121,7 +129,8 @@ audit previous/restored values. No user/account or audit-log deletion is planned
 
 ## Migration, validation and recovery
 
-See `docs/PRODUCTION_RESET_DATABASE.md`. Apply only reviewed additive migrations;
+See `docs/PRODUCTION_RESET_DATABASE.md` and
+[administrator preflight and approval conditions](PRODUCTION_RESET_PREFLIGHT.md). Apply only reviewed additive migrations;
 this implementation task does not authorize production migration or execution.
 Confirm backup/restore procedures in a disposable environment before use.
 Rollback protects failed operations; a committed reset requires restoration from

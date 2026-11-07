@@ -27,8 +27,30 @@ PSQL=("$PG_BIN/psql" "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
 "${PSQL[@]}" -f tests/migrations/reset-baseline.sql
 "${PSQL[@]}" -f tests/migrations/reset-bootstrap.sql
+# Synthetic sentinel only: ensure administrator reports do not reveal webhook
+# arguments, function bodies/configuration or column-default literals.
+"${PSQL[@]}" <<'SQL'
+ALTER TABLE public.families ADD COLUMN preflight_redaction_probe text DEFAULT 'IPSM_PREFLIGHT_REDACTION_SENTINEL';
+CREATE FUNCTION public.preflight_redaction_probe() RETURNS trigger LANGUAGE plpgsql
+SET app.preflight_secret = 'IPSM_PREFLIGHT_REDACTION_SENTINEL'
+AS $$ BEGIN PERFORM 'IPSM_PREFLIGHT_REDACTION_SENTINEL'; RETURN NEW; END $$;
+CREATE TRIGGER preflight_redaction_probe BEFORE INSERT ON public.families
+FOR EACH ROW EXECUTE FUNCTION public.preflight_redaction_probe('IPSM_PREFLIGHT_REDACTION_SENTINEL');
+SQL
+"${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-before.log"
+if rg -q 'IPSM_PREFLIGHT_REDACTION_SENTINEL' "$TEST_ROOT/preflight-before.log"; then
+  echo 'Preflight exposed a synthetic secret sentinel; refusing to print the report.' >&2
+  exit 1
+fi
+"${PSQL[@]}" <<'SQL'
+DROP TRIGGER preflight_redaction_probe ON public.families;
+DROP FUNCTION public.preflight_redaction_probe();
+ALTER TABLE public.families DROP COLUMN preflight_redaction_probe;
+SQL
 "${PSQL[@]}" -f prisma/migrations/20261107000000_teacher_guard_parity/migration.sql
 "${PSQL[@]}" -f prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql
 bash tests/migrations/reset-upgrade.integration.sh
 "${PSQL[@]}" -f tests/migrations/reset-integrity.sql
+"${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-after.log"
+echo "Read-only administrator preflight passed before and after the proposed migrations."
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

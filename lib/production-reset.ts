@@ -16,9 +16,18 @@ export const resetOptions: ReadonlyArray<{ key: ProductionResetScope; label: str
   { key: "seasons", label: "Seasons", description: "All seasons, enrollments, registrations, schedules, seasonal availability and seasonal prices. Global pricing is preserved." },
 ];
 export const resetProtected = ["Application users, identities, roles and statuses", "Supabase Auth users and sessions", "All existing audit history", "Global prices, courses, levels, rooms, closures and operational settings", "Issued business identifiers and reset submission tombstones", "Database schema, migrations, roles, permissions, RLS, triggers and indexes", "Supabase Storage, secrets, configuration and backups"];
-export type ResetErrorCode = "selection" | "not-authorized" | "confirmation" | "acknowledgement" | "blocked" | "stale" | "failed";
+export type ResetErrorCode = "selection" | "not-authorized" | "environment" | "confirmation" | "acknowledgement" | "blocked" | "stale" | "failed";
 export class ProductionResetError extends Error {
   constructor(public code: ResetErrorCode, message: string) { super(message); this.name = "ProductionResetError"; }
+}
+
+// Vercel Preview currently shares IPSM's production connection configuration.
+// Never allow that deployment to preview or execute a reset, even for SUPER_ADMIN.
+export function isProductionResetEnvironmentAllowed() {
+  return process.env.VERCEL_ENV === "production" || (!process.env.VERCEL_ENV && process.env.VERCEL !== "1");
+}
+function requireResetEnvironment() {
+  if (!isProductionResetEnvironmentAllowed()) throw new ProductionResetError("environment", "Production Reset is unavailable outside the Vercel production environment.");
 }
 
 export function validateProductionResetSelection(value: unknown): ProductionResetSelection {
@@ -193,9 +202,16 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
 }
 
 export async function previewProductionReset(prisma: PrismaClient, actorId: string, selection: ProductionResetSelection) {
+  requireResetEnvironment();
   validateProductionResetSelection(selection);
   return prisma.$transaction(async tx => {
-    await lockResetTables(tx);
+    // One MVCC snapshot keeps every count/hash consistent without blocking
+    // normal writers. Only the preview request is written in this transaction.
+    // Execution acquires its own barrier and rejects any intervening changes.
+    // ACCESS SHARE stabilizes table identities against concurrent DDL/TRUNCATE;
+    // it is compatible with normal INSERT/UPDATE/DELETE and execution's locks.
+    await tx.$executeRaw`SET LOCAL lock_timeout = '5s'`;
+    await tx.$executeRawUnsafe(`LOCK TABLE ${observedTables.map(table => `public."${table}"`).join(", ")}, public.users IN ACCESS SHARE MODE`);
     await requireResetActor(tx, actorId);
     const preview = await inspectProductionReset(tx, selection);
     const request = await tx.productionResetRequest.create({ data: {
@@ -203,10 +219,11 @@ export async function previewProductionReset(prisma: PrismaClient, actorId: stri
       expiresAt: new Date(Date.now() + 10 * 60_000),
     } });
     return { id: request.id, preview };
-  }, { isolationLevel: "Serializable", maxWait: 10_000, timeout: 60_000 });
+  }, { isolationLevel: "RepeatableRead", maxWait: 10_000, timeout: 60_000 });
 }
 
 export async function executeProductionReset(prisma: PrismaClient, input: { actorId: string; requestId: string; confirmation: string; reviewed: boolean; financialAcknowledged: boolean }) {
+  requireResetEnvironment();
   if (input.confirmation !== RESET_CONFIRMATION || !input.reviewed) throw new ProductionResetError("confirmation", "Review the preview and type the exact confirmation phrase.");
   return prisma.$transaction(async tx => {
     await lockResetTables(tx);

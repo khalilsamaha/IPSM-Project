@@ -303,3 +303,12 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] Unknown live incoming FKs, changed referential actions and pattern-only lesson dependencies are checked; protected users/audits/schema/Auth/Storage remain untouched.
 - [ ] Run all five validation commands; review additive migrations and rehearse recovery before any authorized rollout.
 - [ ] PR 1 approved and validated before implementing the eight PR 2 categories.
+
+### PR 90 follow-up gates
+
+- [ ] Preview allows a concurrent financial writer but retains one MVCC snapshot; execution rejects the stale preview.
+- [ ] Vercel Preview/development and missing Vercel environment identity cannot call preview or execution, including direct server calls.
+- [ ] Authorized IPSM administrator has reviewed all results from `docs/sql/production-reset-preflight.sql`.
+- [ ] Preview/staging database and Auth isolation is verified before mutation testing; shared project variables are not treated as isolation.
+- [ ] Migration ownership/RLS/EXECUTE privileges and one canonical migration path are approved.
+- [ ] Hosted CI runs normally after the account billing restriction is resolved; workflow remains unchanged.

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { emptyProductionResetSelection, getProductionResetPlan, parseProductionResetSelection, previewProductionReset, executeProductionReset, productionResetScopes, resetTables, RESET_CONFIRMATION, canonical, type ProductionResetSelection } from "@/lib/production-reset";
 import type { PrismaClient } from "@prisma/client";
@@ -165,6 +165,21 @@ describe("reset executor and survivors", () => {
 });
 
 describe("reset server-side authorization and confirmation", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it.each(["preview", "development", ""])("blocks direct library use from a non-production Vercel deployment (%s)", async environment => {
+    vi.stubEnv("VERCEL", "1"); vi.stubEnv("VERCEL_ENV", environment);
+    const db = fixture();
+    await expect(previewProductionReset(db.prisma, actorId, selection({ financialData: true }))).rejects.toMatchObject({ code: "environment" });
+    await expect(execute(db, "unused")).rejects.toMatchObject({ code: "environment" });
+    expect(db.prisma.$transaction).not.toHaveBeenCalled();
+  });
+  it("uses a repeatable-read preview with only read table locks", async () => {
+    const db = fixture(); const sql = vi.spyOn(db.tx, "$executeRawUnsafe");
+    await previewProductionReset(db.prisma, actorId, selection({ financialData: true }));
+    expect(db.prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), expect.objectContaining({ isolationLevel: "RepeatableRead" }));
+    expect(sql).toHaveBeenCalledWith(expect.stringContaining("IN ACCESS SHARE MODE"));
+    expect(sql.mock.calls.every(call => !String(call[0]).includes("SHARE ROW EXCLUSIVE"))).toBe(true);
+  });
   it.each(["ADMIN", "RECEPTION"])("rejects %s for preview and execution", async role => {
     const db = fixture(); const p = await previewProductionReset(db.prisma, actorId, selection({ financialData: true })); db.role(role);
     await expect(previewProductionReset(db.prisma, actorId, selection({ teachers: true }))).rejects.toMatchObject({ code: "not-authorized" });

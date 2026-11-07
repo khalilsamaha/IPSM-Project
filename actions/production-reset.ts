@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
-import { executeProductionReset, previewProductionReset, parseProductionResetSelection, ProductionResetError } from "@/lib/production-reset";
+import { executeProductionReset, previewProductionReset, parseProductionResetSelection, ProductionResetError, isProductionResetEnvironmentAllowed } from "@/lib/production-reset";
 import { logServerError } from "@/lib/server-log";
 
 async function actor() {
+  if (!isProductionResetEnvironmentAllowed()) redirect("/settings/production-reset?error=environment");
   const session = await getSession();
   if (!session || session.role !== "SUPER_ADMIN" || session.status !== "ACTIVE") redirect("/settings/production-reset?error=not-authorized");
   return session.userId;

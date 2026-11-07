@@ -58,7 +58,7 @@ The initial sandbox-only attempt could not start PostgreSQL or the Prisma
 child generator. Validation was subsequently repeated in the primary Kali
 checkout with approved subprocess/socket access: normal `npm run prisma:generate`
 passed, and `npm run test:migration` passed against a fresh PostgreSQL 18 cluster,
-including all 15 connection-based executor tests. No existing database was used.
+including all 16 connection-based executor tests. No existing database was used.
 
 The migration suite also tests rejection and complete DDL rollback for a misleading
 nonunique registration index and conflicting receipt ownership. A successful
@@ -67,7 +67,7 @@ unambiguous audit link and seeds receipt counters from historical audit metadata
 
 The review added coverage for pattern-only lessons, unexpected cascading FKs
 between known tables, changed FK actions, partial/settled/fully discounted
-balances, and receipt repair/immutability. The full unit suite has 328 passing
+balances, and receipt repair/immutability. The full unit suite has 334 passing
 tests; PostgreSQL tests are intentionally gated out of the ordinary unit command
 and run by the disposable migration runner.
 
@@ -82,3 +82,13 @@ byte-for-byte unchanged. Deployment still requires real IPSM schema/privilege
 verification and migration review. In particular, duplicate registration links,
 conflicting receipt owners, ambiguous payroll history, unrecoverable historical
 identifier high-water marks and full-table lock/scan costs require attention.
+
+## Follow-up review
+
+See [preview isolation, Vercel configuration evidence and administrator preflight](PRODUCTION_RESET_PREFLIGHT.md).
+Preview now uses repeatable-read with ACCESS SHARE locks; execution retains the
+serializable write barrier. The expanded suite has 16 PostgreSQL tests and checks
+that a concurrent financial writer is not blocked by preview, while the resulting
+stale preview cannot execute. The exact read-only administrator SQL is tested
+before and after the proposed migrations. Production schema compatibility and
+Preview database isolation remain deployment blockers, not inferred successes.

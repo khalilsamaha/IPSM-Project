@@ -1,5 +1,5 @@
 import { beforeAll, afterAll, beforeEach, describe, expect, it } from "vitest";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION, resetTables } from "@/lib/production-reset";
 import { allocateBusinessIdentifier } from "@/lib/business-identifiers";
@@ -89,6 +89,58 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
     const results = await Promise.allSettled([run(p1.id),run(p2.id)]);
     expect(results.filter(r => r.status === "fulfilled")).toHaveLength(1);
     expect(results.filter(r => r.status === "rejected")).toHaveLength(1);
+  });
+  it("previews one MVCC snapshot without blocking concurrent financial writes, then rejects that stale preview", async () => {
+    const f = await enrollmentFixture();
+    const cashPayment = await db!.payment.findFirstOrThrow({ where: { paymentMethod: "cash", voidedAt: null } });
+    const scopes = selection({ financialData: true });
+    const before = await previewProductionReset(db!, actor, scopes);
+    let reached!: () => void;
+    let resume!: () => void;
+    const ready = new Promise<void>(resolve => { reached = resolve; });
+    const go = new Promise<void>(resolve => { resume = resolve; });
+    let paused = false;
+    const observedClient = {
+      $transaction: (callback: (tx: Prisma.TransactionClient) => Promise<unknown>, options: object) => db!.$transaction(tx => callback(new Proxy(tx, {
+        get(target, key) {
+          if (key !== "$queryRawUnsafe") return Reflect.get(target, key);
+          return async (sql: string) => {
+            const rows = await target.$queryRawUnsafe(sql);
+            if (!paused && sql.includes('public."enrollments"')) {
+              paused = true;
+              const strongLocks = await target.$queryRaw<Array<{ mode: string }>>`
+                SELECT l.mode FROM pg_catalog.pg_locks l
+                JOIN pg_catalog.pg_class c ON c.oid=l.relation
+                JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+                WHERE l.pid=pg_backend_pid() AND n.nspname='public'
+                  AND l.mode <> 'AccessShareLock' AND l.granted`;
+              expect(strongLocks).toEqual([]);
+              reached(); await go;
+            }
+            return rows;
+          };
+        },
+      })), options),
+    } as unknown as PrismaClient;
+    const pending = previewProductionReset(observedClient, actor, scopes);
+    await Promise.race([ready, pending.then(() => { throw new Error("Preview never reached snapshot checkpoint"); })]);
+    try {
+      // This commit must finish while the preview remains paused. The original
+      // SHARE ROW EXCLUSIVE preview would instead fail this lock timeout.
+      await db!.$transaction(async tx => {
+        await tx.$executeRaw`SET LOCAL lock_timeout = '300ms'`;
+        await tx.payment.update({ where: { id: cashPayment.id }, data: { totalAmountCents: { increment: 100 } } });
+        await tx.enrollment.update({ where: { id: f.enrollment.id }, data: { paidCents: { increment: 100 }, remainingCents: { decrement: 100 } } });
+      });
+    } finally { resume(); }
+    const during = await pending;
+    expect(during.preview).toEqual(before.preview);
+    const after = await previewProductionReset(db!, actor, scopes);
+    expect(after.preview.fingerprint).not.toBe(during.preview.fingerprint);
+    expect(after.preview.financial.cashPaymentsCents).toBe(before.preview.financial.cashPaymentsCents + 100);
+    await expect(run(during.id)).rejects.toMatchObject({ code: "stale" });
+    expect(await db!.payment.count()).toBe(3);
+    expect((await db!.enrollment.findUniqueOrThrow({ where: { id: f.enrollment.id } })).paidCents).toBe(6100);
   });
   it("rejects a writer using a transaction started before reset", async () => {
     await enrollmentFixture();
