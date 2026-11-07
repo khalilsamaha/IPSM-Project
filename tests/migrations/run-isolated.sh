@@ -53,6 +53,7 @@ SQL
 "${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-before.log"
 assert_redacted "$TEST_ROOT/preflight-before.log"
 echo "Preflight synthetic-secret redaction assertion passed."
+./node_modules/.bin/vitest run tests/production-reset-dashboard.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 "${PSQL[@]}" <<'SQL'
 DROP TRIGGER preflight_redaction_probe ON public.families;
 DROP FUNCTION public.preflight_redaction_probe();
@@ -65,4 +66,5 @@ bash tests/migrations/reset-upgrade.integration.sh
 "${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-after.log"
 assert_redacted "$TEST_ROOT/preflight-after.log"
 echo "Read-only administrator preflight passed before and after the proposed migrations."
+./node_modules/.bin/vitest run tests/production-reset-dashboard.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

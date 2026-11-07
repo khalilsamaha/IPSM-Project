@@ -62,6 +62,12 @@ empty, and these changes do not repair that historical limitation.
 
 ## Exact administrator SQL
 
+For Supabase's web SQL Editor, use the new [numbered Dashboard preflight and
+operator checklist](sql/production-reset-dashboard/README.md). Those files use
+standard PostgreSQL only, return aggregate findings instead of personal records,
+and explicitly distinguish blockers, expected pre-installation absence and
+checks still requiring review. Do not paste the psql script below into Dashboard.
+
 The executable [preflight SQL](sql/production-reset-preflight.sql) uses psql
 conditionals to handle absent migration-history and reset-infrastructure tables.
 An administrator must first verify the connection is IPSM
@@ -131,17 +137,27 @@ as part of this review, and no preview reset action was invoked.
 3. Validate migration ordering, role privileges, backup/restore and representative
    dataset performance in that isolated environment. Review the global SERIALIZABLE
    operational-transaction and writer-guard implications.
-4. Resolve the GitHub account billing/spending issue and obtain normal hosted CI
-   results. Do not change the workflow to evade the restriction. Local generation,
-   typechecking, unit/integration tests and build remain required evidence.
+4. Retain passing normal hosted CI and local validation. Hosted CI at `4f15cdd`
+   passed; the previous billing/tooling blockers are resolved. CI does not
+   replace the live-schema preflight or administrator review.
 5. Complete human review of PR 90. Keep it draft until accepted; production
    migration, reset, merge and deployment require separate authorization. PR 2
    stays unimplemented.
 
-Local validation for this follow-up passed: normal Prisma generation, typecheck,
-334 unit tests, 16 PostgreSQL integration tests, administrator SQL before/after
-migrations, and synthetic-secret redaction. The build completed successfully
+The earlier preview-safety follow-up at `7430d62` passed normal Prisma generation,
+typecheck, 334 unit tests, 16 PostgreSQL integration tests, administrator SQL
+before/after migrations, and synthetic-secret redaction. Its build completed successfully
 with the existing ESLint patch warning and expected static-data read errors from
 the deliberately unavailable local database endpoint. It does not establish
 runtime behavior against the production or shared Preview database. No dependency,
 lockfile or GitHub Actions workflow changes are included.
+
+The Dashboard-preflight follow-up adds eleven psql-free read-only query files,
+12 static SQL safety tests and 18 disposable PostgreSQL checks executed before
+and after the fixture's existing migration tests. These cover secret redaction
+in defaults, constraints, indexes, policies, triggers, functions and histories;
+missing tables, unresolved roles, permission/RLS errors, unsupported SQL and
+timeouts; duplicate registration references, conflicting receipt owners and
+aggregate historical identifier recovery. Application code, migration files,
+dependencies and CI workflow are unchanged by this documentation/test follow-up.
+Live compatibility still requires the administrator's reports and review.
