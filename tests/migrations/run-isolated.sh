@@ -15,13 +15,15 @@ for command_name in initdb pg_ctl createdb psql; do
 done
 TEST_ROOT=$(mktemp -d /tmp/ipsm-reset-tests.XXXXXX)
 TEST_PORT=${IPSM_TEST_PORT:-55439}
+export IPSM_DISPOSABLE_TEST_TOKEN=$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')
+unset VERCEL VERCEL_ENV
 cleanup() {
   "$PG_BIN/pg_ctl" -D "$TEST_ROOT/data" -m immediate stop >/dev/null 2>&1 || true
   # Preserve logs on failure for review; never touch another database cluster.
 }
 trap cleanup EXIT
 "$PG_BIN/initdb" -D "$TEST_ROOT/data" -A trust --encoding=UTF8 --no-locale > "$TEST_ROOT/init.log"
-if ! "$PG_BIN/pg_ctl" -D "$TEST_ROOT/data" -l "$TEST_ROOT/server.log" -o "-k $TEST_ROOT -p $TEST_PORT -h 127.0.0.1" start; then
+if ! "$PG_BIN/pg_ctl" -D "$TEST_ROOT/data" -l "$TEST_ROOT/server.log" -o "-k $TEST_ROOT -p $TEST_PORT -h 127.0.0.1 -c ipsm.disposable_test_token=$IPSM_DISPOSABLE_TEST_TOKEN" start; then
   cat "$TEST_ROOT/server.log"
   echo 'Isolated PostgreSQL could not start. No existing database was used.' >&2
   exit 1

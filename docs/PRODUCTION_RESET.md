@@ -3,9 +3,17 @@
 Production Reset at `/settings/production-reset` requires an active, non-archived
 SUPER_ADMIN. Preview and execution each verify the profile in PostgreSQL; the
 server action also validates the authenticated session. ADMIN, RECEPTION,
-inactive and unauthenticated callers cannot preview or execute a reset. Vercel
-Preview/development deployments are blocked server-side even for SUPER_ADMIN
-because the current Preview connection configuration is shared with production.
+inactive and unauthenticated callers cannot preview or execute a reset. Normal
+operations require `VERCEL=1`, `VERCEL_ENV=production` and `NODE_ENV=production`.
+Local development, Preview, Development and unknown environments fail closed,
+including direct preview/execution library calls, even for SUPER_ADMIN.
+
+Only the disposable integration runner has a test pathway: a dedicated client
+factory requires Vitest/test mode, matching loopback-only database URLs without
+query overrides, the exact test database name and a fresh cluster marker verified
+against the connected PostgreSQL server. The allowance belongs only to that
+verified client; test flags cannot authorize the ordinary application client or
+server actions. Active SUPER_ADMIN checks still apply inside both transactions.
 
 This release keeps six categories. Every selected category includes all dates
 and statuses, including archived, cancelled, voided and historical records.

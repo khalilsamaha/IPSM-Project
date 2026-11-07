@@ -1,7 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { emptyProductionResetSelection, getProductionResetPlan, parseProductionResetSelection, previewProductionReset, executeProductionReset, productionResetScopes, resetTables, RESET_CONFIRMATION, canonical, type ProductionResetSelection } from "@/lib/production-reset";
 import type { PrismaClient } from "@prisma/client";
+
+// Mocked clients exercise normal production authorization; they never connect.
+beforeEach(() => {
+  vi.stubEnv("VERCEL", "1"); vi.stubEnv("VERCEL_ENV", "production"); vi.stubEnv("NODE_ENV", "production");
+});
+afterEach(() => vi.unstubAllEnvs());
 
 const selection = (patch: Partial<ProductionResetSelection>) => ({ ...emptyProductionResetSelection, ...patch });
 const actorId = "00000000-0000-4000-8000-000000000001";

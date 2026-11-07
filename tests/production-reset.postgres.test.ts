@@ -1,14 +1,15 @@
-import { beforeAll, afterAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION, resetTables } from "@/lib/production-reset";
+import { createDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
 import { allocateBusinessIdentifier } from "@/lib/business-identifiers";
 import { ensurePaymentReceipt } from "@/lib/payments/receipt-repair";
 
 const url = process.env.RESET_TEST_DATABASE_URL;
-if (url && (process.env.IPSM_DISPOSABLE_TEST_DATABASE !== "1" || new URL(url).hostname !== "127.0.0.1" || new URL(url).pathname !== "/ipsm_reset_integrity_test")) throw new Error("Only the disposable migration runner may run PostgreSQL reset tests");
-// Importing the normal test suite cannot connect to any configured application DB.
-const db = url ? new PrismaClient({ datasources: { db: { url } }, transactionOptions: { isolationLevel: "Serializable" } }) : null;
+// Never construct a client from ambient application configuration. The factory
+// verifies the runner's URL, actual server identity and per-cluster marker first.
+const db = url ? await createDisposableProductionResetTestClient() : null;
 const actor = randomUUID();
 let userId: string;
 const selection = (value: Partial<typeof emptyProductionResetSelection>) => ({ ...emptyProductionResetSelection, ...value });
@@ -37,6 +38,14 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
     // Fixture cleanup, not the application reset action. Identifier ledgers persist.
     for (const table of Object.values(resetTables)) await db!.$executeRawUnsafe(`DELETE FROM public."${table}"`);
     await db!.productionResetRequest.deleteMany();
+  });
+  it("rejects a loopback database without the runner's matching cluster marker", async () => {
+    vi.stubEnv("IPSM_DISPOSABLE_TEST_TOKEN", "0".repeat(64));
+    try {
+      await expect(createDisposableProductionResetTestClient()).rejects.toThrow("identity could not be verified");
+      await expect(previewProductionReset(db!, actor, selection({ financialData: true }))).rejects.toMatchObject({ code: "environment" });
+      await expect(run(randomUUID())).rejects.toMatchObject({ code: "environment" });
+    } finally { vi.unstubAllEnvs(); }
   });
   it("deletes mixed/voided allocations and closed-shift history only with explicit financial approval", async () => {
     const f = await enrollmentFixture();
@@ -100,8 +109,8 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
     const ready = new Promise<void>(resolve => { reached = resolve; });
     const go = new Promise<void>(resolve => { resume = resolve; });
     let paused = false;
-    const observedClient = {
-      $transaction: (callback: (tx: Prisma.TransactionClient) => Promise<unknown>, options: object) => db!.$transaction(tx => callback(new Proxy(tx, {
+    const transaction = db!.$transaction.bind(db!);
+    vi.spyOn(db!, "$transaction").mockImplementationOnce(((callback: (tx: Prisma.TransactionClient) => Promise<unknown>, options: object) => transaction(tx => callback(new Proxy(tx, {
         get(target, key) {
           if (key !== "$queryRawUnsafe") return Reflect.get(target, key);
           return async (sql: string) => {
@@ -120,9 +129,8 @@ describe.skipIf(!url)("production reset against disposable PostgreSQL", () => {
             return rows;
           };
         },
-      })), options),
-    } as unknown as PrismaClient;
-    const pending = previewProductionReset(observedClient, actor, scopes);
+      })), options)) as PrismaClient["$transaction"]);
+    const pending = previewProductionReset(db!, actor, scopes);
     await Promise.race([ready, pending.then(() => { throw new Error("Preview never reached snapshot checkpoint"); })]);
     try {
       // This commit must finish while the preview remains paused. The original

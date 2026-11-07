@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { productionResetForeignKeys } from "@/lib/production-reset-foreign-keys";
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { isDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
 
 export const productionResetScopes = ["operationalData", "financialData", "scheduleData", "studentsFamilies", "teachers", "seasons"] as const;
 export type ProductionResetScope = (typeof productionResetScopes)[number];
@@ -21,13 +22,13 @@ export class ProductionResetError extends Error {
   constructor(public code: ResetErrorCode, message: string) { super(message); this.name = "ProductionResetError"; }
 }
 
-// Vercel Preview currently shares IPSM's production connection configuration.
-// Never allow that deployment to preview or execute a reset, even for SUPER_ADMIN.
+// Local development can share production credentials too: require positive
+// deployment identity, never infer permission from missing Vercel variables.
 export function isProductionResetEnvironmentAllowed() {
-  return process.env.VERCEL_ENV === "production" || (!process.env.VERCEL_ENV && process.env.VERCEL !== "1");
+  return process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production" && process.env.NODE_ENV === "production";
 }
-function requireResetEnvironment() {
-  if (!isProductionResetEnvironmentAllowed()) throw new ProductionResetError("environment", "Production Reset is unavailable outside the Vercel production environment.");
+function requireResetEnvironment(prisma: PrismaClient) {
+  if (!isProductionResetEnvironmentAllowed() && !isDisposableProductionResetTestClient(prisma)) throw new ProductionResetError("environment", "Production Reset is unavailable outside the Vercel production environment.");
 }
 
 export function validateProductionResetSelection(value: unknown): ProductionResetSelection {
@@ -202,7 +203,7 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
 }
 
 export async function previewProductionReset(prisma: PrismaClient, actorId: string, selection: ProductionResetSelection) {
-  requireResetEnvironment();
+  requireResetEnvironment(prisma);
   validateProductionResetSelection(selection);
   return prisma.$transaction(async tx => {
     // One MVCC snapshot keeps every count/hash consistent without blocking
@@ -223,7 +224,7 @@ export async function previewProductionReset(prisma: PrismaClient, actorId: stri
 }
 
 export async function executeProductionReset(prisma: PrismaClient, input: { actorId: string; requestId: string; confirmation: string; reviewed: boolean; financialAcknowledged: boolean }) {
-  requireResetEnvironment();
+  requireResetEnvironment(prisma);
   if (input.confirmation !== RESET_CONFIRMATION || !input.reviewed) throw new ProductionResetError("confirmation", "Review the preview and type the exact confirmation phrase.");
   return prisma.$transaction(async tx => {
     await lockResetTables(tx);

@@ -13,7 +13,7 @@ import { previewReset, runProductionReset } from "@/actions/production-reset";
 const id = "00000000-0000-4000-8000-000000000001";
 describe("Production Reset action boundary", () => {
   afterEach(() => vi.unstubAllEnvs());
-  beforeEach(() => { vi.clearAllMocks(); mocks.session.mockResolvedValue({ userId: id, role: "SUPER_ADMIN", status: "ACTIVE" }); });
+  beforeEach(() => { vi.stubEnv("VERCEL", "1"); vi.stubEnv("VERCEL_ENV", "production"); vi.stubEnv("NODE_ENV", "production"); vi.clearAllMocks(); mocks.session.mockResolvedValue({ userId: id, role: "SUPER_ADMIN", status: "ACTIVE" }); });
   it.each([null, { role: "ADMIN", status: "ACTIVE" }, { role: "RECEPTION", status: "ACTIVE" }, { role: "SUPER_ADMIN", status: "INACTIVE" }])("rejects unauthorized callers before touching the reset store (%j)", async session => {
     mocks.session.mockResolvedValue(session);
     await expect(previewReset(new FormData())).rejects.toThrow("not-authorized");
@@ -26,6 +26,13 @@ describe("Production Reset action boundary", () => {
   });
   it.each(["preview", "development"])("rejects %s deployment calls before authentication or database access", async environment => {
     vi.stubEnv("VERCEL_ENV", environment);
+    await expect(previewReset(new FormData())).rejects.toThrow("error=environment");
+    await expect(runProductionReset(new FormData())).rejects.toThrow("error=environment");
+    expect(mocks.session).not.toHaveBeenCalled();
+    expect(mocks.preview).not.toHaveBeenCalled(); expect(mocks.execute).not.toHaveBeenCalled();
+  });
+  it("blocks local development without Vercel variables before authentication", async () => {
+    vi.stubEnv("VERCEL", undefined); vi.stubEnv("VERCEL_ENV", undefined); vi.stubEnv("NODE_ENV", "development");
     await expect(previewReset(new FormData())).rejects.toThrow("error=environment");
     await expect(runProductionReset(new FormData())).rejects.toThrow("error=environment");
     expect(mocks.session).not.toHaveBeenCalled();

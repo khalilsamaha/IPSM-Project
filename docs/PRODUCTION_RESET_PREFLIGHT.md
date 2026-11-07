@@ -109,10 +109,13 @@ query for `agent/production-reset-integrity` returned no branch-specific overrid
 Values were neither decrypted, printed nor saved. These settings do not provide
 database isolation. The deployed connection itself was not opened or probed.
 
-Production Reset now rejects both preview and execution in Vercel Preview and
-development environments, including direct library/server-action calls. A Vercel
-runtime missing its environment identity also fails closed. Local disposable
-tests remain possible. This guard protects this feature only: ordinary app pages
+Production Reset now requires `VERCEL=1`, `VERCEL_ENV=production` and
+`NODE_ENV=production`, including direct library/server-action calls. Ordinary
+local development, Preview, Development and unknown runtimes fail closed.
+Disposable integration tests use a separate, explicitly constructed client with
+strict loopback URL validation and a runner-owned PostgreSQL cluster marker;
+test flags alone cannot authorize an application client. This guard protects
+this feature only: ordinary app pages
 can still use the shared database. Do not use Preview for mutation testing until
 separate database/Auth configuration is established and verified by an authorized
 administrator. No environment variable or deployment configuration was changed
