@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Runtime dependencies: Bash, standard POSIX utilities, PostgreSQL server/client
+# binaries, and the repository's installed Node/Vitest dependencies.
+for command_name in grep cmp mktemp dirname id cat rm node; do
+  command -v "$command_name" >/dev/null || { echo "Missing test dependency: $command_name" >&2; exit 1; }
+done
 # Never use an ambient DATABASE_URL. Own a fresh cluster and database for this run.
 PROJECT_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 PG_BIN=${PG_BIN:-$(pg_config --bindir)}
+# Child fixtures must use the same PostgreSQL installation as the owned cluster.
+export PATH="$PG_BIN:$PATH"
+for command_name in initdb pg_ctl createdb psql; do
+  [[ -x "$PG_BIN/$command_name" ]] || { echo "Missing PostgreSQL test binary: $command_name" >&2; exit 1; }
+done
 TEST_ROOT=$(mktemp -d /tmp/ipsm-reset-tests.XXXXXX)
 TEST_PORT=${IPSM_TEST_PORT:-55439}
 cleanup() {
@@ -22,6 +32,7 @@ export DIRECT_URL="$DATABASE_URL"
 export IPSM_DISPOSABLE_TEST_DATABASE=1
 export RESET_TEST_DATABASE_URL="$DATABASE_URL"
 cd "$PROJECT_ROOT"
+source tests/migrations/assertions.sh
 bash tests/migrations/family-only.integration.sh
 PSQL=("$PG_BIN/psql" "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
@@ -38,10 +49,8 @@ CREATE TRIGGER preflight_redaction_probe BEFORE INSERT ON public.families
 FOR EACH ROW EXECUTE FUNCTION public.preflight_redaction_probe('IPSM_PREFLIGHT_REDACTION_SENTINEL');
 SQL
 "${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-before.log"
-if rg -q 'IPSM_PREFLIGHT_REDACTION_SENTINEL' "$TEST_ROOT/preflight-before.log"; then
-  echo 'Preflight exposed a synthetic secret sentinel; refusing to print the report.' >&2
-  exit 1
-fi
+assert_redacted "$TEST_ROOT/preflight-before.log"
+echo "Preflight synthetic-secret redaction assertion passed."
 "${PSQL[@]}" <<'SQL'
 DROP TRIGGER preflight_redaction_probe ON public.families;
 DROP FUNCTION public.preflight_redaction_probe();
@@ -52,5 +61,6 @@ SQL
 bash tests/migrations/reset-upgrade.integration.sh
 "${PSQL[@]}" -f tests/migrations/reset-integrity.sql
 "${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-after.log"
+assert_redacted "$TEST_ROOT/preflight-after.log"
 echo "Read-only administrator preflight passed before and after the proposed migrations."
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

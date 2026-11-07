@@ -5,6 +5,7 @@ if [[ ${IPSM_DISPOSABLE_TEST_DATABASE:-} != 1 || ${DATABASE_URL:-} != postgresql
   exit 1
 fi
 : "${DATABASE_URL:?Set DATABASE_URL to an isolated PostgreSQL test database}"
+source tests/migrations/assertions.sh
 PSQL=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 MIGRATION=prisma/migrations/20260728000000_family_only_recurring_schedule/migration.sql
 schema() {
@@ -119,17 +120,14 @@ SELECT 'fixture-b-ok';
 SQL
 
 failure_case() {
-  local sql=$1
+  local sql=$1 expected=$2 status=0
   schema no
   "${PSQL[@]}" -c "$sql"
   local before after log
   before=$("${PSQL[@]}" -Atc "SELECT (SELECT count(*) FROM families), (SELECT count(*) FROM students), (SELECT count(*) FROM students WHERE family_id IS NOT NULL), (SELECT count(*) FROM payments), (SELECT count(*) FROM payments WHERE family_id IS NOT NULL)")
   log=$(mktemp)
-  if "${PSQL[@]}" -f "$MIGRATION" >"$log" 2>&1; then
-    cat "$log" >&2
-    echo "Failure fixture failed: migration unexpectedly succeeded" >&2
-    exit 1
-  fi
+  "${PSQL[@]}" -f "$MIGRATION" >"$log" 2>&1 || status=$?
+  assert_migration_error "$status" "$expected" "$log"
   after=$("${PSQL[@]}" -Atc "SELECT (SELECT count(*) FROM families), (SELECT count(*) FROM students), (SELECT count(*) FROM students WHERE family_id IS NOT NULL), (SELECT count(*) FROM payments), (SELECT count(*) FROM payments WHERE family_id IS NOT NULL)")
   if [[ "$after" != "$before" ]]; then
     echo "Rollback fixture failed: expected counts/backfills '$before', found '$after'" >&2
@@ -156,9 +154,9 @@ $$;
 SQL
   rm -f "$log"
 }
-failure_case "INSERT INTO payments VALUES ('40000000-0000-0000-0000-000000000001',null,'unallocated',now())"
-failure_case "INSERT INTO families VALUES (gen_random_uuid(),'DUP','A',null,null,null,'ACTIVE',now(),now()),(gen_random_uuid(),'DUP','B',null,null,null,'ACTIVE',now(),now())"
-failure_case "INSERT INTO payment_items VALUES (gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),1)"
+failure_case "INSERT INTO payments VALUES ('40000000-0000-0000-0000-000000000001',null,'unallocated',now())" 'Family-only migration failed: 1 payment(s) could not be assigned to a family.'
+failure_case "INSERT INTO families VALUES (gen_random_uuid(),'DUP','A',null,null,null,'ACTIVE',now(),now()),(gen_random_uuid(),'DUP','B',null,null,null,'ACTIVE',now(),now())" 'Family-only migration preflight failed: duplicate family codes exist'
+failure_case "INSERT INTO payment_items VALUES (gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),1)" 'Family-only migration preflight failed: orphan payment items exist'
 
 echo "PostgreSQL family-only migration integration tests passed"
 
@@ -238,6 +236,6 @@ echo "PostgreSQL PR80 migration integration tests passed"
 SESSION_PRICING_MIGRATION="prisma/migrations/20260729010000_session_pricing_registration/migration.sql"
 SUPABASE_SESSION_PRICING_MIGRATION="supabase/migrations/20260729010000_session_pricing_registration.sql"
 cmp "$SESSION_PRICING_MIGRATION" "$SUPABASE_SESSION_PRICING_MIGRATION"
-grep -q 'planned_session_count.*INTEGER NOT NULL DEFAULT 15' "$SESSION_PRICING_MIGRATION"
-grep -q 'configured_price_cents' "$SESSION_PRICING_MIGRATION"
-grep -q 'pricing_source_id.*UUID' "$SESSION_PRICING_MIGRATION"
+grep -Fq -- '"planned_session_count" INTEGER NOT NULL DEFAULT 15' "$SESSION_PRICING_MIGRATION"
+grep -Fq -- 'configured_price_cents' "$SESSION_PRICING_MIGRATION"
+grep -Fq -- '"pricing_source_id" UUID' "$SESSION_PRICING_MIGRATION"

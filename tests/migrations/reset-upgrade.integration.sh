@@ -4,16 +4,14 @@ if [[ ${IPSM_DISPOSABLE_TEST_DATABASE:-} != 1 || ${DATABASE_URL:-} != postgresql
   echo "Use npm run test:migration with its owned disposable database." >&2
   exit 1
 fi
+source tests/migrations/assertions.sh
 PSQL=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 MIGRATION=prisma/migrations/20261107010000_reset_integrity/migration.sql
 expect_rollback() {
-  local expected=$1 log
+  local expected=$1 log status=0
   log=$(mktemp /tmp/ipsm-reset-upgrade.XXXXXX)
-  if "${PSQL[@]}" -f "$MIGRATION" >"$log" 2>&1; then
-    echo "Migration unexpectedly accepted inconsistent legacy data" >&2
-    exit 1
-  fi
-  if ! rg -q "$expected" "$log"; then cat "$log"; exit 1; fi
+  "${PSQL[@]}" -f "$MIGRATION" >"$log" 2>&1 || status=$?
+  assert_migration_error "$status" "$expected" "$log"
   "${PSQL[@]}" <<'SQL'
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='expenses' AND column_name='payroll_id')
