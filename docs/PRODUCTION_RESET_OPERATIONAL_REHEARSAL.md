@@ -22,11 +22,13 @@ application deployment or merge was performed on IPSM.
   NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY. Postchecks show
   all five still present as **Production-only** Secrets, with no Preview entries
   or PR-branch overrides. Production values were neither read nor changed.
-- This contains **future** Preview configuration only. The 28 existing Preview
-  deployment snapshots can retain their original environment. Their removal was
-  proposed explicitly because it permanently removes review URLs; it remains
-  pending. No claim of complete Preview isolation is made. A subsequent push may
-  create another Preview snapshot, which must use the now-empty Preview scope.
+- The owner explicitly approved retirement of the 28 old Preview snapshots. Each
+  ID was rechecked against the exact IPSM project/Preview list and excluded from
+  the Production set before deletion. **All 28 were removed.** The three Production
+  deployment IDs were identical before/after. One new Preview from the latest push
+  remained, built after shared configuration removal. A post-publication Preview
+  environment listing returned no entries. This closes the old-snapshot exposure;
+  a green Preview build does not establish a working isolated database/Auth service.
 
 ## Diagnostic command incident and cleanup
 
@@ -109,12 +111,29 @@ Two failed recovery attempts are material:
    failed and rolled back. No ACL/extension check was disabled. The successful
    **scoped** restore is not a full Supabase platform recovery certificate.
 
+A subsequent **physical full-cluster** rehearsal resolved the local PostgreSQL
+recovery limitation without changing restored objects. `pg_basebackup` used the
+existing synthetic replication role after adding only a SCRAM-authenticated
+container-loopback replication rule to this local fixture. A fresh labeled Docker
+volume/container used the identical Supabase PostgreSQL17.6 image, an internal
+network and **no published ports**. `pg_verifybackup` verified the manifest and
+required WAL from an independently unpacked copy of the backup.
+
+All **61 non-system tables** in the restored application database matched. Exact
+function/role/extension catalogs, table ownership/ACL/RLS flags, policies,
+constraints, triggers and role memberships matched, including the extension-owned
+GraphQL wrapper. The old identifier activation failed after the new postmaster
+started. This proves the synthetic PostgreSQL physical-recovery path, not access
+to a production platform backup or recovery of external Storage/provider settings.
+The earlier full logical-dump failure remains documented; do not silently substitute
+its scoped fallback for a production full-recovery requirement.
+
 The synthetic dump and private Auth material remain outside Git, mode0600.
-The local app and only the named synthetic stack were stopped after testing;
+The local app, named synthetic stack and owned physical clone were stopped after testing;
 local volumes were retained. Restart invalidates its old issuance certificate.
 [Sanitized evidence](evidence/production-reset-operational-rehearsal.json) records
 results and checksum, not credentials, account records or financial payloads.
-Production requires its own supported backup, platform ownership/extension/Auth
+Production still requires its own supported backup, platform ownership/extension/Auth
 coverage and demonstrated isolated restoration. Empty metadata cannot satisfy it.
 
 ## Remaining external work
@@ -122,10 +141,11 @@ coverage and demonstrated isolated restoration. Empty metadata cannot satisfy it
 1. An authorized DBA must provide actual runtime/migration role names and connection
    context, fresh target history/pending checks, current content/Auth-dependency
    inventory and a recoverable production backup with a platform-supported restore.
+   The new local physical proof does not certify a production backup.
    No original SQL-body comparison, teacher report or provenance-scope approval is
    requested again. The scope is accepted; bootstrap purpose remains unknown.
-2. Retire or effectively contain the old Preview snapshots, then supply an explicitly
-   approved IPSM staging database/Auth resource and its private configuration access.
+2. Supply an explicitly approved IPSM staging database/Auth resource and its private
+   configuration access. Old Preview containment is now complete.
    No branch was available through current metadata; no cost authorization is assumed.
    Future Preview variables already exclude Production. Hosted end-to-end and actual
    deployment identity checks remain pending; local results do not replace them.

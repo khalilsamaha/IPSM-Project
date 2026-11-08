@@ -2,12 +2,12 @@
 
 > Current operational evidence (2026-11-08): the owner has accepted the
 > existing-database-only provenance scope and supplied conditional migration
-> authority. Five shared Vercel variables now target Production only; old Preview
-> snapshots still require containment. Real local Supabase Auth/browser and scoped
-> backup recovery have passed. Production roles, recoverable platform backup,
+> authority. Five shared Vercel variables now target Production only; all 28
+> approved old Preview snapshots have been removed. Real local Supabase Auth/browser, scoped
+> logical recovery and full physical PostgreSQL recovery have passed. Production roles, recoverable platform backup,
 > hosted isolation and business certifications remain pending. See the
 > [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
-> the removed unintended diagnostic deployment and full-platform restore limit.
+> the removed unintended diagnostic deployment and production-backup evidence limit.
 > Earlier access/authorization statements below describe their historical stage.
 
 **NO-GO for production. Draft PR90 only.** This is a prepared procedure, not
@@ -107,9 +107,9 @@ Required target architecture (Preview-only configuration changes are authorized;
 The existing reset gate stays fail closed for Preview/Development/local. Staging
 application flows can test normal operations after isolation; reset executor tests
 remain in the verified disposable factory, never by setting VERCEL_ENV=production
-on an ordinary local client. Old Preview snapshots still block safe hosted mutation testing for
-**all** application features. Preview targeting has now been removed; Production
-values remain unchanged. [Vercel environment scopes](https://vercel.com/docs/environment-variables).
+on an ordinary local client. All 28 old Preview snapshots have been removed after explicit owner approval.
+Preview targeting has been removed; Production values and three deployments remain
+unchanged. Hosted mutation tests await isolated database/Auth configuration. [Vercel environment scopes](https://vercel.com/docs/environment-variables).
 
 ## Provenance and package outcome
 
@@ -245,7 +245,7 @@ before selecting a production maintenance window.
    constraints, and review the full implementation/test contract in
    [identifier decision](PRODUCTION_RESET_IDENTIFIER_DECISION.md); acknowledge the
    three preserved payroll audit events using the form below. Identifier engineering is implemented; no production activation is implied.
-3. **Deployment/release owner:** contain old Preview snapshots and establish hosted isolated database/
+3. **Deployment/release owner:** establish hosted isolated database/
    Auth, attest actual identities without secrets and demonstrate platform recovery.
    Conditional migration authority is supplied; application deployment is separate.
 

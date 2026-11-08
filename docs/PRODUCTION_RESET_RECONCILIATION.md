@@ -2,12 +2,12 @@
 
 > Current operational evidence (2026-11-08): the owner has accepted the
 > existing-database-only provenance scope and supplied conditional migration
-> authority. Five shared Vercel variables now target Production only; old Preview
-> snapshots still require containment. Real local Supabase Auth/browser and scoped
-> backup recovery have passed. Production roles, recoverable platform backup,
+> authority. Five shared Vercel variables now target Production only; all 28
+> approved old Preview snapshots have been removed. Real local Supabase Auth/browser, scoped
+> logical recovery and full physical PostgreSQL recovery have passed. Production roles, recoverable platform backup,
 > hosted isolation and business certifications remain pending. See the
 > [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
-> the removed unintended diagnostic deployment and full-platform restore limit.
+> the removed unintended diagnostic deployment and production-backup evidence limit.
 > Earlier access/authorization statements below describe their historical stage.
 
 **Overall: NO-GO for migration, reset, merge or production deployment.** The FK
@@ -100,7 +100,7 @@ only synthetic data and a verified disposable cluster; no production mutation.
 | New-table client protection | GO for isolated remediation; NO-GO for rollout | Exact broad TABLE defaults confirmed. New-object ACL cleanup and effective assertions deny all eight privileges and function execution to clients; strict invoker state guard closes NULL/RLS bypass. Actual creator/runtime memberships and live-compatible staging still require verification. |
 | PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
 | Synthetic release/recovery | GO for isolated scope | Future-delta checksum/order, non-superuser owner, six scopes, rollback/repeat rejection, modest lock/load and pre/post backup restoration tested. Not actual production roles/history/platform recovery. |
-| Deployment readiness | NO-GO | Five shared entries now target Production only. Existing Preview snapshots remain a containment gate. Resolve actual roles, fresh target verification, hosted isolation, recoverable production backup and business certifications. CI is not production authorization. |
+| Deployment readiness | NO-GO | Five shared entries now target Production only. All 28 approved old Preview snapshots have been removed; Production deployments were unchanged. Resolve actual roles, fresh target verification, hosted isolation, recoverable production backup and business certifications. CI is not production authorization. |
 
 ## FK assessment
 

@@ -2,12 +2,12 @@
 
 > Current operational evidence (2026-11-08): the owner has accepted the
 > existing-database-only provenance scope and supplied conditional migration
-> authority. Five shared Vercel variables now target Production only; old Preview
-> snapshots still require containment. Real local Supabase Auth/browser and scoped
-> backup recovery have passed. Production roles, recoverable platform backup,
+> authority. Five shared Vercel variables now target Production only; all 28
+> approved old Preview snapshots have been removed. Real local Supabase Auth/browser, scoped
+> logical recovery and full physical PostgreSQL recovery have passed. Production roles, recoverable platform backup,
 > hosted isolation and business certifications remain pending. See the
 > [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
-> the removed unintended diagnostic deployment and full-platform restore limit.
+> the removed unintended diagnostic deployment and production-backup evidence limit.
 > Earlier access/authorization statements below describe their historical stage.
 
 **Production NO-GO; draft PR90.** The recorded-history packaging problem can be

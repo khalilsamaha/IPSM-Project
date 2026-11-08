@@ -2,17 +2,17 @@
 
 > Current operational evidence (2026-11-08): the owner has accepted the
 > existing-database-only provenance scope and supplied conditional migration
-> authority. Five shared Vercel variables now target Production only; old Preview
-> snapshots still require containment. Real local Supabase Auth/browser and scoped
-> backup recovery have passed. Production roles, recoverable platform backup,
+> authority. Five shared Vercel variables now target Production only; all 28
+> approved old Preview snapshots have been removed. Real local Supabase Auth/browser, scoped
+> logical recovery and full physical PostgreSQL recovery have passed. Production roles, recoverable platform backup,
 > hosted isolation and business certifications remain pending. See the
 > [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
-> the removed unintended diagnostic deployment and full-platform restore limit.
+> the removed unintended diagnostic deployment and production-backup evidence limit.
 > Earlier access/authorization statements below describe their historical stage.
 
 A dedicated local Supabase17.6/Auth fixture and real browser workflows now pass;
-see the operational report above. This is not hosted Preview isolation. Existing
-Preview snapshots still retain their deployment-time environment. Five shared
+see the operational report above. This is not hosted Preview isolation. All 28 approved old
+Preview snapshots were removed, preserving the three Production deployments. Five shared
 configuration entries now target Production only; no Production value changed.
 No hosted IPSM staging branch was returned by the authorized CLI metadata request.
 Production SQL/runtime access remains unavailable through the connected tools.

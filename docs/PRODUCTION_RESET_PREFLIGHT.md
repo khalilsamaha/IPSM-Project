@@ -1,5 +1,10 @@
 # PR 90 review and administrator preflight
 
+> Operational follow-up, 2026-11-08: all five shared variables now target Production
+> only, and the owner-approved 28 old Preview snapshots were removed. The three
+> Production deployments are unchanged. Hosted Preview database/Auth provisioning
+> is still pending. See [current evidence](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md).
+
 Review continued from `6031c8242ab5f6f52650b0d761aa1ace37c55a4d` on
 2026-11-07. PR 90 remains draft. No production migration or reset is authorized.
 
