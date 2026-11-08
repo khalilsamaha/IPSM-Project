@@ -65,7 +65,7 @@ the selected IPSM grammar in a third delta; historical non-use proof remains pen
   do not invent postings or delete evidence. Recheck if financial data changes.
 - Query 15 confirms families, students, payments and receipts are empty. This
   resolves population uncertainty, **not historical issuance uncertainty**.
-- Query 16 reports three Supabase records with 0/1/1 stored statements and no
+- Query 16 administrator evidence now maps the three Supabase versions to 0/1/1 stored statements and reports no
   Prisma ledger. These do not reconstruct the schema's full creation history.
 
 ## Query 17 evidence and implemented security model
@@ -216,7 +216,7 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 
 | Gate / owner | Required artifact before advancing |
 | --- | --- |
-| Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; provide retained Query16 per-version rows/authentic SQL. |
+| Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; retain mapped Query16 metadata and recover authentic SQL/deployment sources. |
 | Guards / application owner + DBA | Body, schema and metadata preservation checks are closed for the reported snapshot; no repeat needed. Keep strict assertions. Synthetic delta rehearsal preserves guard catalog entries. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Approved IPSM implementation/tests are prepared; certify historical non-use and complete recovery before activation. No repeated format decision is needed. |
