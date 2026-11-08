@@ -5,9 +5,12 @@ Files 01–11 are the initial **SQL Editor alternative** to
 They collect evidence for review; they do not certify compatibility or authorize
 a migration, reset, merge or deployment. The live IPSM schema remains unverified
 until an authorized administrator supplies and reviewers assess these results.
-Files **12–16** are the targeted follow-ups to the administrator's November 7
+Files **12–17** are the targeted follow-ups to the administrator's November 7
 reports; see the [reconciliation matrix](../../PRODUCTION_RESET_RECONCILIATION.md).
 The initial reports need not be repeated merely to collect these follow-ups.
+November 8 reports 10 and 12–16 have been summarized in the reconciliation;
+17 is the new effective-client-ACL review. Query 10's supplied postgres roles
+remain unverified as the actual Vercel runtime identity.
 
 ## Administrator procedure
 
@@ -90,13 +93,18 @@ last nonempty result is unambiguous even though ROLLBACK follows it.
 | [14_payroll_classification.sql](14_payroll_classification.sql) | Explains the 2 invalid-event / 3 inconsistent-pair findings without adding overlapping counts. Distinguishes absent historical/unresolved pairs, old invalid audit references with a consistent current posting, and live financial mismatches. Counts/flags only; no automatic cleanup. |
 | [15_identifier_sources.sql](15_identifier_sources.sql) | Explicit current row/code counts for all four identifier source tables, including empty ones, plus audit-only recoverable maxima and create-event coverage. No family floor or empty-source conclusion is assumed. |
 | [16_migration_provenance.sql](16_migration_provenance.sql) | Checks the exact three reported Supabase versions, statement counts/hashes and known guard mentions. No statements/credentials are returned. Missing history columns or denied access remain blockers; hashes do not invent provenance. |
+| [17_reset_client_permissions.sql](17_reset_client_permissions.sql) | Expanded defaults for supplied candidate creator postgres; client role/membership metadata; effective table TRUNCATE/REFERENCES/TRIGGER/DML, RLS/policies and function EXECUTE when proposed objects exist. Missing future objects are expected before installation, never proof of protection. No impersonation, grant or production modification. |
 
-For this reconciliation, run 12–16 as complete independent files, with the same
-project, transaction, timeout and result-completeness checks above. Rerun 10 only
-after confirming actual runtime/migration database roles using the existing
-connection-context procedure in the reconciliation document. Share each full
-JSON report and any sanitized errors. Do not run 11 on the confirmed pre-PR90
-schema or apply migrations to make it runnable.
+Reports 10 and 12–16 have now been supplied as administrator summaries; retain the
+full sanitized JSON and timestamps for review. Run **17** as a complete independent
+file with the same project, transaction, timeout and completeness checks. Share
+its full metadata report, not credentials. It does not establish Vercel runtime
+identity or browser API exposure. Confirm actual runtime/migration connection
+contexts separately; rerun 10 if roles or permissions differ from the supplied
+postgres roles. Do not run 11 on the confirmed pre-PR90 schema or apply migrations
+to make future-object checks runnable. See the
+[release/security review](../../PRODUCTION_RESET_RELEASE_REVIEW.md) for blockers
+and the preserve-or-change guard decision.
 
 FK action codes: `a` NO ACTION, `r` RESTRICT, `c` CASCADE, `n` SET NULL,
 `d` SET DEFAULT. Hash equality is evidence of matching text, not proof of safe

@@ -61,6 +61,14 @@ ALTER TABLE public.families DROP COLUMN preflight_redaction_probe;
 SQL
 "${PSQL[@]}" -f prisma/migrations/20261107000000_teacher_guard_parity/migration.sql
 "${PSQL[@]}" -f prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql
+# Model the reported broad creator defaults ONLY in this owned disposable cluster.
+# These are exposure-characterization tests, not a proposed permissions change.
+"${PSQL[@]}" <<'SQL'
+CREATE ROLE ipsm_fixture_service BYPASSRLS;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, ipsm_fixture_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, ipsm_fixture_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, ipsm_fixture_service;
+SQL
 bash tests/migrations/reset-upgrade.integration.sh
 "${PSQL[@]}" -f tests/migrations/reset-integrity.sql
 "${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-after.log"
@@ -68,3 +76,4 @@ assert_redacted "$TEST_ROOT/preflight-after.log"
 echo "Read-only administrator preflight passed before and after the proposed migrations."
 ./node_modules/.bin/vitest run tests/production-reset-dashboard.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+./node_modules/.bin/vitest run tests/production-reset-review.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

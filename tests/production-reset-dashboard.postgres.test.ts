@@ -131,6 +131,19 @@ describe.skipIf(!url)("SQL Editor preflight on the owned PostgreSQL fixture", ()
     expect(sources).toHaveLength(4);
     expect(sources.every(item => item.details.total_rows === 0 && item.details.currently_empty === true)).toBe(true);
   });
+  it("reports new-table client TRUNCATE exposure separately from function EXECUTE revocation", () => {
+    const value = report("17");
+    const tables = value.items.filter(item => item.section === "effective_table_permissions" && ["anon", "authenticated"].includes(String(item.details.role)));
+    expect(tables).toHaveLength(10);
+    if (!installed) {
+      expect(tables.every(item => item.status === "EXPECTED_ABSENT_BEFORE_PR90")).toBe(true);
+      return;
+    }
+    expect(tables.every(item => item.status === "BLOCKER" && item.details.truncate === true)).toBe(true);
+    const functions = value.items.filter(item => item.section === "effective_function_permissions" && ["anon", "authenticated"].includes(String(item.details.role)));
+    expect(functions).toHaveLength(8);
+    expect(functions.every(item => item.details.execute === false)).toBe(true);
+  });
   it("checks existing reset objects only when present; missing objects cannot produce a success report", () => {
     if (installed) { report("11"); return; }
     const result = run(sql("11"));

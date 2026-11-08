@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 const directory = path.resolve("docs/sql/production-reset-dashboard");
 const files = readdirSync(directory).filter(name => name.endsWith(".sql")).sort();
 describe("Dashboard preflight SQL safety envelope", () => {
-  it("includes the eleven initial queries and five reconciliation queries", () => {
-    expect(files.map(file => file.slice(0, 2))).toEqual(Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, "0")));
+  it("includes the eleven initial queries and six reconciliation queries", () => {
+    expect(files.map(file => file.slice(0, 2))).toEqual(Array.from({ length: 17 }, (_, i) => String(i + 1).padStart(2, "0")));
   });
   it.each(files)("keeps %s read-only and independent of psql", file => {
     const sql = readFileSync(path.join(directory, file), "utf8");

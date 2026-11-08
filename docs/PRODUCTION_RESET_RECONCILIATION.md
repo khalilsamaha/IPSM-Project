@@ -1,9 +1,9 @@
 # PR 90 — production preflight reconciliation
 
 **Overall: NO-GO for migration, reset, merge or production deployment.** The FK
-compatibility blocker has an evidence-based correction. Guard semantics, payroll
-classification, identifier history, migration provenance and actual database
-roles remain unresolved. PR 90 stays draft; PR 2 is untouched.
+compatibility blocker has an evidence-based correction. Guard semantics, effective
+client ACLs, identifier history, migration provenance and actual Vercel runtime
+identity remain unresolved. PR 90 stays draft; PR 2 is untouched.
 
 ## Evidence and limits
 
@@ -14,11 +14,24 @@ and SHA-256. It contains no records, credentials or function bodies. The connect
 again denied the read-only IPSM catalog request; no other project was accessed.
 These are supplied observations, not an independently repeated live inspection.
 
-The administrator also confirmed all 25 core tables, absent Prisma history,
-exactly three Supabase history versions, absent PR90 infrastructure/payroll column,
-zero registration/availability/rate and receipt/balance findings, payroll counts
-2/3, and recoverable 2026 receipt/student maxima 14/5. Source-population, actual-role
-and detailed financial-classification evidence is still missing.
+The November 8 [administrator summary](evidence/production-reset-2026-11-08-summary.json)
+supersedes the earlier unknown source counts and payroll classification. Query 10
+completed 42/42 items with no explicit blockers for the **supplied** `postgres` /
+`postgres` roles: required schema access, DML on 25 application tables,
+BYPASSRLS and teacher-function execution were reported. This verifies those
+candidate roles' permissions, **not the actual Vercel Prisma runtime identity**.
+Raw November 8 JSON, execution timestamps and exact default ACL entries were not
+supplied; the findings below are attributed to the administrator's summary.
+
+Queries 12–16 confirm the reviewed 45 FKs/22 variants and guard hash differences;
+three historical payroll audit events reference absent records; current payroll
+and teacher-payroll-expense counts are zero. All four identifier source tables
+are empty. Recoverable 2026 RCPT/STU maxima are 14/5; FAM history is unknown.
+The three Supabase records contain 0, 1 and 1 statements; Prisma history is absent.
+Statement counts do not reconstruct the missing bootstrap or prove provenance.
+
+See the [security review, guard decision and release plan](PRODUCTION_RESET_RELEASE_REVIEW.md)
+for isolated characterization tests, the default-ACL exposure and concrete gates.
 
 ## GO / NO-GO matrix
 
@@ -30,11 +43,13 @@ and detailed financial-classification evidence is still missing.
 | Schedule guard | NO-GO | Body differs; private semantic comparison and an explicit preserve/change decision required. |
 | Enrollment guard | NO-GO pending baseline review | Body differs from repository and checked history. PR90 parity does not replace it; confirm intended behavior in isolated staging. |
 | Registration uniqueness | GO for duplicate check; migration pending | Zero duplicate groups. Missing unique indexes require the separately approved canonical rollout. |
-| Payroll | NO-GO | Two invalid events and three inconsistent distinct links may overlap. Run query 14; distinguish unresolved history from actual posting inconsistencies. |
+| Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
-| Identifier history | NO-GO | 14/5 are recoverable lower bounds. No FAM floor and source emptiness unconfirmed. Run 15 and reconcile older history. |
-| Migration provenance | NO-GO | Three Supabase versions name no repository file. Query 16 plus private statement/object review; no invented applied rows. |
-| Runtime/migration permissions | NO-GO | Placeholder report cannot establish privileges. Identify actual connection roles and rerun 10. |
+| Identifier history | NO-GO | Query 15: all four sources empty; RCPT/STU 14/5 remain lower bounds, FAM unknown. Recover complete issuance or adopt an enforced disjoint namespace. |
+| Migration provenance | NO-GO | Three Supabase versions, statement counts 0/1/1, no Prisma ledger. Counts do not establish object provenance; preserve truthful history and reconcile a future delta. |
+| Candidate database permissions | GO for supplied roles only | Query 10 completed 42/42: postgres/postgres schema access, 25-table DML, BYPASSRLS and teacher-function execution reported. Proposed objects absent. |
+| Actual Vercel runtime identity | NO-GO | Not independently verified; Query 10 cannot prove which role Prisma uses. |
+| New-table client protection | NO-GO | RLS blocks ordinary client rows, but broad defaults can retain TRUNCATE/REFERENCES/TRIGGER. Disposable tests reproduce exposure; exact live ACL paths still needed. |
 | PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
 | Deployment readiness | NO-GO | Resolve above gates, Preview isolation, backup/restore/load checks and human acceptance. CI is not production authorization. |
 
@@ -96,8 +111,11 @@ it.** Review other parity columns/indexes/checks/grants separately.
 
 Query 07 counts audit **events** for invalid references and distinct
 (payroll ID, expense ID) **pairs** for inconsistent links. Two and three are not
-necessarily five independent problems. Four zero counters do not establish that
-payroll tables are empty or that malformed audits are harmless.
+five independent problems. November 8 Query 14 classifies three audit events as
+references to absent records and confirms zero current payroll / teacher-payroll
+expense rows. No current posting inconsistency is reported in that snapshot.
+This does not prove why historical records disappeared or authorize cleanup.
+Obtain the financial owner's acknowledgement and retain all three audit events.
 
 [Query 14](sql/production-reset-dashboard/14_payroll_classification.sql) distinguishes:
 
@@ -124,7 +142,7 @@ separate remediation explicitly. No production repair was executed.
 
 ## Identifier retention and deleted history
 
-Current source emptiness remains **unknown**. [Query 15](sql/production-reset-dashboard/15_identifier_sources.sql)
+November 8 confirms families, students, payments and receipts are **all empty**. [Query 15](sql/production-reset-dashboard/15_identifier_sources.sql)
 returns explicit counts for families, students, payments and receipts, audit-only
 high-water marks and creation-event coverage, without individual identifiers.
 
@@ -159,8 +177,10 @@ committed trees have original-schema bootstrap gaps.
 **Recommend Supabase as the single canonical deployment/history path**, subject
 to provenance reconciliation. Query 16 returns only versions, statement counts,
 hashes and known guard-name mentions; a mention does not prove application.
-An administrator must privately reconcile the three actual migration contents
-and current schema. Prepare an isolated release directory/history matching those
+The reported 0/1/1 stored statement counts alone cannot explain all current objects;
+a zero-statement record is not evidence that nothing happened. An administrator
+must privately reconcile available migration contents, deployment artifacts and
+current schema; record unrecoverable provenance honestly. Prepare an isolated release directory/history matching those
 actual records and only the reviewed future delta; verify pending migrations and
 restore testing before separate deployment approval. Do not push the entire
 repository history, mark unrelated files applied, use Prisma migrate deploy
@@ -187,7 +207,12 @@ roles such as SUPER_ADMIN are unrelated; pooler usernames can include routing
 suffixes. If no authorized runtime-context connection is available, retain the
 blocker rather than guess.
 
-Rerun 10 with confirmed roles. Verify ownership for ALTER/replacement/revokes,
+Query 10 now verifies the supplied postgres roles, with BYPASSRLS, against the
+existing objects. It does not attest either connection context or privileges on
+the five not-yet-created tables. Confirm the actual Vercel runtime role and the
+selected migration connection; rerun 10 only if the confirmed roles differ or
+permissions changed. Query 17 reviews client/default ACLs without impersonation.
+Verify ownership for ALTER/replacement/revokes,
 schema usage/create, allocator EXECUTE, protected-table access, generation-guard
 SELECT/FOR SHARE privileges and RLS visibility. Table grants alone do not bypass
 RLS. Do not grant DELETE on protected users/audits simply because a report lists
@@ -202,16 +227,16 @@ inconsistent payroll postings, refusal to replace unknown guard bodies, preserve
 orphan audits, and financial/academic resets with the 22 exact live FK variants.
 No historical migration is rewritten or production FK changed to match Prisma.
 
-Before approval: resolve the two guard bodies and all other parity DDL; classify
-payroll findings; establish identifier source/history coverage; reconcile the
-three migration records; verify actual roles/RLS; and validate a live-compatible
+Before approval: resolve the two guard bodies and all other parity DDL; sign off
+the preserved historical payroll findings; establish complete identifier history; reconcile the
+three migration records; verify actual roles and resolve the new-table ACL exposure; and validate a live-compatible
 isolated PostgreSQL 17 staging restore with representative load, lock timeouts and
 backup/restore procedures. Keep schema deployments separate from resets.
 Green CI and the FK correction alone do not make PR90 merge-ready.
 
 ## Exact comparisons
 
-Local validation for this reconciliation passed: Prisma generation, TypeScript,
+Validation of the previous November 7 correction passed (not the new review tests): Prisma generation, TypeScript,
 404 unit tests, all existing migration fixtures plus 27 Dashboard/reconciliation
 checks before and after fixture migration, 18 reset integration tests, and the
 production build. Database validation used PostgreSQL 17.6 on fresh owned loopback
