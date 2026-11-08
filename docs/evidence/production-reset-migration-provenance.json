@@ -9,12 +9,15 @@
       "statements_hash": null,
       "trusted_original_sql": null,
       "attributable_objects": [],
-      "evidence_quality": "administrator-supplied Query16 read-only report at 2026-11-08T15:44:55.544114+00:00; per-version count/hash and guard-name mentions observed; SQL source not supplied",
-      "unresolved": "trusted original SQL bytes and deployment provenance; map objects to recorded migration only after comparing authentic source",
+      "evidence_quality": "Administrator supplied actual SQL Editor history with zero stored statements; does not establish past schema creation",
+      "unresolved": "Original creation/recording provenance, separate manual/bootstrap DDL and truthful CLI history strategy",
       "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
       "mentions_availability_guard": false,
       "mentions_schedule_guard": false,
-      "mentions_enrollment_guard": false
+      "mentions_enrollment_guard": false,
+      "stored_sql_supplied": true,
+      "stored_sql_is_empty_array": true,
+      "source_match": null
     },
     {
       "version": "20260801163840",
@@ -22,12 +25,27 @@
       "statements_hash": null,
       "trusted_original_sql": null,
       "attributable_objects": [],
-      "evidence_quality": "administrator-supplied Query16 read-only report at 2026-11-08T15:44:55.544114+00:00; per-version count/hash and guard-name mentions observed; SQL source not supplied",
-      "unresolved": "trusted original SQL bytes and deployment provenance; map objects to recorded migration only after comparing authentic source",
+      "evidence_quality": "Administrator supplied stored SQL + MD5; repo SQL transforms (comments and trailing LF only) reproduce the stored fingerprint",
+      "unresolved": "Confirm deployment provenance and supported Supabase CLI release history/pending list in isolated workspace; no production history alteration",
       "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
       "mentions_availability_guard": true,
       "mentions_schedule_guard": true,
-      "mentions_enrollment_guard": false
+      "mentions_enrollment_guard": false,
+      "stored_sql_supplied": true,
+      "stored_sql_is_empty_array": false,
+      "repository_source_fingerprint_reconstruction": {
+        "file": "supabase/migrations/20260801101500_teacher_consistency.sql",
+        "source_chars": 6165,
+        "stored_chars": 5923,
+        "removed_comments": [
+          132,
+          109
+        ],
+        "removed_terminal_LF": true,
+        "match_md5": "d34257683e5172ad7b1ede576a4b2591",
+        "method": "From repository source, remove the two existing explanatory comment blocks (132 and 109 ASCII bytes) and final LF. MD5 of result equals single-statement Supabase history fingerprint."
+      },
+      "source_candidate_match_supported": true
     },
     {
       "version": "20260801165129",
@@ -35,12 +53,24 @@
       "statements_hash": null,
       "trusted_original_sql": null,
       "attributable_objects": [],
-      "evidence_quality": "administrator-supplied Query16 read-only report at 2026-11-08T15:44:55.544114+00:00; per-version count/hash and guard-name mentions observed; SQL source not supplied",
-      "unresolved": "trusted original SQL bytes and deployment provenance; map objects to recorded migration only after comparing authentic source",
+      "evidence_quality": "Administrator supplied stored SQL + MD5; repo SQL transforms (comments and trailing LF only) reproduce the stored fingerprint",
+      "unresolved": "Confirm deployment provenance and supported Supabase CLI release history/pending list in isolated workspace; no production history alteration",
       "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
       "mentions_availability_guard": false,
       "mentions_schedule_guard": false,
-      "mentions_enrollment_guard": true
+      "mentions_enrollment_guard": true,
+      "stored_sql_supplied": true,
+      "stored_sql_is_empty_array": false,
+      "repository_source_fingerprint_reconstruction": {
+        "file": "supabase/migrations/20260801190000_enrollment_teacher_availability.sql",
+        "source_chars": 2831,
+        "stored_chars": 2830,
+        "removed_comments": [],
+        "removed_terminal_LF": true,
+        "match_md5": "6c4135265819300dd72a0fbc476f80c2",
+        "method": "From repository source, remove final LF only. MD5 of result equals single-statement Supabase history fingerprint."
+      },
+      "source_candidate_match_supported": true
     }
   ],
   "recorded_versions_found_in_migration_paths": false,
@@ -81,7 +111,9 @@
     ],
     "historical_records_changed": false,
     "original_query16_metadata_supplied_at": "2026-11-08T15:44:55.544114+00:00",
-    "original_query16_sql_not_supplied": true
+    "original_query16_sql_not_supplied": false,
+    "original_query16_nonempty_sql_supplied": true,
+    "empty_july31_history_unresolved": true
   },
   "query16_observation": {
     "project_ref": "rakzehtbpzseetldbohm",
@@ -94,7 +126,24 @@
     "reported_status": "REVIEW_REQUIRED",
     "prisma_migration_history_present": false,
     "source": "administrator-provided SQL Editor report",
-    "sql_bodies_present": false,
-    "meaning": "Stored statement counts and joined-statement MD5 are proven by supplied metadata, but original source bytes, repository attribution and release package remain unresolved"
+    "sql_bodies_present": true,
+    "meaning": "Mapped counts/MD5 and original stored text supplied for the two nonempty statements; both fingerprints reproducible from repository sources with only documented comment/terminal-LF differences. Empty July 31 history and complete release package provenance remain unresolved."
+  },
+  "stored_sql_observation": {
+    "source": "administrator-supplied read-only Supabase SQL Editor SELECT of schema_migrations.statements; full text reviewed in conversation, not committed",
+    "reported_versions": [
+      "20260731171613",
+      "20260801163840",
+      "20260801165129"
+    ],
+    "statement_text_received_for": [
+      "20260801163840",
+      "20260801165129"
+    ],
+    "empty_statement_array_for": [
+      "20260731171613"
+    ],
+    "reconstruction_note": "ASCII SQL, canonical repository body transformed only by documented non-executable comments and final LF. MD5 reproduction is a strong fingerprint match, not an attestation of full original deployment history.",
+    "requires_final_release_review": true
   }
 }
