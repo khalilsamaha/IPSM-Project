@@ -1,7 +1,7 @@
 # Identifier decision for PR90 — IPSM namespace selected; activation blocked
 
 **Business-format decision (2026-11-08):** The owner selected the unversioned `IPSM`
-namespace for new FAM/STU/RCPT identifiers, rather than `IPSM1` or `IPSM`.
+namespace for new FAM/STU/RCPT identifiers, rather than versioned `IPSM1` or `IPSM2`.
 This approves the display grammar and preparation of draft-PR implementation;
 it does **not** establish historical non-use or authorize production activation.
 Keep production NO-GO until historical non-overlap is certified (including manual
