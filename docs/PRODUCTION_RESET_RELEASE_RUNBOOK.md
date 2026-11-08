@@ -109,7 +109,7 @@ by date or matching function text. The private SQL snippet is one byte; the only
 IPSM archive found holds the already-reviewed schema reports, not original history.
 The targeted Supabase read-only history query was denied; no other project was used.
 
-Known 0/1/1 statement counts remain unmapped without original Query16 rows. The
+Query16 administrator evidence (2026-11-08T15:44:55.544114+00:00) now maps counts to actual versions: 20260731171613=0 (MD5 d41d8cd98f00b204e9800998ecf8427e), 20260801163840=1 (MD5 d34257683e5172ad7b1ede576a4b2591; availability/schedule mentions), 20260801165129=1 (MD5 6c4135265819300dd72a0fbc476f80c2; enrollment mention). This is statement metadata, not original SQL provenance. The
 worksheet leaves each count/hash/attributable object **unknown**. No Prisma ledger
 is invented. Supabase is the single future migration mechanism; Prisma is limited
 to schema/client generation and byte-identical mirror checks.
@@ -128,8 +128,8 @@ a `supabase/migrations` deployment workspace and contains no fabricated old SQL.
 The two foundation migration pairs remain unchanged; the third pair is additive. The rehearsal applies this
 exact checked bundle and rejects reapplication of the integrity migration.
 
-Supported next provenance step for an authorized administrator: obtain the
-retained Query16 rows and privately recover actual recorded SQL/deployment files.
+Supported next provenance step for an authorized administrator: retain the
+mapped Query16 evidence and privately recover actual recorded SQL/deployment files.
 Supabase's documented `migration fetch` retrieves history files; `migration list`
 compares version timestamps. Use fetch only in an isolated release workspace with
 an existing authorized connection, review its SQL privately for sensitive literals,
@@ -221,8 +221,8 @@ before selecting a production maintenance window.
 ## Smallest outstanding decision/evidence set
 
 1. **DBA/deployment owner:** actual runtime and chosen migration connection role
-   names/context, relevant membership/ownership confirmation; original Query16
-   per-version rows and authentic recorded/deployment SQL. Resolve truthful canonical
+   names/context, relevant membership/ownership confirmation; mapped Query16 evidence
+   (already supplied) and authentic recorded/deployment SQL. Resolve truthful canonical
    packaging, not historic-schema attribution by guesswork.
 2. **Business/financial owner:** the `IPSM` display format is selected; certify
    historical non-use or complete reservations, approve operational delivery/recovery
