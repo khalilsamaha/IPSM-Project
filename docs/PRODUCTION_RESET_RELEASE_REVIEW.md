@@ -1,5 +1,15 @@
 # PR90 — security remediation and release decision
 
+> Current operational evidence (2026-11-08): the owner has accepted the
+> existing-database-only provenance scope and supplied conditional migration
+> authority. Five shared Vercel variables now target Production only; old Preview
+> snapshots still require containment. Real local Supabase Auth/browser and scoped
+> backup recovery have passed. Production roles, recoverable platform backup,
+> hosted isolation and business certifications remain pending. See the
+> [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
+> the removed unintended diagnostic deployment and full-platform restore limit.
+> Earlier access/authorization statements below describe their historical stage.
+
 **NO-GO. Keep draft.** The two mirrored, unapplied reset-integrity migrations now contain the
 reviewed security correction. This does not authorize production migration,
 permission changes, identifier issuance, reset, merge or deployment.
@@ -222,11 +232,11 @@ original deployment provenance. Do not reconstruct or label fictitious historica
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Approved IPSM implementation/tests are prepared; certify historical non-use and complete recovery before activation. No repeated format decision is needed. |
 | ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
-| Provenance / release owner | Accept the documented existing-database-only release boundary: preserve the empty transcript without claiming bootstrap execution. If complete original lineage is mandatory, recover original artifacts/operator evidence; no history repair or synthetic application claims. |
+| Provenance / release owner | Owner acceptance is recorded: preserve the empty transcript without claiming bootstrap execution. If complete original lineage is mandatory, recover original artifacts/operator evidence; no history repair or synthetic application claims. |
 | Release packaging / DBA | Canonical six-file workspace and real CLI2.78.1 isolated rehearsal are prepared. Verify fresh target version/content equality and exactly three pending future deltas; local tests are not current production certification. |
 | Staging / QA | Synthetic PG17 delta/role/load/restore rehearsal implemented. Remaining acceptance is actual intended role/membership and representative workload/platform recovery, plus separately isolated Preview/Auth. No production data/credentials in CI. |
-| Approval / owner | Full CI on the final commit, human review, Preview database isolation, maintenance/backup plan and explicit separate migration/deployment authorization. Keep draft until these are satisfied. |
-| Future release / authorized operator | Only after separate approval: pause relevant writers, take/verify backup, apply canonical reviewed delta once, run read-only postchecks, then release compatible application version. Treat partial/failed verification as stop; recover using tested procedure, not ad hoc down SQL. Never include a Production Reset execution in deployment validation. |
+| Approval / owner | Full CI on the final commit, human review, Preview database isolation, maintenance/backup plan and verification of all safeguards for the already-authorized conditional migration. Application deployment remains separately controlled. Keep draft until these are satisfied. |
+| Future release / authorized operator | Only after all conditional-authorization safeguards pass: pause relevant writers, take/verify backup, apply canonical reviewed delta once, run read-only postchecks, then release compatible application version. Treat partial/failed verification as stop; recover using tested procedure, not ad hoc down SQL. Never include a Production Reset execution in deployment validation. |
 
 For role identity, use the existing authorized runtime-configured connection and
 separately the selected migration connection, read-only `SELECT current_user,
@@ -281,5 +291,5 @@ bootstrap DDL or an original execution to it. See the
 [canonical workspace review](PRODUCTION_RESET_CANONICAL_WORKSPACE.md) for the exact
 six-file package, checksum validation, isolated real-CLI rehearsal and limits.
 No history repair or production access is needed to prepare this artifact.
-Production remains NO-GO pending fresh target verification, acceptance of the
-existing-database-only provenance boundary and the other release gates.
+Production remains NO-GO pending fresh target verification and the other safeguards.
+The owner has accepted the existing-database-only provenance boundary.

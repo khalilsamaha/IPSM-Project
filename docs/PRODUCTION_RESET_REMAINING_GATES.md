@@ -1,5 +1,15 @@
 # PR90 — final consolidated gates
 
+> Current operational evidence (2026-11-08): the owner has accepted the
+> existing-database-only provenance scope and supplied conditional migration
+> authority. Five shared Vercel variables now target Production only; old Preview
+> snapshots still require containment. Real local Supabase Auth/browser and scoped
+> backup recovery have passed. Production roles, recoverable platform backup,
+> hosted isolation and business certifications remain pending. See the
+> [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
+> the removed unintended diagnostic deployment and full-platform restore limit.
+> Earlier access/authorization statements below describe their historical stage.
+
 **Production NO-GO; PR remains draft.** All independently executable repository
 preparation is consolidated in the [release runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md).
 This replaces the previous request to run Queries18/19: the administrator has now
@@ -31,10 +41,10 @@ only if relevant schema/permissions change before a separately authorized releas
 | --- | --- | --- |
 | Connection evidence — DBA/deployment owner | Verify current_user/session_user in the actual Vercel Prisma and intended migration connection contexts; confirm owner/membership compatibility. Names/context only. | Owner-only protections remain; do not assume SQL Editor postgres or service_role is the app identity. |
 | Historical non-use / recovery certification — business owner + DBA | Certify the approved IPSM grammar was never previously issued across manual/external/import channels. Review private reservation/recovery manifests and sign their coverage. | Implementation is complete, but no activation exists by default. Do not enable issuance without proof or repeat the completed format decision. |
-| Existing-database history — DBA/release owner | Recorded arrays and isolated canonical CLI mechanics are reconciled. Accept the documented existing-database-only scope, then verify fresh target history/checksums and exactly three pending deltas. | Original July31 recording/bootstrap purpose remains unknown. If full original lineage is mandatory, supply trusted original artifacts; never repair or invent history. |
-| Environment access/authorization — deployment owner | Provide/approve independently isolated Preview PostgreSQL17 and Supabase Auth; perform scoped configuration changes and verify deployed identities. | Shared Production/Preview entries remain confirmed. No mutation testing on the shared Preview. No resources purchased or credentials retrieved. |
+| Existing-database history — DBA/release owner | Recorded arrays and isolated canonical CLI mechanics are reconciled. Scope accepted by the owner. Verify fresh target history/checksums and exactly three pending deltas. | Original July31 recording/bootstrap purpose remains unknown. If full original lineage is mandatory, supply trusted original artifacts; never repair or invent history. |
+| Environment access/authorization — deployment owner | Retire/contain old Preview snapshots and supply an approved isolated hosted PostgreSQL17/Auth resource; configure Preview-only values and verify deployed identities. | Future Preview targeting has been removed from all five shared entries. Existing snapshots may still retain them. Local real Auth/browser tests passed; hosted Preview mutation tests remain blocked. No resources purchased. |
 | Financial acknowledgement — financial owner | Acknowledge three retained historical payroll audit orphans and the inability to reconstruct their context from available evidence. | Preserve all three; no invented postings, links or deletion. |
-| Release authorization — release/security/DBA owners | Review the final three-delta package, actual role model, representative staging and platform recovery, including restart-triggered issuance holds. Separately authorize any production migration/configuration/deployment. | Local PG17 mechanics do not prove platform recovery, unknown history or production capacity. Keep draft and production NO-GO. |
+| Release authorization — release/security/DBA owners | Review the final three-delta package, actual role model, representative staging and platform recovery, including restart-triggered issuance holds. Conditional migration authority is already supplied; satisfy every safeguard. Production application deployment remains separately controlled. | Local PG17 mechanics do not prove platform recovery, unknown history or production capacity. Keep draft and production NO-GO. |
 
 ## Query16 evidence now reconciled (2026-11-08T15:44:55.544114+00:00)
 
@@ -71,9 +81,8 @@ fresh recovery review. No generic local bypass or permissive RLS policy exists.
 
 IPSM-only connector calls for targeted history, migration listing and branch
 discovery were denied. Administrator supplied original Query16 metadata on 2026-11-08T15:44:55.544114+00:00: mapped
-counts 0/1/1, MD5s and stored SQL for the two nonempty records. Their source-text fingerprints match reviewed repository migrations; July31 bootstrap/deployment purpose remains unknown; canonical workspace mechanics are now tested in isolation. Metadata-only Vercel inspection
-still shows all five DB/Auth entries shared across Production/Preview. No existing
-authorized runtime SQL session or isolated Auth resource was exposed to this work.
+counts 0/1/1, MD5s and stored SQL for the two nonempty records. Their source-text fingerprints match reviewed repository migrations; July31 bootstrap/deployment purpose remains unknown; canonical workspace mechanics are now tested in isolation. Initial metadata-only Vercel inspection
+showed all five DB/Auth entries shared across Production/Preview; the current operational follow-up removed Preview targeting. No authorized production runtime SQL session or hosted staging Auth resource was exposed. A dedicated local Supabase/Auth stack has now been tested.
 These are access/evidence limits, not negative assertions about all resources owned
 by the administrator. No unrelated project was used.
 
@@ -85,12 +94,12 @@ The offline bundle now contains three genuine ordered future deltas and no fake 
 
 ## Three coordinated remaining workstreams
 
-1. DBA/deployment: actual connection identities, fresh target ledger/pending-list verification and acceptance of the documented existing-database-only provenance boundary, and role ownership.
+1. DBA/deployment: actual connection identities, fresh target ledger/pending-list verification and role ownership. Existing-database-only scope is accepted.
 2. Business/financial: historical non-use/recovery certification and payroll acknowledgement.
-3. Deployment/release: isolated Preview database/Auth, real platform rehearsal and explicit release authorization.
+3. Deployment/release: old Preview containment, hosted isolation and platform recovery; conditional migration authority is supplied, application deployment is separate.
 
-No further broad schema report or Query18/19 repetition is requested. No production
-migration, reset, credential/environment change, merge, deployment or PR2 work occurred.
+No further broad schema report or Query18/19 repetition is requested. No IPSM production
+migration, reset, credential/environment change, merge, application deployment or PR2 work occurred. Preview targeting changed; the separate unintended diagnostic deployment was removed as documented.
 
 ## Canonical workspace follow-up
 
@@ -100,5 +109,5 @@ with Supabase CLI2.78.1. It is not a fabricated bootstrap migration. The
 three recorded transcripts and three future deltas, with independent SQL checksum
 checks. This closes isolated packaging mechanics only. Original bootstrap purpose
 remains unknown;
-release-owner acceptance of this explicit existing-database scope and fresh target
-verification are still required. Do not request the two nonempty SQL bodies again.
+the owner has accepted this explicit existing-database scope; fresh target
+verification and the other safeguards are still required. Do not request the two nonempty SQL bodies again.

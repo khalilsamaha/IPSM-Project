@@ -1,12 +1,22 @@
 # PR 90 — production preflight reconciliation
 
+> Current operational evidence (2026-11-08): the owner has accepted the
+> existing-database-only provenance scope and supplied conditional migration
+> authority. Five shared Vercel variables now target Production only; old Preview
+> snapshots still require containment. Real local Supabase Auth/browser and scoped
+> backup recovery have passed. Production roles, recoverable platform backup,
+> hosted isolation and business certifications remain pending. See the
+> [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
+> the removed unintended diagnostic deployment and full-platform restore limit.
+> Earlier access/authorization statements below describe their historical stage.
+
 **Overall: NO-GO for migration, reset, merge or production deployment.** The FK
 compatibility blocker has an evidence-based correction. Default-ACL and
 invisible-state vulnerabilities are corrected in the unapplied migration pair.
 The reported teacher-body differences are now reproduced exactly and preserved.
 Approved IPSM identifier engineering is implemented but activation remains blocked
-until non-use/recovery certification. Teacher schema/metadata reconciliation is closed by administrator Queries18/19. Identifier history, migration provenance,
-actual runtime identity and live-compatible security validation remain unresolved.
+until non-use/recovery certification. Teacher schema/metadata reconciliation is closed by administrator Queries18/19. Identifier non-use/recovery, fresh target migration verification,
+actual runtime identity and live-compatible security validation remain unresolved. The existing-database-only provenance boundary is accepted.
 See [implemented identifier controls](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md)
 and [current remaining gates](PRODUCTION_RESET_REMAINING_GATES.md). PR 90 stays draft;
 PR 2 is untouched.
@@ -84,13 +94,13 @@ only synthetic data and a verified disposable cluster; no production mutation.
 | Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
 | Identifier history | NO-GO | Query 15: all four sources empty; RCPT/STU 14/5 remain lower bounds, FAM unknown. Approved IPSM namespace implemented; certify historical non-use and recovery before activating it. |
-| Migration provenance / package | GO for isolated existing-database mechanics; production NO-GO | Actual 0/1/1 arrays and known fingerprints packaged; native empty export and three-delta order tested with CLI2.78.1. Unknown bootstrap purpose remains explicit; fresh target verification and release-owner scope acceptance required. |
+| Migration provenance / package | GO for isolated existing-database mechanics; production NO-GO | Actual 0/1/1 arrays and known fingerprints packaged; native empty export and three-delta order tested with CLI2.78.1. Unknown bootstrap purpose remains explicit; scope accepted; fresh target verification remains required. |
 | Candidate database permissions | GO for supplied roles only | Query 10 completed 42/42: postgres/postgres schema access, 25-table DML, BYPASSRLS and teacher-function execution reported. Proposed objects absent. |
 | Actual Vercel runtime identity | NO-GO | Not independently verified; Query 10 cannot prove which role Prisma uses. |
 | New-table client protection | GO for isolated remediation; NO-GO for rollout | Exact broad TABLE defaults confirmed. New-object ACL cleanup and effective assertions deny all eight privileges and function execution to clients; strict invoker state guard closes NULL/RLS bypass. Actual creator/runtime memberships and live-compatible staging still require verification. |
 | PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
 | Synthetic release/recovery | GO for isolated scope | Future-delta checksum/order, non-superuser owner, six scopes, rollback/repeat rejection, modest lock/load and pre/post backup restoration tested. Not actual production roles/history/platform recovery. |
-| Deployment readiness | NO-GO | Metadata confirms shared Preview/Production database/Auth entries. Resolve identities, historical namespace non-use/recovery certification, genuine history, Preview isolation and human/platform acceptance. CI is not production authorization. |
+| Deployment readiness | NO-GO | Five shared entries now target Production only. Existing Preview snapshots remain a containment gate. Resolve actual roles, fresh target verification, hosted isolation, recoverable production backup and business certifications. CI is not production authorization. |
 
 ## FK assessment
 
@@ -386,5 +396,5 @@ bootstrap DDL or an original execution to it. See the
 [canonical workspace review](PRODUCTION_RESET_CANONICAL_WORKSPACE.md) for the exact
 six-file package, checksum validation, isolated real-CLI rehearsal and limits.
 No history repair or production access is needed to prepare this artifact.
-Production remains NO-GO pending fresh target verification, acceptance of the
-existing-database-only provenance boundary and the other release gates.
+Production remains NO-GO pending fresh target verification and the other safeguards.
+The owner has accepted the existing-database-only provenance boundary.

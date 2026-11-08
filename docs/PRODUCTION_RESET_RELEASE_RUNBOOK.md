@@ -1,9 +1,21 @@
 # PR90 — consolidated release preparation and runbook
 
+> Current operational evidence (2026-11-08): the owner has accepted the
+> existing-database-only provenance scope and supplied conditional migration
+> authority. Five shared Vercel variables now target Production only; old Preview
+> snapshots still require containment. Real local Supabase Auth/browser and scoped
+> backup recovery have passed. Production roles, recoverable platform backup,
+> hosted isolation and business certifications remain pending. See the
+> [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
+> the removed unintended diagnostic deployment and full-platform restore limit.
+> Earlier access/authorization statements below describe their historical stage.
+
 **NO-GO for production. Draft PR90 only.** This is a prepared procedure, not
-permission to perform it. No production SQL mutation, grant, environment change,
-reset, merge or deployment has been performed. All destructive tests use a fresh,
-runner-owned local database; auth rows in the rehearsal are synthetic stand-ins.
+evidence that release safeguards passed. Conditional migration authority is supplied.
+No IPSM production SQL mutation, grant, environment change, reset, merge or application
+deployment occurred. The separate diagnostic deployment incident is documented.
+Destructive tests use owned local data; the latest rehearsal also uses real local
+Supabase Auth with synthetic accounts.
 
 ## Current identifier delta and activation hold
 
@@ -48,7 +60,7 @@ Repository architecture: `lib/prisma.ts` instantiates the shared Prisma client;
 schema tooling. Supabase Auth uses the Supabase client configuration, not Prisma's
 SQL role. A Supabase service_role API key is not proof of the Prisma role.
 
-Current metadata-only Vercel CLI inspection (known IPSM project/team; no --json,
+Initial metadata-only Vercel CLI inspection (known IPSM project/team; no --json,
 pull, decrypt or environment values) confirms these five shared entries:
 DATABASE_URL, DIRECT_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
 SUPABASE_SERVICE_ROLE_KEY — each targets **Production and Preview**. The explicit
@@ -84,7 +96,7 @@ client/service_role access or weaken invoker guards. A synthetic non-superuser
 owner proves that superuser/BYPASSRLS is not inherently required, not that an
 unverified production role has the right entitlements.
 
-Required target architecture (configuration changes need separate authorization):
+Required target architecture (Preview-only configuration changes are authorized; Production changes remain conditional):
 
 | Environment | Database / Auth / allowed validation |
 | --- | --- |
@@ -95,9 +107,9 @@ Required target architecture (configuration changes need separate authorization)
 The existing reset gate stays fail closed for Preview/Development/local. Staging
 application flows can test normal operations after isolation; reset executor tests
 remain in the verified disposable factory, never by setting VERCEL_ENV=production
-on an ordinary local client. Shared Preview currently blocks mutation testing for
-**all** application features, not only Production Reset. No environment changes
-are made in this work. [Vercel environment scopes](https://vercel.com/docs/environment-variables).
+on an ordinary local client. Old Preview snapshots still block safe hosted mutation testing for
+**all** application features. Preview targeting has now been removed; Production
+values remain unchanged. [Vercel environment scopes](https://vercel.com/docs/environment-variables).
 
 ## Provenance and package outcome
 
@@ -110,7 +122,7 @@ IPSM archive found holds the already-reviewed schema reports, not original histo
 The targeted Supabase read-only history query was denied; no other project was used.
 
 Query16 administrator evidence (2026-11-08T15:44:55.544114+00:00) maps counts to actual versions: 20260731171613=0 (MD5 d41d8cd98f00b204e9800998ecf8427e), 20260801163840=1 (MD5 d34257683e5172ad7b1ede576a4b2591; availability/schedule mentions), 20260801165129=1 (MD5 6c4135265819300dd72a0fbc476f80c2; enrollment mention). The administrator later supplied both nonempty stored SQL bodies. Each recorded MD5 is reproduced from the repository teacher-consistency/enrollment SQL after removing only the documented explanatory comment blocks and terminal LF (teacher), or terminal LF only (enrollment). This proves source-text fingerprint compatibility, **not** the original bootstrap or full DDL history. The
-worksheet leaves each count/hash/attributable object **unknown**. No Prisma ledger
+worksheet records known counts/hashes without attributing unproven bootstrap execution. No Prisma ledger
 is invented. Supabase is the single future migration mechanism; Prisma is limited
 to schema/client generation and byte-identical mirror checks.
 
@@ -143,9 +155,9 @@ node --import tsx tools/production-reset/canonical-workspace.ts /tmp/ipsm-pr90-c
 
 Never use the repository's complete Supabase migration tree as the release directory.
 An existing-database incremental release can preserve the empty record without
-replaying history. Release owners must accept the explicit incomplete-bootstrap
-boundary or obtain original artifacts if policy requires full provenance. Before
-any separately authorized production application, verify the fresh target history,
+replaying history. The owner has accepted the explicit incomplete-bootstrap boundary for this existing
+database. No invented bootstrap or history repair is needed. Before
+any conditionally authorized production migration, verify the fresh target history,
 file checksums and exact three-version CLI pending list with the reviewed tool.
 Do not repair, relabel or replay historical entries. Current production pending
 state has not been queried by this work; all CLI application tests are disposable.
@@ -207,11 +219,11 @@ regression workload, **not** production capacity/SLA certification. See recorded
 [rehearsal metrics](evidence/production-reset-release-rehearsal.json) for local timings; rehearse realistic approved volume and writer load
 before selecting a production maintenance window.
 
-## Future production procedure — separate approval required
+## Conditional production procedure — safeguards must pass
 
 | Stage | Operator requirement / stop condition |
 | --- | --- |
-| Admission | Close runtime identities, historical namespace non-use/recovery certification, authentic history/pending list, Preview/Auth isolation and financial sign-off. Obtain explicit migration and application deployment authorization. CI alone cannot admit release. |
+| Admission | Close runtime identities, historical namespace non-use/recovery certification, authentic history/pending list, Preview/Auth isolation and financial sign-off. Conditional migration authority is supplied. Application deployment remains separately controlled. CI alone cannot admit release. |
 | Freeze | Stop relevant application writes, registration/payment/payroll jobs and cron activity; account for shared previews and external imports. Do not modify user accounts as a maintenance mechanism. Prohibit concurrent schema/function DDL. |
 | Backup | Record recovery point, verified DB/platform/role/storage coverage and checksums. Restore to an authorized isolated target and verify integrity/ACLs before proceeding. Keep an independent issuance record after the backup point; retain it through recovery. |
 | Recheck | Compare only changed evidence since the approved snapshot; verify current schema, roles/memberships, blockers and approved identifiers. Confirm exactly reviewed pending files/hashes. Unknown drift or timeouts stop the release. |
@@ -225,17 +237,17 @@ before selecting a production maintenance window.
 
 1. **DBA/deployment owner:** actual runtime and chosen migration connection role
    names/context and relevant membership/ownership confirmation. Refresh actual target
-   history/pending state before release. Accept the tested existing-database-only
-   workspace boundary, or obtain original bootstrap provenance if policy requires it.
+   history/pending state before release. The owner has accepted the tested existing-database-only
+   workspace boundary; no repeat scope approval is needed.
    The recorded SQL and empty-array serialization no longer require investigation.
 2. **Business/financial owner:** the `IPSM` display format is selected; certify
    historical non-use or complete reservations, approve operational delivery/recovery
    constraints, and review the full implementation/test contract in
    [identifier decision](PRODUCTION_RESET_IDENTIFIER_DECISION.md); acknowledge the
    three preserved payroll audit events using the form below. Identifier engineering is implemented; no production activation is implied.
-3. **Deployment/release owner:** authorize and establish separate Preview database/
-   Auth, attest actual identities without secrets, perform representative staging
-   and platform backup/restore, then explicitly authorize any production release.
+3. **Deployment/release owner:** contain old Preview snapshots and establish hosted isolated database/
+   Auth, attest actual identities without secrets and demonstrate platform recovery.
+   Conditional migration authority is supplied; application deployment is separate.
 
 No further broad schema report or Query18/19 rerun is requested. If these inputs
 are deferred, keep draft/NO-GO; independently executable repository preparation is

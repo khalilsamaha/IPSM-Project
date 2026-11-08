@@ -1,5 +1,15 @@
 # PR90 — canonical Supabase workspace for the existing database
 
+> Current operational evidence (2026-11-08): the owner has accepted the
+> existing-database-only provenance scope and supplied conditional migration
+> authority. Five shared Vercel variables now target Production only; old Preview
+> snapshots still require containment. Real local Supabase Auth/browser and scoped
+> backup recovery have passed. Production roles, recoverable platform backup,
+> hosted isolation and business certifications remain pending. See the
+> [operational rehearsal](PRODUCTION_RESET_OPERATIONAL_REHEARSAL.md), including
+> the removed unintended diagnostic deployment and full-platform restore limit.
+> Earlier access/authorization statements below describe their historical stage.
+
 **Production NO-GO; draft PR90.** The recorded-history packaging problem can be
 resolved without inventing bootstrap SQL or altering the production ledger. This
 workspace is an incremental release against the independently reviewed existing
@@ -104,7 +114,7 @@ The local workspace may be certified for the tested **existing-database** mechan
 It cannot certify current production connection identity, current ledger state,
 complete bootstrap lineage or authorization to release. Release owners must:
 
-1. Accept this explicit scope: preserve the recorded empty transcript, leave its
+1. Preserve the scope already accepted by the owner: preserve the recorded empty transcript, leave its
    original purpose unknown, and release only against the independently verified
    existing schema. If policy instead requires complete original bootstrap
    provenance, obtain the original deployment artifacts/operator attestation; the
@@ -116,8 +126,9 @@ complete bootstrap lineage or authorization to release. Release owners must:
    future versions in order. Do not accept suggested `repair`/`include-all` remedies.
    CLI2.78.1 dry-run only reads the pending list: [tagged implementation](https://github.com/supabase/cli/blob/v2.78.1/internal/db/push/push.go).
 3. Close the independent role, Preview/Auth isolation, identifier non-use/recovery,
-   financial acknowledgement and platform backup/restore gates. Separately authorize
-   any production application. No production command was executed in this work.
+   financial acknowledgement and platform backup/restore gates. Conditional authority
+   covers the three reviewed deltas only after safeguards pass. Application deployment
+   remains separately controlled. No production migration was executed.
 
 Use an existing secure direct connection mechanism; do not use a linked CLI login
 flow that creates temporary database roles. The isolated fixture alone sets

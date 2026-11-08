@@ -10,7 +10,7 @@
       "trusted_original_sql": null,
       "attributable_objects": [],
       "evidence_quality": "Administrator supplied actual SQL Editor history with zero stored statements; does not establish past schema creation",
-      "unresolved": "Original recording/bootstrap purpose remains unknown. Exact empty transcript can be preserved for an existing-database delta without asserting historical execution; release owner must accept that scope or provide original provenance.",
+      "unresolved": "Original recording/bootstrap purpose remains unknown. The owner has accepted preserving the exact empty transcript for an existing-database-only delta, without asserting historical bootstrap execution. Fresh target verification remains required.",
       "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
       "mentions_availability_guard": false,
       "mentions_schedule_guard": false,
@@ -160,5 +160,17 @@
     "production_verified": false,
     "isolated_verification": "Passed: real CLI2.78.1 on PostgreSQL17.6; exact fetch, pending order, three-delta application, repeat no-op and missing-ledger rejection",
     "evidence": "docs/evidence/production-reset-canonical-workspace.json"
+  },
+  "release_scope_acceptance": {
+    "date": "2026-11-08",
+    "source": "Project owner expanded operational authorization in this task",
+    "accepted_scope": "Existing IPSM database only; preserve actual three history records and apply only three reviewed future deltas after all mandatory safeguards pass.",
+    "does_not_certify": [
+      "unknown original bootstrap purpose",
+      "current production identity/history",
+      "backup recovery",
+      "identifier non-use"
+    ],
+    "production_migration_performed": false
   }
 }

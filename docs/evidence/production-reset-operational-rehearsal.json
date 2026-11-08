@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-08",
+  "baseline": "ae1e204854fc2d0b029327eb7b7ec20585972d4d",
+  "project_ref": "rakzehtbpzseetldbohm",
+  "production_decision": "NO_GO",
+  "production_mutations": false,
+  "production_runtime_role": null,
+  "production_migration_role": null,
+  "existing_database_provenance_scope_accepted": true,
+  "production_backup_metadata": {
+    "source": "Supabase CLI 2.78.1 exact-project read-only request",
+    "listed_backups": 0,
+    "physical_backup_metadata_empty": true,
+    "pitr_enabled": false,
+    "walg_enabled": true,
+    "recoverable_backup_verified": false
+  },
+  "preview": {
+    "project_id": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+    "removed_preview_targets": [
+      "DATABASE_URL",
+      "DIRECT_URL",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY"
+    ],
+    "production_targets_preserved": true,
+    "old_snapshots": 28,
+    "old_snapshot_retirement": "pending",
+    "hosted_isolated_database_auth_verified": false
+  },
+  "local_staging": {
+    "project_id": "ipsm-pr90-synthetic",
+    "postgresql": "17.6",
+    "cli": "2.78.1",
+    "chromium": "150",
+    "runtime_role": "postgres",
+    "migration_role": "postgres",
+    "superuser": false,
+    "bypassrls": true,
+    "host_bindings": "127.0.0.1 only; Auth no host port",
+    "synthetic_only": true,
+    "real_auth": true,
+    "browser_workflows": [
+      "login",
+      "cashier shift",
+      "full registration",
+      "recurring scheduling",
+      "cash payment",
+      "Whish allocation",
+      "receipt PDF",
+      "attendance",
+      "payroll draft/approval/payment",
+      "reset access denials"
+    ],
+    "effective_privilege_checks": 192,
+    "unexpected_client_grants": 0,
+    "historical_rows_preserved": true,
+    "repeat_push_applied_nothing": true,
+    "stopped_after_rehearsal": true,
+    "private_synthetic_volumes_retained": true
+  },
+  "recovery": {
+    "synthetic_only": true,
+    "postgresql": "17.6",
+    "backup_sha256": "49620a2bf2d3888cc3c141d2b46330e8d8e6e6c0c1a144c2ba6f82d520ced488",
+    "backup_scope": [
+      "public",
+      "auth",
+      "supabase_migrations",
+      "ipsm_rehearsal"
+    ],
+    "full_platform_logical_restore_verified": false,
+    "restore_transaction": true,
+    "restore_role": "supabase_admin",
+    "ordinary_postgres_restore_denied_owner_transfer": true,
+    "table_fingerprints_matched": 17,
+    "auth_users": 4,
+    "auth_sessions": 5,
+    "restored_old_activation_blocked": true,
+    "post_backup_issuance_recovered": true,
+    "reuse_prevented": true
+  },
+  "production_identifier_activation": false,
+  "historical_non_use_certified": false,
+  "historical_payroll_audits_preserved": true,
+  "financial_owner_acknowledgement": "pending",
+  "incident": {
+    "unintended_separate_diagnostic_deployment": true,
+    "project": "ipsm-runtime-role",
+    "deployment": "dpl_BRAPymgCF5BtFKopKWBvjc5MQQjt",
+    "removed": true,
+    "ipsm_production_deployments_unchanged": true
+  },
+  "migration_sha256": {
+    "20261107000000_teacher_guard_parity": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6",
+    "20261107010000_reset_integrity": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2",
+    "20261108000000_ipsm_identifiers": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+  },
+  "validation": {
+    "unit_tests": 436,
+    "disposable_pg17_tests": 207,
+    "dashboard_cases_executed_twice": 40,
+    "real_cli_tests_included": 7,
+    "prisma_generate": "passed",
+    "build": "passed",
+    "typecheck": "passed",
+    "hosted_ci": "Verify the exact published commit in PR90; hosted result recorded there after publication, not inferred from local tests.",
+    "canonical_workspace_tests_after_evidence_update": 11,
+    "log_sha256": {
+      "generate": "30a762b37ab3495ca0adc3bb5d053c49150e14f67c2aefe5435639a9c7c27222",
+      "unit": "9955b695b6005beee2742960e471dfa963e13a05d5def900e33e3dcbf5ef3572",
+      "migration": "5ebe64b47ccaed6833d72f22db7a0f2513dd3dbe7c530416f4451f96e72d2799",
+      "build": "e1d6077d02f1ecfec947ac27424996fe547bac2568eff3ef90b5a726706cbfc0",
+      "typecheck": "deaf364843166054098babdec791230b0b2900708615f211b174032e5c8a34e0",
+      "workspace": "c073005d69866303c11a5ed44471ffd9173c788919497cd9e4b83f1d9bb36baf"
+    }
+  }
+}
