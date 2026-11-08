@@ -31,7 +31,7 @@ only if relevant schema/permissions change before a separately authorized releas
 | --- | --- | --- |
 | Connection evidence — DBA/deployment owner | Verify current_user/session_user in the actual Vercel Prisma and intended migration connection contexts; confirm owner/membership compatibility. Names/context only. | Owner-only protections remain; do not assume SQL Editor postgres or service_role is the app identity. |
 | Historical non-use / recovery certification — business owner + DBA | Certify the approved IPSM grammar was never previously issued across manual/external/import channels. Review private reservation/recovery manifests and sign their coverage. | Implementation is complete, but no activation exists by default. Do not enable issuance without proof or repeat the completed format decision. |
-| Authentic migration history — DBA/release owner | Query16 and the two nonempty stored SQL texts are supplied. Their MD5s reproduce from historical repository SQL using only comment/final-LF differences. Reconcile the zero-statement July 31 record, original deployment provenance and actual canonical CLI history/pending list in isolated staging. | Matching recorded statements does not reconstruct the database bootstrap or certify a deployable history. No history repair, fictitious no-op or tree replay. Future-delta package remains rehearsal-only. |
+| Existing-database history — DBA/release owner | Recorded arrays and isolated canonical CLI mechanics are reconciled. Accept the documented existing-database-only scope, then verify fresh target history/checksums and exactly three pending deltas. | Original July31 recording/bootstrap purpose remains unknown. If full original lineage is mandatory, supply trusted original artifacts; never repair or invent history. |
 | Environment access/authorization — deployment owner | Provide/approve independently isolated Preview PostgreSQL17 and Supabase Auth; perform scoped configuration changes and verify deployed identities. | Shared Production/Preview entries remain confirmed. No mutation testing on the shared Preview. No resources purchased or credentials retrieved. |
 | Financial acknowledgement — financial owner | Acknowledge three retained historical payroll audit orphans and the inability to reconstruct their context from available evidence. | Preserve all three; no invented postings, links or deletion. |
 | Release authorization — release/security/DBA owners | Review the final three-delta package, actual role model, representative staging and platform recovery, including restart-triggered issuance holds. Separately authorize any production migration/configuration/deployment. | Local PG17 mechanics do not prove platform recovery, unknown history or production capacity. Keep draft and production NO-GO. |
@@ -49,7 +49,8 @@ The administrator subsequently supplied the stored SQL text for both nonempty
 versions. Their history hashes are reproducible from repository migrations with
 comment removal and a terminal-LF difference only; see the provenance worksheet.
 The first recorded version has an empty statement array. Complete deployment
-history, bootstrap DDL and CLI pending-list behavior remain unverified. Do not replay historical
+history and bootstrap DDL remain unknown. Canonical existing-database CLI behavior
+is independently tested in isolation; current production pending state is not. Do not replay historical
 migrations, fabricate applied ledgers or run history repair.
 
 ## Completed identifier engineering
@@ -70,7 +71,7 @@ fresh recovery review. No generic local bypass or permissive RLS policy exists.
 
 IPSM-only connector calls for targeted history, migration listing and branch
 discovery were denied. Administrator supplied original Query16 metadata on 2026-11-08T15:44:55.544114+00:00: mapped
-counts 0/1/1, MD5s and stored SQL for the two nonempty records. Their source-text fingerprints match reviewed repository migrations; July 31 bootstrap/deployment history and safe CLI release packaging remain unresolved. Metadata-only Vercel inspection
+counts 0/1/1, MD5s and stored SQL for the two nonempty records. Their source-text fingerprints match reviewed repository migrations; July31 bootstrap/deployment purpose remains unknown; canonical workspace mechanics are now tested in isolation. Metadata-only Vercel inspection
 still shows all five DB/Auth entries shared across Production/Preview. No existing
 authorized runtime SQL session or isolated Auth resource was exposed to this work.
 These are access/evidence limits, not negative assertions about all resources owned
@@ -84,9 +85,20 @@ The offline bundle now contains three genuine ordered future deltas and no fake 
 
 ## Three coordinated remaining workstreams
 
-1. DBA/deployment: actual connection identities, zero-statement July 31/deployment provenance and a truthful Supabase CLI pending-list rehearsal (two nonempty SQL statements now mapped), and role ownership.
+1. DBA/deployment: actual connection identities, fresh target ledger/pending-list verification and acceptance of the documented existing-database-only provenance boundary, and role ownership.
 2. Business/financial: historical non-use/recovery certification and payroll acknowledgement.
 3. Deployment/release: isolated Preview database/Auth, real platform rehearsal and explicit release authorization.
 
 No further broad schema report or Query18/19 repetition is requested. No production
 migration, reset, credential/environment change, merge, deployment or PR2 work occurred.
+
+## Canonical workspace follow-up
+
+The actual empty history entry now has a supported export representation, tested
+with Supabase CLI2.78.1. It is not a fabricated bootstrap migration. The
+[canonical workspace](PRODUCTION_RESET_CANONICAL_WORKSPACE.md) contains exactly
+three recorded transcripts and three future deltas, with independent SQL checksum
+checks. This closes isolated packaging mechanics only. Original bootstrap purpose
+remains unknown;
+release-owner acceptance of this explicit existing-database scope and fresh target
+verification are still required. Do not request the two nonempty SQL bodies again.

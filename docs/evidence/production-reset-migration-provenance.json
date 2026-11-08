@@ -10,7 +10,7 @@
       "trusted_original_sql": null,
       "attributable_objects": [],
       "evidence_quality": "Administrator supplied actual SQL Editor history with zero stored statements; does not establish past schema creation",
-      "unresolved": "Original creation/recording provenance, separate manual/bootstrap DDL and truthful CLI history strategy",
+      "unresolved": "Original recording/bootstrap purpose remains unknown. Exact empty transcript can be preserved for an existing-database delta without asserting historical execution; release owner must accept that scope or provide original provenance.",
       "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
       "mentions_availability_guard": false,
       "mentions_schedule_guard": false,
@@ -26,7 +26,7 @@
       "trusted_original_sql": null,
       "attributable_objects": [],
       "evidence_quality": "Administrator supplied stored SQL + MD5; repo SQL transforms (comments and trailing LF only) reproduce the stored fingerprint",
-      "unresolved": "Confirm deployment provenance and supported Supabase CLI release history/pending list in isolated workspace; no production history alteration",
+      "unresolved": "Original deployment mechanism is not inferred. Stored SQL packaging is supported by reviewed fingerprint reconstruction; fresh target history and release approval remain required.",
       "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
       "mentions_availability_guard": true,
       "mentions_schedule_guard": true,
@@ -54,7 +54,7 @@
       "trusted_original_sql": null,
       "attributable_objects": [],
       "evidence_quality": "Administrator supplied stored SQL + MD5; repo SQL transforms (comments and trailing LF only) reproduce the stored fingerprint",
-      "unresolved": "Confirm deployment provenance and supported Supabase CLI release history/pending list in isolated workspace; no production history alteration",
+      "unresolved": "Original deployment mechanism is not inferred. Stored SQL packaging is supported by reviewed fingerprint reconstruction; fresh target history and release approval remain required.",
       "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
       "mentions_availability_guard": false,
       "mentions_schedule_guard": false,
@@ -98,7 +98,7 @@
   "supabase_read_only_history_probe": "denied by connector; no substitute project accessed",
   "canonical_future_mechanism": "Supabase",
   "prisma_use": "schema/client generation and reviewed mirror verification",
-  "package_status": "future-delta rehearsal bundle only; authentic history packaging blocked",
+  "package_status": "Canonical existing-database workspace prepared; production release blocked pending fresh target verification and explicit acceptance of incomplete bootstrap provenance",
   "identifier_followup": {
     "checked_at": "2026-11-08T11:55:26.324462+00:00",
     "baseline": "40f11670ea5b40d9fcafc3e01fefbbacbd613809",
@@ -145,5 +145,20 @@
     ],
     "reconstruction_note": "ASCII SQL, canonical repository body transformed only by documented non-executable comments and final LF. MD5 reproduction is a strong fingerprint match, not an attestation of full original deployment history.",
     "requires_final_release_review": true
+  },
+  "canonical_workspace": {
+    "cli_version": "2.78.1",
+    "builder": "tools/production-reset/canonical-workspace.ts",
+    "documentation": "docs/PRODUCTION_RESET_CANONICAL_WORKSPACE.md",
+    "empty_export_hex": "3b0a",
+    "empty_export_source": "https://github.com/supabase/cli/blob/v2.78.1/internal/migration/fetch/fetch.go",
+    "original_empty_entry_purpose": "unknown; not inferred from an empty array",
+    "bootstrap_complete": false,
+    "historical_names": "not supplied; descriptive local suffixes do not assert original names",
+    "historical_execution_claimed": false,
+    "history_repair_performed": false,
+    "production_verified": false,
+    "isolated_verification": "Passed: real CLI2.78.1 on PostgreSQL17.6; exact fetch, pending order, three-delta application, repeat no-op and missing-ledger rejection",
+    "evidence": "docs/evidence/production-reset-canonical-workspace.json"
   }
 }

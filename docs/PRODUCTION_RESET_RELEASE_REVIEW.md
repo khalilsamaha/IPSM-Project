@@ -210,19 +210,20 @@ reserved or renumbered in production.
 Use **Supabase as the sole canonical history/deployment mechanism** for this database.
 Keep Prisma for client/schema generation and reviewed mirror checks, not independent
 production migration replay. Preserve the actual three versions and their original
-contents unchanged. A 0-statement record may have unavailable SQL, manual DDL may be
-unrecorded, and two stored statements may contain compound SQL: counts alone cannot
-attribute objects. Do not reconstruct or label fictitious historical executions.
+contents unchanged. The confirmed empty array does not explain bootstrap DDL.
+Both nonempty statement bodies are now supplied and fingerprint-mapped. The
+canonical workspace preserves the exact recorded arrays without claiming complete
+original deployment provenance. Do not reconstruct or label fictitious historical executions.
 
 | Gate / owner | Required artifact before advancing |
 | --- | --- |
-| Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; retain mapped Query16 metadata and recovered two SQL statements; reconcile original deployment/bootstrap and CLI pending list. |
+| Evidence / administrator | Queries02/18/19 are reconciled; no repeat requested. Confirm actual runtime/migration roles and memberships. Refresh target history/checksums immediately before an authorized release; known SQL bodies need not be supplied again. |
 | Guards / application owner + DBA | Body, schema and metadata preservation checks are closed for the reported snapshot; no repeat needed. Keep strict assertions. Synthetic delta rehearsal preserves guard catalog entries. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Approved IPSM implementation/tests are prepared; certify historical non-use and complete recovery before activation. No repeated format decision is needed. |
 | ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
-| Provenance / release owner | The administrator supplied both nonempty stored SQL statements; their MD5 fingerprints match repository historical SQL after only comment/trailing-LF differences. Investigate the empty July 31 record and trusted bootstrap/deployment artifacts; inventory current objects and document unrecoverable history. Produce a sanitized current-schema snapshot as a reconstruction baseline, **not a migration claimed to have run**. |
-| Release packaging / DBA | Isolated release workspace containing only truthful canonical history and the approved future delta. Where old SQL cannot be recovered, resolve the tool's history-matching strategy explicitly before deployment; do not synthesize statements/repair applied rows to make tooling happy. Review the pending list/dry-run and prove it contains only approved new changes. |
+| Provenance / release owner | Accept the documented existing-database-only release boundary: preserve the empty transcript without claiming bootstrap execution. If complete original lineage is mandatory, recover original artifacts/operator evidence; no history repair or synthetic application claims. |
+| Release packaging / DBA | Canonical six-file workspace and real CLI2.78.1 isolated rehearsal are prepared. Verify fresh target version/content equality and exactly three pending future deltas; local tests are not current production certification. |
 | Staging / QA | Synthetic PG17 delta/role/load/restore rehearsal implemented. Remaining acceptance is actual intended role/membership and representative workload/platform recovery, plus separately isolated Preview/Auth. No production data/credentials in CI. |
 | Approval / owner | Full CI on the final commit, human review, Preview database isolation, maintenance/backup plan and explicit separate migration/deployment authorization. Keep draft until these are satisfied. |
 | Future release / authorized operator | Only after separate approval: pause relevant writers, take/verify backup, apply canonical reviewed delta once, run read-only postchecks, then release compatible application version. Treat partial/failed verification as stop; recover using tested procedure, not ad hoc down SQL. Never include a Production Reset execution in deployment validation. |
@@ -270,3 +271,15 @@ records 425 unit tests and 200 disposable PostgreSQL tests (including 31 identif
 tests), Prisma generation, TypeScript and production build. Hosted CI is recorded
 on the draft PR for the published commit. Local PostgreSQL is 17.6; synthetic
 certificates and roles do not close the production evidence gates.
+
+## Canonical recorded-history release workspace
+
+The administrator-supplied three history records are now package inputs; the two
+completed SQL fingerprint comparisons were not reopened. CLI2.78.1's native fetch
+serialization represents the zero-statement entry as `;\n`, without attributing
+bootstrap DDL or an original execution to it. See the
+[canonical workspace review](PRODUCTION_RESET_CANONICAL_WORKSPACE.md) for the exact
+six-file package, checksum validation, isolated real-CLI rehearsal and limits.
+No history repair or production access is needed to prepare this artifact.
+Production remains NO-GO pending fresh target verification, acceptance of the
+existing-database-only provenance boundary and the other release gates.

@@ -128,39 +128,39 @@ a `supabase/migrations` deployment workspace and contains no fabricated old SQL.
 The two foundation migration pairs remain unchanged; the third pair is additive. The rehearsal applies this
 exact checked bundle and rejects reapplication of the integrity migration.
 
-Supported next provenance step for an authorized administrator: retain the
-mapped Query16 and two recovered SQL statements privately; investigate the empty
-July 31 history record and original deployment/bootstrap provenance, then
-validate an authentic-history pending-list strategy offline. Do not fabricate an
-empty-file historical migration to satisfy the tool.
-Supabase's documented `migration fetch` retrieves history files; `migration list`
-compares version timestamps. Use fetch only in an isolated release workspace with
-an existing authorized connection, review its SQL privately for sensitive literals,
-and preserve exact source bytes/hash. A genuine empty statement array is an
-**incomplete recorded transcript**, not a recovered original migration; never
-handwrite a fictitious no-op or claim it explains the schema. If an authentic
-transcript cannot yield a truthful, reviewed pending list, packaging remains blocked
-until the DBA/vendor approves an explicit existing-database history reconciliation.
-Do not run `migration repair` or accept a `db pull` prompt to modify production
-history under this task. [Supabase history commands](https://supabase.com/docs/reference/cli/supabase-migration-list).
+The [canonical workspace procedure](PRODUCTION_RESET_CANONICAL_WORKSPACE.md) now
+packages the actual recorded arrays plus the three future deltas. CLI2.78.1 exports
+the empty array as `;\n`; this is an authentic transcript representation, not a
+substitute bootstrap or claim that empty SQL was historically executed. Original
+history names and the empty entry's purpose remain unknown. Descriptive local
+filenames do not change or invent ledger metadata.
 
-After authentic history is reconciled, the release workspace must show exactly
-the three reviewed future versions pending, and none of the historical repository tree. Review hashes and tool
-version; apply only once through the canonical mechanism. Do not replay both mirrors.
-No CLI production pending-list certification is claimed in the absence of authentic
-history/connection access. Package order/checksums and repeat rejection are proved
-in the isolated rehearsal; production CLI packaging remains pending.
+Build a separate workspace with:
+
+```bash
+node --import tsx tools/production-reset/canonical-workspace.ts /tmp/ipsm-pr90-canonical-review
+```
+
+Never use the repository's complete Supabase migration tree as the release directory.
+An existing-database incremental release can preserve the empty record without
+replaying history. Release owners must accept the explicit incomplete-bootstrap
+boundary or obtain original artifacts if policy requires full provenance. Before
+any separately authorized production application, verify the fresh target history,
+file checksums and exact three-version CLI pending list with the reviewed tool.
+Do not repair, relabel or replay historical entries. Current production pending
+state has not been queried by this work; all CLI application tests are disposable.
 
 ## Reproducible isolated rehearsal
 
 Prerequisites: existing installed dependencies; matching PG17 initdb/pg_ctl/psql/
-createdb/pg_dump/pg_restore. No dependency upgrade or production connection needed.
+createdb/pg_dump/pg_restore; Supabase CLI2.78.1 for the explicit canonical-workspace
+rehearsal. No dependency upgrade or production connection needed.
 
 ```bash
 npm run prisma:generate
 npm run typecheck
 npm test
-PG_BIN=/usr/lib/postgresql/17/bin npm run test:migration
+PG_BIN=/usr/lib/postgresql/17/bin IPSM_TEST_SUPABASE_CLI=1 npm run test:migration
 DATABASE_URL=postgresql://fixture:fixture@127.0.0.1:1/ipsm_unavailable \
 DIRECT_URL=postgresql://fixture:fixture@127.0.0.1:1/ipsm_unavailable \
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:1 \
@@ -224,9 +224,10 @@ before selecting a production maintenance window.
 ## Smallest outstanding decision/evidence set
 
 1. **DBA/deployment owner:** actual runtime and chosen migration connection role
-   names/context, relevant membership/ownership confirmation; mapped Query16 evidence
-   and nonempty stored SQL (already supplied), plus missing bootstrap/deployment evidence and a truthful CLI release plan. Resolve truthful canonical
-   packaging, not historic-schema attribution by guesswork.
+   names/context and relevant membership/ownership confirmation. Refresh actual target
+   history/pending state before release. Accept the tested existing-database-only
+   workspace boundary, or obtain original bootstrap provenance if policy requires it.
+   The recorded SQL and empty-array serialization no longer require investigation.
 2. **Business/financial owner:** the `IPSM` display format is selected; certify
    historical non-use or complete reservations, approve operational delivery/recovery
    constraints, and review the full implementation/test contract in

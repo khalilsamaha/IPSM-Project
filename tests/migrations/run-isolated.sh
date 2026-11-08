@@ -115,3 +115,10 @@ echo "Read-only administrator preflight passed before and after the proposed mig
 # Final approved namespace, still inactive by default. Tests certify synthetic
 # evidence only and verify restore/restart bindings on the owned cluster.
 ./node_modules/.bin/vitest run tests/ipsm-identifiers.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+
+# Optional real-CLI release certification. No mock or download fallback: the
+# explicit run fails unless the reviewed CLI 2.78.1 is installed. Ordinary CI
+# always tests offline workspace/version/checksum guards in the unit suite.
+if [[ "${IPSM_TEST_SUPABASE_CLI:-0}" == "1" ]]; then
+  ./node_modules/.bin/vitest run tests/canonical-release.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+fi

@@ -19,12 +19,12 @@ export function buildReleasePackage(directory: string, repository = process.cwd(
   const manifest = {
     format: 1, status: "REHEARSAL_ONLY_PRODUCTION_BLOCKED", canonicalMechanism: "Supabase",
     historicalSqlIncluded: false, historicalVersions: ["20260731171613", "20260801163840", "20260801165129"],
-    historyNote: "Authentic SQL and per-version statement counts unavailable; no substitute history files created.",
+    historyNote: "Recorded statements are now available; this future-delta-only artifact deliberately omits history. Use canonical-workspace.ts for the reviewed existing-database workspace.",
     migrations: migrations.map(({ source: _source, ...m }) => m),
     gates: ["runtime and migration connection identity", "historical namespace non-use and recovery certification", "authentic history packaging", "Preview/Auth isolation", "financial acknowledgement", "release approval"],
   };
   writeFileSync(join(directory, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
-  writeFileSync(join(directory, "README.txt"), "REVIEW / DISPOSABLE REHEARSAL ONLY. Not a Supabase CLI deployment workspace.\nNo original history was recovered. No production apply command is supplied.\nRead docs/PRODUCTION_RESET_RELEASE_RUNBOOK.md before considering a future release.\n");
+  writeFileSync(join(directory, "README.txt"), "REVIEW / DISPOSABLE REHEARSAL ONLY. Not a Supabase CLI deployment workspace.\nHistory exports are packaged separately by canonical-workspace.ts. No production apply command is supplied.\nRead docs/PRODUCTION_RESET_RELEASE_RUNBOOK.md before considering a future release.\n");
   return manifest;
 }
 export function verifyReleasePackage(directory: string, repository = process.cwd()) {

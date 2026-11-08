@@ -84,7 +84,7 @@ only synthetic data and a verified disposable cluster; no production mutation.
 | Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
 | Identifier history | NO-GO | Query 15: all four sources empty; RCPT/STU 14/5 remain lower bounds, FAM unknown. Approved IPSM namespace implemented; certify historical non-use and recovery before activating it. |
-| Migration provenance | NO-GO | Three Supabase versions, statement counts 0/1/1, no Prisma ledger. Counts do not establish object provenance; preserve truthful history and reconcile a future delta. |
+| Migration provenance / package | GO for isolated existing-database mechanics; production NO-GO | Actual 0/1/1 arrays and known fingerprints packaged; native empty export and three-delta order tested with CLI2.78.1. Unknown bootstrap purpose remains explicit; fresh target verification and release-owner scope acceptance required. |
 | Candidate database permissions | GO for supplied roles only | Query 10 completed 42/42: postgres/postgres schema access, 25-table DML, BYPASSRLS and teacher-function execution reported. Proposed objects absent. |
 | Actual Vercel runtime identity | NO-GO | Not independently verified; Query 10 cannot prove which role Prisma uses. |
 | New-table client protection | GO for isolated remediation; NO-GO for rollout | Exact broad TABLE defaults confirmed. New-object ACL cleanup and effective assertions deny all eight privileges and function execution to clients; strict invoker state guard closes NULL/RLS bypass. Actual creator/runtime memberships and live-compatible staging still require verification. |
@@ -376,3 +376,15 @@ All 22 update differences are **CASCADE (expected) → NO ACTION (live)**.
 | teacher_payrolls_teacher_id_fkey | public.teacher_payrolls.teacher_id->public.teachers.id:rc | Exact original match |
 
 </details>
+
+## Canonical recorded-history release workspace
+
+The administrator-supplied three history records are now package inputs; the two
+completed SQL fingerprint comparisons were not reopened. CLI2.78.1's native fetch
+serialization represents the zero-statement entry as `;\n`, without attributing
+bootstrap DDL or an original execution to it. See the
+[canonical workspace review](PRODUCTION_RESET_CANONICAL_WORKSPACE.md) for the exact
+six-file package, checksum validation, isolated real-CLI rehearsal and limits.
+No history repair or production access is needed to prepare this artifact.
+Production remains NO-GO pending fresh target verification, acceptance of the
+existing-database-only provenance boundary and the other release gates.
