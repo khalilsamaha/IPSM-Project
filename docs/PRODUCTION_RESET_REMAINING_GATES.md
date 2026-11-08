@@ -30,7 +30,7 @@ only if relevant schema/permissions change before a separately authorized releas
 | Type / owner | Exact outstanding action | Recommendation and consequence of deferral |
 | --- | --- | --- |
 | Evidence — DBA/deployment owner | Report current_user/session_user through the actual deployed Prisma connection context and intended migration connection; confirm relevant ownership/memberships. Names/context only, no secrets. | Use existing secure clients. SQL Editor postgres is not runtime proof. Keep owner-only protections; a different runtime role requires a separately reviewed entitlement model. No release until verified. |
-| Business decision + dependent engineering — business/financial owner | Choose complete historical reservations or approve the detailed IPSM2 namespace proposal, including non-use evidence across manual/import/external channels, after-commit delivery and post-backup recovery rules. | Favor a certified disjoint namespace if complete recovery cannot be proved. Do not implement the format before approval. Both strategies remain blocked if neither proof is available. The approved choice still requires focused implementation/tests before release. |
+| Business decision + dependent engineering — business/financial owner | The IPSM format is selected. Certify non-use across historical/manual/import/external channels or provide complete historical reservations; finalize post-commit delivery and post-backup recovery rules. Implement and validate the approved format before release. | Business-facing IPSM spelling is approved, not its historical non-use. Allow draft implementation and synthetic tests; keep production issuance disabled until disjointness, owner sign-off and recovery constraints are proven. |
 | Evidence / packaging — DBA/release owner | Supply retained original Query16 per-version rows and authentic recorded/deployment SQL; reconcile the three real versions without changing existing history. | Supabase is canonical. Only an offline future-delta rehearsal bundle is prepared; no fabricated history. Fetch authentic history privately with a supported tool if authorized. If accurate pending order cannot be established, no production migration. |
 | Environment authorization — deployment owner | Approve and establish separate Preview/staging PostgreSQL **and Auth**, keys and side-effect isolation; verify non-production identity before mutation testing. | Current metadata confirms all five database/Auth variables shared across Production/Preview, no PR-branch override. Do not mutation-test that Preview or change its variables without approval. |
 | Human acceptance — financial owner | Sign or decline the runbook acknowledgement of three preserved historical payroll audit orphans, zero current payroll/expense populations and unreconstructable historical context. | Preserve audits; do not invent financial postings. Acceptance cannot be inferred from green tests. |
@@ -45,9 +45,9 @@ new endpoint, production migration, history repair, reset or deployment is autho
 
 The [complete proposal](PRODUCTION_RESET_IDENTIFIER_DECISION.md) covers allocation,
 ledger immutability, legacy restore/import, receipts, parsing/export, concurrency,
-reset persistence, overflow, rollback, backup gaps and acceptance tests. Proposed
-new grammar is KIND-IPSM2-YYYY-number, subject to business approval **and proof of
-non-overlap**; it is not enabled. Current sources are empty, RCPT/STU 2026 minimums
+reset persistence, overflow, rollback, backup gaps and acceptance tests. Selected
+new grammar is KIND-IPSM-YYYY-number, subject to **proof of historical
+non-overlap** and full tested implementation; it is not enabled. Current sources are empty, RCPT/STU 2026 minimums
 14/5 do not establish completeness, and FAM history remains unknown. No private
 issuance backup/import manifest was found. Existing TEXT assignment means an
 arbitrary prefix cannot be certified just from repository generators.
@@ -67,6 +67,15 @@ SQL delta and mirror hashes in a fresh output directory. Its status is explicitl
 REHEARSAL_ONLY_PRODUCTION_BLOCKED; no history stub, production apply command or
 independent Prisma migration path exists. See the runbook for the supported private
 history-fetch/reconciliation route and staging validation; no repair was executed.
+
+## Approved decision — 2026-11-08
+
+The business owner selected `FAM-IPSM-YYYY-serial`, `STU-IPSM-YYYY-serial`
+and `RCPT-IPSM-YYYY-serial` with no numeric namespace-version suffix.
+This is format authorization only. Do not infer historical non-use from the
+old generator regex, current empty source tables or this decision; no
+deployment or production writes are authorized. Engineering in the draft PR
+may proceed behind a fail-closed release gate.
 
 ## What changed / stayed deferred
 
