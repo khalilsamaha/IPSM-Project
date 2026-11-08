@@ -1,10 +1,12 @@
-# Identifier decision for PR90 — approval required, no format implemented
+# Identifier decision for PR90 — IPSM namespace selected; activation blocked
 
-**Recommendation:** if complete historical issuance cannot be certified, use a
-new, enforced epoch namespace after the business owner approves its grammar and
-non-overlap evidence. Neither repository history nor the empty current tables
-proves that an arbitrary new prefix was never manually issued. Keep issuance and
-production rollout blocked until that evidence/decision exists.
+**Business-format decision (2026-11-08):** The owner selected the unversioned `IPSM`
+namespace for new FAM/STU/RCPT identifiers, rather than `IPSM1` or `IPSM`.
+This approves the display grammar and preparation of draft-PR implementation;
+it does **not** establish historical non-use or authorize production activation.
+Keep production NO-GO until historical non-overlap is certified (including manual
+and external issuance), the implementation and restoration policy pass review,
+and a separate migration/deployment approval is given.
 
 ## Research and limits
 
@@ -36,7 +38,7 @@ legacy-shaped codes. These are minimums, not complete issuance or safe restart f
 | Requirement | Historical reservations | Proposed epoch namespace |
 | --- | --- | --- |
 | Proof | Business/financial owner certifies complete issuer/import/year coverage and a private exact-value reservation manifest, including voids/deleted/nonstandard codes. | Owner certifies proposed grammar/epoch was never accepted or issued by any historical channel, including manual imports and external documents. Show old accepted language L and new N have empty intersection; resolve arbitrary-text exceptions privately. |
-| User-visible contract | Keep KIND-YYYY-number. | Proposed exact grammar: `^(FAM|STU|RCPT)-IPSM2-[0-9]{4}-[0-9]{6,19}$`, canonical positive decimal serial padded to at least six digits. `IPSM2` is a **proposal**, not a claimed-unused value. Year is UTC issuance year. |
+| User-visible contract | Keep KIND-YYYY-number. | Selected future grammar (not activated): `^(FAM|STU|RCPT)-IPSM-[0-9]{4}-[0-9]{6,19}$`, canonical positive decimal serial padded to at least six digits. The `IPSM` format is **approved for future use**, but is not claimed historically unused. Year is UTC issuance year. |
 | Recovery work | Reconcile exact codes and owners where proven; historical-only reservations otherwise. Reserve every issued value, advance counters, reject ambiguous ownership. | Retain all recoverable old reservations; never renumber old documents. Block ordinary new rows/imports in legacy grammar; allow restoration only via a separately reviewed procedure tied to evidence. |
 | Failure to prove | Do not allocate from guessed floors. | Do not substitute random prefix/high number/new year as proof. If proposed epoch cannot be certified, both paths remain NO-GO. |
 
@@ -124,7 +126,7 @@ known history, not this new format or unknown production history.
 ## Exact approval requested
 
 Business/financial owner: select complete reservations **or** approve the proposed
-IPSM2 grammar subject to a signed non-use assessment across all historical channels.
+IPSM grammar subject to a signed non-use assessment across all historical channels.
 Identify any imported/custom formats and choose the after-commit delivery/gap and
 post-backup recovery rules. Share only the decision, coverage and manifest checksum;
 keep individual codes/owners/documents private. Engineering then implements and
