@@ -109,7 +109,7 @@ by date or matching function text. The private SQL snippet is one byte; the only
 IPSM archive found holds the already-reviewed schema reports, not original history.
 The targeted Supabase read-only history query was denied; no other project was used.
 
-Query16 administrator evidence (2026-11-08T15:44:55.544114+00:00) now maps counts to actual versions: 20260731171613=0 (MD5 d41d8cd98f00b204e9800998ecf8427e), 20260801163840=1 (MD5 d34257683e5172ad7b1ede576a4b2591; availability/schedule mentions), 20260801165129=1 (MD5 6c4135265819300dd72a0fbc476f80c2; enrollment mention). This is statement metadata, not original SQL provenance. The
+Query16 administrator evidence (2026-11-08T15:44:55.544114+00:00) maps counts to actual versions: 20260731171613=0 (MD5 d41d8cd98f00b204e9800998ecf8427e), 20260801163840=1 (MD5 d34257683e5172ad7b1ede576a4b2591; availability/schedule mentions), 20260801165129=1 (MD5 6c4135265819300dd72a0fbc476f80c2; enrollment mention). The administrator later supplied both nonempty stored SQL bodies. Each recorded MD5 is reproduced from the repository teacher-consistency/enrollment SQL after removing only the documented explanatory comment blocks and terminal LF (teacher), or terminal LF only (enrollment). This proves source-text fingerprint compatibility, **not** the original bootstrap or full DDL history. The
 worksheet leaves each count/hash/attributable object **unknown**. No Prisma ledger
 is invented. Supabase is the single future migration mechanism; Prisma is limited
 to schema/client generation and byte-identical mirror checks.
@@ -129,7 +129,10 @@ The two foundation migration pairs remain unchanged; the third pair is additive.
 exact checked bundle and rejects reapplication of the integrity migration.
 
 Supported next provenance step for an authorized administrator: retain the
-mapped Query16 evidence and privately recover actual recorded SQL/deployment files.
+mapped Query16 and two recovered SQL statements privately; investigate the empty
+July 31 history record and original deployment/bootstrap provenance, then
+validate an authentic-history pending-list strategy offline. Do not fabricate an
+empty-file historical migration to satisfy the tool.
 Supabase's documented `migration fetch` retrieves history files; `migration list`
 compares version timestamps. Use fetch only in an isolated release workspace with
 an existing authorized connection, review its SQL privately for sensitive literals,
@@ -222,7 +225,7 @@ before selecting a production maintenance window.
 
 1. **DBA/deployment owner:** actual runtime and chosen migration connection role
    names/context, relevant membership/ownership confirmation; mapped Query16 evidence
-   (already supplied) and authentic recorded/deployment SQL. Resolve truthful canonical
+   and nonempty stored SQL (already supplied), plus missing bootstrap/deployment evidence and a truthful CLI release plan. Resolve truthful canonical
    packaging, not historic-schema attribution by guesswork.
 2. **Business/financial owner:** the `IPSM` display format is selected; certify
    historical non-use or complete reservations, approve operational delivery/recovery
