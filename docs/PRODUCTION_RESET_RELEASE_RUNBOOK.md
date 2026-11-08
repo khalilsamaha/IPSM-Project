@@ -214,8 +214,9 @@ before selecting a production maintenance window.
    names/context, relevant membership/ownership confirmation; original Query16
    per-version rows and authentic recorded/deployment SQL. Resolve truthful canonical
    packaging, not historic-schema attribution by guesswork.
-2. **Business/financial owner:** choose and approve the detailed identifier contract
-   and its non-overlap/completeness evidence in
+2. **Business/financial owner:** the `IPSM` display format is selected; certify
+   historical non-use or complete reservations, approve operational delivery/recovery
+   constraints, and review the full implementation/test contract in
    [identifier decision](PRODUCTION_RESET_IDENTIFIER_DECISION.md); acknowledge the
    three preserved payroll audit events using the form below. Identifier engineering
    follows approval and must pass before release; it is not already implemented.
