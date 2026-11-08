@@ -31,10 +31,24 @@ only if relevant schema/permissions change before a separately authorized releas
 | --- | --- | --- |
 | Connection evidence — DBA/deployment owner | Verify current_user/session_user in the actual Vercel Prisma and intended migration connection contexts; confirm owner/membership compatibility. Names/context only. | Owner-only protections remain; do not assume SQL Editor postgres or service_role is the app identity. |
 | Historical non-use / recovery certification — business owner + DBA | Certify the approved IPSM grammar was never previously issued across manual/external/import channels. Review private reservation/recovery manifests and sign their coverage. | Implementation is complete, but no activation exists by default. Do not enable issuance without proof or repeat the completed format decision. |
-| Authentic migration history — DBA/release owner | Supply original Query16 per-version rows and authentic stored/deployment SQL for the three recorded Supabase versions. | Counts 0/1/1 remain unmapped. No fabricated history, repair or historical-tree replay. Future-delta package is rehearsal-only until truthful pending order is verified. |
+| Authentic migration history — DBA/release owner | Original Query16 per-version counts and MD5 fingerprints are now supplied and mapped. Recover authentic stored/deployment SQL for the three recorded Supabase versions and reconcile byte-for-byte provenance. | Statement counts and function mentions do not prove original SQL or safe pending order; no fabricated history, repair or historical-tree replay. Future-delta package is rehearsal-only until truthful pending order is verified. |
 | Environment access/authorization — deployment owner | Provide/approve independently isolated Preview PostgreSQL17 and Supabase Auth; perform scoped configuration changes and verify deployed identities. | Shared Production/Preview entries remain confirmed. No mutation testing on the shared Preview. No resources purchased or credentials retrieved. |
 | Financial acknowledgement — financial owner | Acknowledge three retained historical payroll audit orphans and the inability to reconstruct their context from available evidence. | Preserve all three; no invented postings, links or deletion. |
 | Release authorization — release/security/DBA owners | Review the final three-delta package, actual role model, representative staging and platform recovery, including restart-triggered issuance holds. Separately authorize any production migration/configuration/deployment. | Local PG17 mechanics do not prove platform recovery, unknown history or production capacity. Keep draft and production NO-GO. |
+
+## Query16 evidence now reconciled (2026-11-08T15:44:55.544114+00:00)
+
+| Recorded version | Statements | Joined statements MD5 | Guard references |
+| --- | ---: | --- | --- |
+| 20260731171613 | 0 | `d41d8cd98f00b204e9800998ecf8427e` | none |
+| 20260801163840 | 1 | `d34257683e5172ad7b1ede576a4b2591` | schedule, availability |
+| 20260801165129 | 1 | `6c4135265819300dd72a0fbc476f80c2` | enrollment |
+
+The supplied read-only Query16 report has four REVIEW_REQUIRED items and no
+BLOCKER. It resolves mapping of counts/hashes to versions only. SQL bodies and
+trusted deployment sources were not provided, and code-name mentions are not
+proof of which repository migrations were executed. Do not replay historical
+migrations, fabricate applied ledgers or run history repair.
 
 ## Completed identifier engineering
 
@@ -53,8 +67,8 @@ fresh recovery review. No generic local bypass or permissive RLS policy exists.
 ## External access findings in this cycle
 
 IPSM-only connector calls for targeted history, migration listing and branch
-discovery were denied. Known local evidence still contains Query02/schema extracts,
-not original Query16 rows or authentic historical SQL. Metadata-only Vercel inspection
+discovery were denied. Administrator supplied original Query16 metadata on 2026-11-08T15:44:55.544114+00:00: mapped
+counts 0/1/1 and statement MD5s. Authentic historical SQL remains unavailable. Metadata-only Vercel inspection
 still shows all five DB/Auth entries shared across Production/Preview. No existing
 authorized runtime SQL session or isolated Auth resource was exposed to this work.
 These are access/evidence limits, not negative assertions about all resources owned
@@ -68,7 +82,7 @@ The offline bundle now contains three genuine ordered future deltas and no fake 
 
 ## Three coordinated remaining workstreams
 
-1. DBA/deployment: actual connection identities, authentic Query16/history and role ownership.
+1. DBA/deployment: actual connection identities, authentic stored SQL/deployment history (Query16 metadata received), and role ownership.
 2. Business/financial: historical non-use/recovery certification and payroll acknowledgement.
 3. Deployment/release: isolated Preview database/Auth, real platform rehearsal and explicit release authorization.
 
