@@ -22,7 +22,7 @@ Production/Preview DB/Auth configuration; repository migration-lineage research;
 complete proposed identifier contract; truthful future-delta package/verifier;
 synthetic release/load/backup/restore rehearsal; financial-owner acknowledgement
 and production runbook. Neither proposed migration pair nor application behavior
-changes. Business-facing identifier policy stays unimplemented pending approval.
+changes. The `IPSM` display grammar is selected; implementation and historical non-use proof are still pending.
 
 ## What the new evidence resolves
 
@@ -166,8 +166,8 @@ of legacy codes. A counter floor alone does not stop explicit imports below it.
 Do not include individual identifiers or owner data in the public review.
 
 No complete source was found in available evidence. Recommend the
-[proposed IPSM2 namespace contract](PRODUCTION_RESET_IDENTIFIER_DECISION.md), subject
-to business approval and non-use proof. If complete recovery is impossible, use a
+[selected IPSM namespace contract](PRODUCTION_RESET_IDENTIFIER_DECISION.md), subject
+to historical non-use proof and approved recovery semantics. If complete recovery is impossible, use a
 **new, approved issuance namespace**
 with a non-overlapping format (a dedicated epoch component, not just a larger number
 or new year). Establish that the new format was never historically accepted/issued;
