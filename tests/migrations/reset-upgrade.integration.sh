@@ -23,6 +23,18 @@ SQL
   rm -f "$log"
 }
 
+# Object revokes cannot undo ownership or predefined-role powers; fail closed.
+"${PSQL[@]}" <<'SQL'
+DO $$ BEGIN EXECUTE format('GRANT %I TO anon', current_user); END $$;
+SQL
+expect_rollback 'Client role can assume reset infrastructure owner'
+"${PSQL[@]}" <<'SQL'
+DO $$ BEGIN EXECUTE format('REVOKE %I FROM anon', current_user); END $$;
+GRANT pg_read_all_data TO ipsm_fixture_acl_parent;
+SQL
+expect_rollback 'Client retains effective reset table privilege'
+"${PSQL[@]}" -c 'REVOKE pg_read_all_data FROM ipsm_fixture_acl_parent'
+
 # A familiar index name must not conceal a nonunique index.
 "${PSQL[@]}" -c 'CREATE INDEX registration_attempts_enrollment_id_key ON public.registration_attempts(enrollment_id)'
 expect_rollback 'Registration uniqueness index does not match'

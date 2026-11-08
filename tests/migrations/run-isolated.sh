@@ -35,6 +35,7 @@ export IPSM_DISPOSABLE_TEST_DATABASE=1
 export RESET_TEST_DATABASE_URL="$DATABASE_URL"
 cd "$PROJECT_ROOT"
 source tests/migrations/assertions.sh
+cmp prisma/migrations/20261107010000_reset_integrity/migration.sql supabase/migrations/20261107010000_reset_integrity.sql
 bash tests/migrations/family-only.integration.sh
 PSQL=("$PG_BIN/psql" "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
@@ -62,14 +63,39 @@ SQL
 "${PSQL[@]}" -f prisma/migrations/20261107000000_teacher_guard_parity/migration.sql
 "${PSQL[@]}" -f prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql
 # Model the reported broad creator defaults ONLY in this owned disposable cluster.
-# These are exposure-characterization tests, not a proposed permissions change.
+# Supabase Query 17 grants ALL eight table privileges on PG17 (including MAINTAIN).
+# Also exercise PUBLIC/custom inherited defaults, without touching production.
 "${PSQL[@]}" <<'SQL'
-CREATE ROLE ipsm_fixture_service BYPASSRLS;
-GRANT USAGE ON SCHEMA public TO anon, authenticated, ipsm_fixture_service;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, ipsm_fixture_service;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, ipsm_fixture_service;
+SELECT version() AS disposable_postgresql_version;
+CREATE ROLE service_role BYPASSRLS;
+CREATE ROLE ipsm_fixture_acl_parent;
+CREATE ROLE ipsm_fixture_public_reader;
+CREATE ROLE ipsm_fixture_set_only NOINHERIT;
+CREATE ROLE ipsm_fixture_backend;
+GRANT ipsm_fixture_acl_parent TO anon, authenticated, service_role, ipsm_fixture_set_only;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role, ipsm_fixture_acl_parent, ipsm_fixture_public_reader, ipsm_fixture_set_only, ipsm_fixture_backend;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO PUBLIC, ipsm_fixture_acl_parent;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role, ipsm_fixture_acl_parent;
+CREATE TABLE public.ipsm_unrelated_acl_probe(id integer PRIMARY KEY);
+CREATE SCHEMA ipsm_fixture_acl;
+CREATE TABLE ipsm_fixture_acl.before_migration AS
+SELECT md5(string_agg(row_to_json(d)::text, ',' ORDER BY oid)) AS defaults_hash FROM pg_catalog.pg_default_acl d;
 SQL
 bash tests/migrations/reset-upgrade.integration.sh
+"${PSQL[@]}" <<'SQL'
+DO $$ BEGIN
+  IF (SELECT defaults_hash FROM ipsm_fixture_acl.before_migration) IS DISTINCT FROM
+    (SELECT md5(string_agg(row_to_json(d)::text, ',' ORDER BY oid)) FROM pg_catalog.pg_default_acl d) THEN
+    RAISE EXCEPTION 'Migration changed global default ACLs';
+  END IF;
+  IF EXISTS (SELECT 1 FROM unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) p WHERE NOT has_table_privilege('anon','public.ipsm_unrelated_acl_probe',p)) THEN
+    RAISE EXCEPTION 'Migration changed unrelated table privileges';
+  END IF;
+END $$;
+DROP TABLE public.ipsm_unrelated_acl_probe;
+DROP SCHEMA ipsm_fixture_acl CASCADE;
+SQL
 "${PSQL[@]}" -f tests/migrations/reset-integrity.sql
 "${PSQL[@]}" -v app_role="$(id -un)" -v migration_role="$(id -un)" -f docs/sql/production-reset-preflight.sql > "$TEST_ROOT/preflight-after.log"
 assert_redacted "$TEST_ROOT/preflight-after.log"

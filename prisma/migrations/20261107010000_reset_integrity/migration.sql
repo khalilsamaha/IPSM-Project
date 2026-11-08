@@ -1,5 +1,22 @@
 BEGIN;
 
+-- Owner-only infrastructure. No runtime role has yet been independently verified;
+-- never infer a backend entitlement from service_role/BYPASSRLS or creator defaults.
+-- A client that can assume the owner cannot be constrained by object ACL revokes.
+DO $$
+DECLARE client record; owner_oid oid := current_user::regrole::oid;
+BEGIN
+  IF (SELECT count(*) FROM pg_catalog.pg_roles WHERE rolname IN ('anon','authenticated','service_role')) <> 3 THEN
+    RAISE EXCEPTION 'Required Supabase client roles are missing; review reset infrastructure ownership';
+  END IF;
+  FOR client IN SELECT oid, rolname, rolsuper FROM pg_catalog.pg_roles
+    WHERE rolname IN ('anon','authenticated','service_role') LOOP
+    IF client.rolsuper OR pg_catalog.pg_has_role(client.oid, owner_oid, 'MEMBER') THEN
+      RAISE EXCEPTION 'Client role can assume reset infrastructure owner: %; reconcile role membership', client.rolname;
+    END IF;
+  END LOOP;
+END $$;
+
 -- Additive correction. Duplicates deliberately fail migration for manual review.
 CREATE UNIQUE INDEX IF NOT EXISTS registration_attempts_enrollment_id_key ON public.registration_attempts(enrollment_id);
 CREATE UNIQUE INDEX IF NOT EXISTS registration_attempts_payment_id_key ON public.registration_attempts(payment_id);
@@ -70,7 +87,10 @@ CREATE TABLE public.production_reset_requests (
   consumed_at timestamp(3), result jsonb, created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX production_reset_requests_actor_id_created_at_idx ON public.production_reset_requests(actor_id, created_at);
-CREATE TABLE public.production_reset_state (id text PRIMARY KEY, changed_at timestamptz(6) NOT NULL);
+CREATE TABLE public.production_reset_state (
+  id text PRIMARY KEY CONSTRAINT production_reset_state_singleton CHECK (id = 'school'),
+  changed_at timestamptz(6) NOT NULL CONSTRAINT production_reset_state_timestamp CHECK (changed_at <> 'infinity'::timestamptz)
+);
 INSERT INTO public.production_reset_state VALUES ('school', '-infinity');
 CREATE TABLE public.reset_registration_submissions (id uuid PRIMARY KEY, reset_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE public.business_identifier_counters (key text PRIMARY KEY, value integer NOT NULL CHECK (value >= 0));
@@ -147,14 +167,24 @@ CREATE TRIGGER retain_receipt_identifier BEFORE INSERT OR UPDATE OF receipt_numb
 -- A writer that started before the reset must retry, rather than apply decisions
 -- based on the old database after the reset releases its table locks.
 CREATE FUNCTION public.guard_reset_generation() RETURNS trigger
-LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
-DECLARE reset_time timestamptz;
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' SET row_security = off AS $$
+DECLARE state_id text; reset_time timestamptz;
 BEGIN
-  SELECT changed_at INTO reset_time FROM public.production_reset_state WHERE id = 'school' FOR SHARE;
-  IF reset_time >= transaction_timestamp() THEN
+  -- row_security=off does NOT bypass RLS: a policy-filtered read raises instead.
+  -- Read every row, not just id='school', so even inconsistent state fails closed.
+  -- STRICT rejects missing/multiple rows; FOR SHARE serializes generation changes
+  -- and PostgreSQL rejects a stale locked row at REPEATABLE READ/SERIALIZABLE.
+  SELECT id, changed_at INTO STRICT state_id, reset_time
+    FROM public.production_reset_state FOR SHARE;
+  IF state_id IS DISTINCT FROM 'school' OR reset_time IS NULL THEN
+    RAISE EXCEPTION 'Production reset state is invalid; writes are blocked' USING ERRCODE = '55000';
+  END IF;
+  IF reset_time >= pg_catalog.transaction_timestamp() THEN
     RAISE EXCEPTION 'Data changed during production reset; reload and retry' USING ERRCODE = '40001';
   END IF;
   RETURN NULL;
+EXCEPTION WHEN no_data_found OR too_many_rows THEN
+  RAISE EXCEPTION 'Production reset state is missing or inconsistent; writes are blocked' USING ERRCODE = '55000';
 END $$;
 DO $$ DECLARE table_name text; BEGIN
   FOREACH table_name IN ARRAY ARRAY['families','students','seasons','teachers','courses','course_levels','course_pricings','teacher_courses','teacher_availability','enrollments','registration_attempts','schedule_sessions','schedule_patterns','school_closures','rooms','operational_settings','payments','payment_items','receipts','expenses','cashier_shifts','teacher_payrolls','teacher_payroll_items','business_identifier_counters','issued_business_identifiers'] LOOP
@@ -180,9 +210,78 @@ ALTER TABLE public.production_reset_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reset_registration_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.business_identifier_counters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.issued_business_identifiers ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON FUNCTION public.allocate_business_identifier(text, integer) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.retain_business_identifier() FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.guard_reset_generation() FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.guard_reset_registration_submission() FROM PUBLIC, anon, authenticated;
+-- Remove all inherited creator-default ACL grants on these NEW objects only.
+-- ALL includes PostgreSQL 17 MAINTAIN. Dynamic grantees cover custom intermediary
+-- roles, not just the three Supabase names; PUBLIC is not a pg_roles entry.
+REVOKE ALL PRIVILEGES ON TABLE public.production_reset_requests,
+  public.production_reset_state, public.reset_registration_submissions,
+  public.business_identifier_counters, public.issued_business_identifiers
+  FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL PRIVILEGES ON FUNCTION public.allocate_business_identifier(text, integer),
+  public.retain_business_identifier(), public.guard_reset_generation(),
+  public.guard_reset_registration_submission() FROM PUBLIC, anon, authenticated, service_role;
+
+DO $$
+DECLARE target record; recipient record; client record; access_role record; privilege text;
+  table_privileges text[] := ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'];
+BEGIN
+  IF current_setting('server_version_num')::integer >= 170000 THEN
+    table_privileges := array_append(table_privileges, 'MAINTAIN');
+  END IF;
+  FOR target IN SELECT c.oid, c.relname, c.relowner, c.relacl
+    FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname IN ('production_reset_requests','production_reset_state',
+      'reset_registration_submissions','business_identifier_counters','issued_business_identifiers') LOOP
+    IF target.relowner <> current_user::regrole::oid THEN
+      RAISE EXCEPTION 'Unexpected reset infrastructure owner';
+    END IF;
+    FOR recipient IN SELECT DISTINCT a.grantee FROM pg_catalog.aclexplode(
+      coalesce(target.relacl, pg_catalog.acldefault('r', target.relowner))) a
+      WHERE a.grantee <> target.relowner LOOP
+      EXECUTE format('REVOKE ALL PRIVILEGES ON TABLE public.%I FROM %s CASCADE', target.relname,
+        CASE WHEN recipient.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_catalog.pg_get_userbyid(recipient.grantee)) END);
+    END LOOP;
+    -- Check both immediately inherited grants and NOINHERIT memberships that
+    -- permit SET ROLE. Never change global memberships to force this check through.
+    FOR client IN SELECT oid, rolname FROM pg_catalog.pg_roles
+      WHERE rolname IN ('anon','authenticated','service_role') LOOP
+      FOR access_role IN SELECT oid, rolname FROM pg_catalog.pg_roles
+        WHERE oid=client.oid OR pg_catalog.pg_has_role(client.oid, oid, 'MEMBER') LOOP
+        FOREACH privilege IN ARRAY table_privileges LOOP
+          IF pg_catalog.has_table_privilege(access_role.oid, target.oid, privilege)
+            OR (CASE WHEN privilege IN ('SELECT','INSERT','UPDATE','REFERENCES')
+                THEN pg_catalog.has_any_column_privilege(access_role.oid, target.oid, privilege) ELSE false END) THEN
+            RAISE EXCEPTION 'Client retains effective reset table privilege via %: %.% (%); reconcile before migration',
+              access_role.rolname, 'public', target.relname, privilege;
+          END IF;
+        END LOOP;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+  FOR target IN SELECT p.oid, p.proowner, p.proacl, names.signature
+    FROM (VALUES ('public.allocate_business_identifier(text,integer)'),
+      ('public.retain_business_identifier()'),('public.guard_reset_generation()'),
+      ('public.guard_reset_registration_submission()')) names(signature)
+    JOIN pg_catalog.pg_proc p ON p.oid=names.signature::regprocedure LOOP
+    IF target.proowner <> current_user::regrole::oid THEN
+      RAISE EXCEPTION 'Unexpected reset function owner';
+    END IF;
+    FOR recipient IN SELECT DISTINCT a.grantee FROM pg_catalog.aclexplode(
+      coalesce(target.proacl, pg_catalog.acldefault('f', target.proowner))) a
+      WHERE a.grantee <> target.proowner LOOP
+      EXECUTE format('REVOKE ALL PRIVILEGES ON FUNCTION %s FROM %s CASCADE', target.signature,
+        CASE WHEN recipient.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_catalog.pg_get_userbyid(recipient.grantee)) END);
+    END LOOP;
+    FOR client IN SELECT oid FROM pg_catalog.pg_roles
+      WHERE rolname IN ('anon','authenticated','service_role') LOOP
+      FOR access_role IN SELECT oid, rolname FROM pg_catalog.pg_roles
+        WHERE oid=client.oid OR pg_catalog.pg_has_role(client.oid, oid, 'MEMBER') LOOP
+        IF pg_catalog.has_function_privilege(access_role.oid, target.oid, 'EXECUTE') THEN
+          RAISE EXCEPTION 'Client retains effective reset function execution via %: %', access_role.rolname, target.signature;
+        END IF;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+END $$;
 
 COMMIT;

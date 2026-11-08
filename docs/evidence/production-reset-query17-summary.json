@@ -1,0 +1,53 @@
+{
+  "project_ref": "rakzehtbpzseetldbohm",
+  "source": "Administrator Query 17 summary supplied in conversation; raw JSON and execution timestamp not supplied",
+  "independently_repeated": false,
+  "completed": true,
+  "item_count": 84,
+  "read_only": "on",
+  "isolation": "repeatable read",
+  "status": "REVIEW_REQUIRED",
+  "candidate_creator": "postgres",
+  "schema": "public",
+  "default_table_grants": {
+    "anon": [
+      "SELECT",
+      "INSERT",
+      "UPDATE",
+      "DELETE",
+      "TRUNCATE",
+      "REFERENCES",
+      "TRIGGER",
+      "MAINTAIN"
+    ],
+    "authenticated": [
+      "SELECT",
+      "INSERT",
+      "UPDATE",
+      "DELETE",
+      "TRUNCATE",
+      "REFERENCES",
+      "TRIGGER",
+      "MAINTAIN"
+    ],
+    "service_role": [
+      "SELECT",
+      "INSERT",
+      "UPDATE",
+      "DELETE",
+      "TRUNCATE",
+      "REFERENCES",
+      "TRIGGER",
+      "MAINTAIN"
+    ]
+  },
+  "bypass_rls": {
+    "anon": false,
+    "authenticated": false,
+    "service_role": true
+  },
+  "proposed_tables_present": 0,
+  "proposed_functions_present": 0,
+  "actual_vercel_runtime_identity_verified": false,
+  "effective_post_installation_permissions_verified": false
+}

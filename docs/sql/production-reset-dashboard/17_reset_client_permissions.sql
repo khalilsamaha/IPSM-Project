@@ -46,16 +46,17 @@ findings AS (
  UNION ALL
  SELECT 'effective_table_permissions',CASE WHEN o.oid IS NULL THEN 'EXPECTED_ABSENT_BEFORE_PR90'
  WHEN c.oid IS NULL THEN 'BLOCKER'
- WHEN c.name IN ('anon','authenticated') AND (
-   has_table_privilege(c.oid,o.oid,'TRUNCATE') OR has_table_privilege(c.oid,o.oid,'REFERENCES') OR has_table_privilege(c.oid,o.oid,'TRIGGER')
-   OR c.rolsuper OR c.rolbypassrls OR pg_has_role(c.oid,o.relowner,'USAGE')) THEN 'BLOCKER' ELSE 'REVIEW_REQUIRED' END,
+ WHEN (has_table_privilege(c.oid,o.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+   OR CASE WHEN current_setting('server_version_num')::integer >= 170000 THEN has_table_privilege(c.oid,o.oid,'MAINTAIN') ELSE false END
+   OR c.rolsuper OR pg_has_role(c.oid,o.relowner,'MEMBER')) THEN 'BLOCKER' ELSE 'REVIEW_REQUIRED' END,
  jsonb_build_object('table',o.name,'role',c.name,'select',has_table_privilege(c.oid,o.oid,'SELECT'),
  'insert',has_table_privilege(c.oid,o.oid,'INSERT'),'update',has_table_privilege(c.oid,o.oid,'UPDATE'),'delete',has_table_privilege(c.oid,o.oid,'DELETE'),
  'truncate',has_table_privilege(c.oid,o.oid,'TRUNCATE'),'references',has_table_privilege(c.oid,o.oid,'REFERENCES'),
- 'trigger',has_table_privilege(c.oid,o.oid,'TRIGGER'),'inherits_owner',pg_has_role(c.oid,o.relowner,'USAGE')) FROM objects o CROSS JOIN clients c
+ 'trigger',has_table_privilege(c.oid,o.oid,'TRIGGER'),
+ 'maintain',CASE WHEN current_setting('server_version_num')::integer >= 170000 THEN has_table_privilege(c.oid,o.oid,'MAINTAIN') ELSE NULL END,'inherits_owner',pg_has_role(c.oid,o.relowner,'USAGE')) FROM objects o CROSS JOIN clients c
  UNION ALL
  SELECT 'effective_function_permissions',CASE WHEN f.oid IS NULL THEN 'EXPECTED_ABSENT_BEFORE_PR90'
- WHEN c.oid IS NULL OR (c.name IN ('anon','authenticated') AND has_function_privilege(c.oid,f.oid,'EXECUTE')) THEN 'BLOCKER' ELSE 'REVIEW_REQUIRED' END,
+ WHEN c.oid IS NULL OR has_function_privilege(c.oid,f.oid,'EXECUTE') THEN 'BLOCKER' ELSE 'REVIEW_REQUIRED' END,
  jsonb_build_object('signature',f.signature,'role',c.name,'execute',has_function_privilege(c.oid,f.oid,'EXECUTE'),
  'security_definer',p.prosecdef,'owner',pg_get_userbyid(p.proowner)) FROM functions f CROSS JOIN clients c LEFT JOIN pg_catalog.pg_proc p ON p.oid=f.oid
  UNION ALL

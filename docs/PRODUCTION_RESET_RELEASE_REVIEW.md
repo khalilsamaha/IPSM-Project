@@ -1,7 +1,8 @@
-# PR90 — November 8 security review and release decision
+# PR90 — security remediation and release decision
 
-**NO-GO. Keep draft.** This is a review and isolated test change, not permission to
-apply migrations, modify privileges, issue identifiers, reset, merge or deploy.
+**NO-GO. Keep draft.** The two mirrored, unapplied reset-integrity migrations now contain the
+reviewed security correction. This does not authorize production migration,
+permission changes, identifier issuance, reset, merge or deployment.
 The [reconciliation matrix](PRODUCTION_RESET_RECONCILIATION.md) and
 [administrator summary](evidence/production-reset-2026-11-08-summary.json) distinguish
 reported production observations from isolated reproduction.
@@ -26,54 +27,82 @@ reported production observations from isolated reproduction.
 - Query 16 reports three Supabase records with 0/1/1 stored statements and no
   Prisma ledger. These do not reconstruct the schema's full creation history.
 
-## Security review: proposed infrastructure
+## Query 17 evidence and implemented security model
 
-The integrity migration creates five tables: `production_reset_requests`
-(actor-bound preview/result), `production_reset_state` (concurrency generation),
-`reset_registration_submissions` (replay tombstones),
-`business_identifier_counters` and `issued_business_identifiers` (non-reuse).
-All enable RLS, none forces RLS, and none has a policy. The four new functions
-are SECURITY INVOKER with an empty search_path and schema-qualified references.
-Execution is revoked from PUBLIC, anon and authenticated. **There is no explicit
-table ACL revocation.** No sequence is created; counters use an integer column.
+The [administrator's Query 17 summary](evidence/production-reset-query17-summary.json)
+reports 84/84 items, READ ONLY / REPEATABLE READ, REVIEW_REQUIRED. Actual
+`postgres` public-schema TABLE defaults grant SELECT, INSERT, UPDATE, DELETE,
+TRUNCATE, REFERENCES, TRIGGER and MAINTAIN to anon, authenticated and service_role.
+The first two do not bypass RLS; service_role does. All five proposed tables and
+four functions are absent. This establishes **real creator-default exposure**, not
+post-installation effective permissions and not Vercel runtime identity. Exact
+function defaults, full role graph, raw report and timestamp were not supplied.
+The correction removes any non-owner default-function grants as well.
 
-| Access path | Effective behavior / conclusion |
+Only `20261107010000_reset_integrity` and its byte-identical mirror change. They
+create five tables: `production_reset_requests`, `production_reset_state`,
+`reset_registration_submissions`, `business_identifier_counters` and
+`issued_business_identifiers`. All remain RLS-enabled with no policies.
+
+| Boundary | Implemented behavior |
 | --- | --- |
-| anon/authenticated, ordinary row operations, no elevated memberships | With broad table grants, policy-free RLS hides rows; INSERT fails, UPDATE/DELETE cannot target hidden rows. Allocator EXECUTE is explicitly revoked. Isolated tests verify these properties. |
-| anon/authenticated, TRUNCATE | RLS does not apply. If creator defaults include TRUNCATE (e.g. ALL), the migration retains it. Isolated tests successfully truncate all five new tables as each client role, then roll back. **Blocking exposure**, not an approved behavior. |
-| REFERENCES / TRIGGER | RLS does not govern REFERENCES; broad defaults also leave trigger-creation rights. Exploitability depends on further privileges/functions; remove unnecessary effective grants in an explicitly reviewed correction. |
-| owner / superuser / BYPASSRLS | Owner bypasses RLS unless FORCE applies; superuser/BYPASSRLS still bypass FORCE. The supplied postgres role has BYPASSRLS. Server-side active SUPER_ADMIN checks remain essential and are not database policies. |
-| service_role / inherited privileged roles | Function revocation names do not remove another role's grants or inherited rights. A service role with default grants and BYPASSRLS can read/write these tables and call the allocator. The fixture reproduces this with a synthetic BYPASSRLS role; actual service_role grants/membership remain unverified. |
-| Browser/PostgREST | No normal table REST TRUNCATE endpoint is established by this review. SQL privilege exposure does not prove a browser exploit. Privileged RPCs, exposed schemas, views, inherited roles and other SQL bridges still need review; no service credential may reach clients. |
-| Generation guard on client-writable existing tables | The invoker guard reads `production_reset_state FOR SHARE`; if RLS hides its sole row, the result is NULL and its comparison does not reject the write. Missing grants can instead error. A writable client path must not be assumed to have the same concurrency guarantee as the verified privileged Prisma path. |
+| PUBLIC, anon, authenticated, service_role | Explicit ALL revocation on all five tables and four functions in the creation transaction. ALL includes PostgreSQL 17 MAINTAIN. BYPASSRLS is not a grant of table privileges. |
+| Additional/default/inherited grantees | Enumerate actual new-object ACLs and revoke every non-owner grant, with dependent grants removed on those objects only. This includes custom intermediary roles and PUBLIC. No global defaults or role memberships are changed. |
+| Effective permissions | Before COMMIT, check all table privileges (including MAINTAIN on PG17), column privileges and function EXECUTE for each client and every membership-reachable role. NOINHERIT paths are included conservatively because SET ROLE may be possible. |
+| Ownership / predefined-role powers | Reject clients that are superusers or can assume the creating owner. Abort if effective access remains via e.g. pg_read_all_data; revokes must not pretend to remove such global powers. Do not rewrite memberships to force deployment. |
+| Authorized backend | Owner access is retained; no speculative runtime grant is added. The actual Vercel role must be verified and its effective access approved before deployment. If it is a distinct role needing grants/policies, stop and design/test a separate explicit entitlement; do not substitute service_role. |
+| Function execution | All four functions stay SECURITY INVOKER with empty search_path. No SECURITY DEFINER, new elevated owner, client RPC capability or permissive RLS policy is introduced. |
+| Unrelated objects | Global/schema default ACLs and unrelated table privileges remain unchanged; isolated fixtures assert this and mirror equality. Existing migration history is untouched. |
+
+The application still enforces active SUPER_ADMIN server-side for preview and
+execution. Database ownership is not an application role or a replacement for
+that check. Database administrators/owners can intentionally alter their objects;
+this model does not claim to constrain a malicious administrator or an existing
+privileged RPC capable of doing so. Audit existing elevated RPCs and verified
+runtime/migration ownership during release review.
 
 PostgreSQL documents [RLS's TRUNCATE/REFERENCES exclusions and bypass rules](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)
-and [creator-specific default privileges](https://www.postgresql.org/docs/17/sql-alterdefaultprivileges.html).
-Defaults come from the **effective creating role**, not all its memberships.
-Global and schema-specific defaults, PUBLIC and inherited privileges must all be
-accounted for. FORCE RLS alone cannot solve TRUNCATE or BYPASSRLS access.
+and [creator-specific defaults, including MAINTAIN](https://www.postgresql.org/docs/17/sql-alterdefaultprivileges.html).
+The migration targets actual new-object ACLs, covering global and schema defaults
+without modifying either. No production permissions were changed during testing.
 
-**Required future correction, not implemented or executed here:** deny effective
-client access to these five tables (including TRUNCATE/REFERENCES/TRIGGER) and the
-four functions; inspect PUBLIC, direct, inherited and service-role paths. Prefer
-object-scoped restrictions in the pending migration over changing unrelated global
-default ACLs. Define the verified backend/migration role requirements explicitly,
-and ensure ordinary registrations/payments/payroll can still execute their
-SECURITY INVOKER triggers. Review fail-closed behavior when the generation row is
-missing or invisible. Do not merely grant RLS visibility to public clients to make
-writes pass. Retain protection within the same migration transaction as creation.
-No production or repository migration permissions were changed by this review.
-Only the owned disposable fixture models broad grants.
+## Fail-closed generation guard
 
-[Query 17](sql/production-reset-dashboard/17_reset_client_permissions.sql) returns
-expanded creator defaults, client role/membership metadata and (when present)
-effective grants/policies on the five tables and four functions. It is read-only;
-missing future objects are expected before installation and cannot certify future
-protection. It assumes only the supplied candidate creator `postgres`, not Prisma
-identity. Run it now for catalog evidence, then against approved isolated staging
-with the actual creator before release. Exact ACL entries, elevated memberships,
-RPC exposure and actual creator/runtime contexts remain gaps. Do not apply the
-migrations merely to obtain a post-installation report.
+`guard_reset_generation()` remains SECURITY INVOKER. Its function-local
+`row_security=off` makes policy-filtered reads **error**, not bypass RLS. It reads
+all state rows with `INTO STRICT ... FOR SHARE`, requires exactly one `school`
+row and a non-NULL timestamp, and rejects a generation at/after the writer's
+transaction start. Missing/multiple/invalid state raises SQLSTATE 55000;
+permission/RLS denial propagates 42501; stale generation or concurrent snapshot
+conflict raises 40001. Errors are never converted into authorization to write.
+
+The state table has a singleton-ID CHECK, NOT NULL timestamp and rejection of
+positive infinity. Negative infinity remains the intentional initial generation.
+The function independently checks shape so a missing row or corrupted constraint
+cannot silently disable it. An owner can still intentionally tamper with the
+ledger; that is outside the untrusted-client boundary.
+
+FOR SHARE retains its row lock until the writer transaction ends. A generation
+update waits for existing writers; a REPEATABLE READ writer cannot lock a row
+updated since its snapshot. Reset's existing ordered table locks, SERIALIZABLE
+transaction, actor-bound stale-preview checks and transactional audit remain
+unchanged. No client is granted visibility into the state table to make a trigger
+succeed. A client with unrelated domain write access but no authorized state access
+now fails closed; confirm legitimate application writers use the verified backend.
+
+Tests cover direct/ PUBLIC / inherited / NOINHERIT / BYPASSRLS access, actual denied
+CRUD/TRUNCATE/REFERENCES/TRIGGER/REINDEX operations, all eight effective permissions
+on PG17, all four function permissions, ordinary registration/payment/scheduling/
+payroll writes as a non-superuser owner, missing/inaccessible/invisible/corrupted
+state, row-lock blocking, concurrent snapshot rejection and the existing reset
+concurrency suite. The old successful exposure probes are now denial regressions.
+
+[Query 17](sql/production-reset-dashboard/17_reset_client_permissions.sql) is updated
+to report MAINTAIN and flag any client/service-role table or function grant after
+installation. It remains strictly read-only. Missing future objects cannot certify
+protection; use it on an approved isolated staging copy with the actual creator and
+role graph before release. It supplements the transactional migration assertions,
+not the still-missing runtime identity check.
 
 ## Teacher guards: preserve-or-change decision
 
@@ -158,7 +187,7 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 | Guards / application owner + DBA | Signed preserve/change rule comparison, full non-guard parity object review and live-compatible isolated tests. Current parity remains blocked. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Complete reservation/ownership policy or enforceable proven-disjoint namespace; exercise deleted-history, manual import, concurrent issuance and overflow tests. |
-| ACLs / security reviewer + DBA | Separate reviewed object-scoped permission correction and missing/invisible state decision; test anon/authenticated denial, service-role boundary, backend writer success and no inherited bypass. |
+| ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
 | Provenance / release owner | Privately inspect actual stored statements and trusted deployment artifacts; inventory current objects and explicitly document unrecoverable history. Produce a sanitized current-schema snapshot as a reconstruction baseline, **not a migration claimed to have run**. |
 | Release packaging / DBA | Isolated release workspace containing only truthful canonical history and the approved future delta. Where old SQL cannot be recovered, resolve the tool's history-matching strategy explicitly before deployment; do not synthesize statements/repair applied rows to make tooling happy. Review the pending list/dry-run and prove it contains only approved new changes. |
 | Staging / QA | Build an isolated PG17 database from the reviewed current schema (including guards/default ACLs), replay only the future delta; test rollback, runtime role, permissions, data integrity, identifiers, concurrency/lock load and backup restoration. No production data/credentials needed in CI. |
@@ -172,15 +201,20 @@ create diagnostic endpoints, deploy, or change environment variables for this re
 
 ## Validation scope
 
-The new tests are **characterization tests**: a passing TRUNCATE exposure test is
-evidence of a blocker, not proof that the migration is secure. They use only the
-owned disposable runner and rollback all security/guard probes. No application
-business logic, migration SQL, dependency versions or CI workflow changed.
-Local validation: Prisma generation, TypeScript and 405 unit tests passed.
-On PostgreSQL 17.6, all migration fixtures passed, including 29 Dashboard checks
-before and after migration, 18 reset integration tests, and 20 security/guard
-characterization tests. The production build passed with the previously
-documented ESLint compatibility warning and expected static-read errors against
-an unavailable loopback database; it is not a clean standalone lint result.
-Hosted CI is recorded in the PR and completion report. The regular unit run skips the 67 tests gated
-to the disposable database runner.
+The earlier exposure-characterization tests are replaced by regression tests that
+require denial. All destructive/role/corruption probes run in the owned disposable
+loopback cluster and roll back. The fixture reproduces the real eight-privilege
+Supabase defaults and adds PUBLIC/inherited grants to test additional paths.
+Migration negative fixtures positively verify rollback on unsafe memberships and
+predefined-role access; historical payroll audits remain preserved.
+
+Prisma generation, TypeScript and 405 unit tests passed locally. PostgreSQL 17.6
+passed all migration fixtures, 29 Dashboard tests before and after migration,
+18 reset integration tests and 33 security/guard tests. The 80 integration tests
+are gated out of the ordinary unit run. The production build passed with the
+existing ESLint compatibility warning and expected static-read failures against
+an unavailable loopback fixture; this is not a clean standalone lint result.
+Hosted CI is recorded in the PR and completion report. No production database was accessed for implementation.
+No teacher-guard migration, application business logic, dependency version or CI
+workflow is changed by this correction. Only the still-unapplied reset-integrity
+migration pair changes; historical migrations remain unchanged.

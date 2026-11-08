@@ -9,7 +9,9 @@ Files **12–17** are the targeted follow-ups to the administrator's November 7
 reports; see the [reconciliation matrix](../../PRODUCTION_RESET_RECONCILIATION.md).
 The initial reports need not be repeated merely to collect these follow-ups.
 November 8 reports 10 and 12–16 have been summarized in the reconciliation;
-17 is the new effective-client-ACL review. Query 10's supplied postgres roles
+17 has now been supplied as an administrator summary confirming broad TABLE
+defaults, while proposed objects remain absent. Its updated version also checks
+MAINTAIN and service_role after an approved isolated installation. Query 10's supplied postgres roles
 remain unverified as the actual Vercel runtime identity.
 
 ## Administrator procedure
@@ -93,11 +95,14 @@ last nonempty result is unambiguous even though ROLLBACK follows it.
 | [14_payroll_classification.sql](14_payroll_classification.sql) | Explains the 2 invalid-event / 3 inconsistent-pair findings without adding overlapping counts. Distinguishes absent historical/unresolved pairs, old invalid audit references with a consistent current posting, and live financial mismatches. Counts/flags only; no automatic cleanup. |
 | [15_identifier_sources.sql](15_identifier_sources.sql) | Explicit current row/code counts for all four identifier source tables, including empty ones, plus audit-only recoverable maxima and create-event coverage. No family floor or empty-source conclusion is assumed. |
 | [16_migration_provenance.sql](16_migration_provenance.sql) | Checks the exact three reported Supabase versions, statement counts/hashes and known guard mentions. No statements/credentials are returned. Missing history columns or denied access remain blockers; hashes do not invent provenance. |
-| [17_reset_client_permissions.sql](17_reset_client_permissions.sql) | Expanded defaults for supplied candidate creator postgres; client role/membership metadata; effective table TRUNCATE/REFERENCES/TRIGGER/DML, RLS/policies and function EXECUTE when proposed objects exist. Missing future objects are expected before installation, never proof of protection. No impersonation, grant or production modification. |
+| [17_reset_client_permissions.sql](17_reset_client_permissions.sql) | Expanded defaults for supplied candidate creator postgres; client role/membership metadata; effective table TRUNCATE/REFERENCES/TRIGGER/MAINTAIN/DML, RLS/policies and function EXECUTE when proposed objects exist. Missing future objects are expected before installation, never proof of protection. No impersonation, grant or production modification. |
 
 Reports 10 and 12–16 have now been supplied as administrator summaries; retain the
-full sanitized JSON and timestamps for review. Run **17** as a complete independent
-file with the same project, transaction, timeout and completeness checks. Share
+full sanitized JSON and timestamps for review. Query **17** already establishes the reported pre-installation defaults; there is
+no need to repeat unchanged evidence. Use the updated file as a complete independent
+query on approved isolated staging after the proposed correction, with the same
+transaction, timeout and completeness checks. Production post-installation checks
+require separately authorized deployment; do not apply anything for this review. Share
 its full metadata report, not credentials. It does not establish Vercel runtime
 identity or browser API exposure. Confirm actual runtime/migration connection
 contexts separately; rerun 10 if roles or permissions differ from the supplied

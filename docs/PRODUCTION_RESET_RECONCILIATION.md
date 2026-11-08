@@ -1,9 +1,11 @@
 # PR 90 — production preflight reconciliation
 
 **Overall: NO-GO for migration, reset, merge or production deployment.** The FK
-compatibility blocker has an evidence-based correction. Guard semantics, effective
-client ACLs, identifier history, migration provenance and actual Vercel runtime
-identity remain unresolved. PR 90 stays draft; PR 2 is untouched.
+compatibility blocker has an evidence-based correction. Default-ACL and
+invisible-state vulnerabilities are corrected in the unapplied migration pair.
+Guard semantics, identifier history, migration provenance, actual runtime identity
+and live-compatible security validation remain unresolved. PR 90 stays draft;
+PR 2 is untouched.
 
 ## Evidence and limits
 
@@ -20,8 +22,9 @@ completed 42/42 items with no explicit blockers for the **supplied** `postgres` 
 `postgres` roles: required schema access, DML on 25 application tables,
 BYPASSRLS and teacher-function execution were reported. This verifies those
 candidate roles' permissions, **not the actual Vercel Prisma runtime identity**.
-Raw November 8 JSON, execution timestamps and exact default ACL entries were not
-supplied; the findings below are attributed to the administrator's summary.
+Raw report JSON and execution timestamps were not supplied; findings are
+attributed to the administrator summaries. The later Query 17 summary supplies
+the exact TABLE default grants listed below.
 
 Queries 12–16 confirm the reviewed 45 FKs/22 variants and guard hash differences;
 three historical payroll audit events reference absent records; current payroll
@@ -31,7 +34,17 @@ The three Supabase records contain 0, 1 and 1 statements; Prisma history is abse
 Statement counts do not reconstruct the missing bootstrap or prove provenance.
 
 See the [security review, guard decision and release plan](PRODUCTION_RESET_RELEASE_REVIEW.md)
-for isolated characterization tests, the default-ACL exposure and concrete gates.
+for the permission/state correction, isolated regression tests and concrete gates.
+
+Query 17 subsequently completed 84 items, read-only/repeatable-read,
+REVIEW_REQUIRED: candidate creator postgres grants all eight TABLE privileges
+(including MAINTAIN) to anon/authenticated/service_role; only service_role bypasses
+RLS. All five tables and four functions remain absent. See the
+[Query 17 evidence summary](evidence/production-reset-query17-summary.json).
+This verifies creator defaults, not post-installation privileges or Vercel identity.
+The mirrored unapplied reset-integrity migrations now revoke all non-owner grants,
+assert effective client denial including membership paths, and fail closed on
+missing/invisible/invalid generation state without SECURITY DEFINER.
 
 ## GO / NO-GO matrix
 
@@ -49,7 +62,7 @@ for isolated characterization tests, the default-ACL exposure and concrete gates
 | Migration provenance | NO-GO | Three Supabase versions, statement counts 0/1/1, no Prisma ledger. Counts do not establish object provenance; preserve truthful history and reconcile a future delta. |
 | Candidate database permissions | GO for supplied roles only | Query 10 completed 42/42: postgres/postgres schema access, 25-table DML, BYPASSRLS and teacher-function execution reported. Proposed objects absent. |
 | Actual Vercel runtime identity | NO-GO | Not independently verified; Query 10 cannot prove which role Prisma uses. |
-| New-table client protection | NO-GO | RLS blocks ordinary client rows, but broad defaults can retain TRUNCATE/REFERENCES/TRIGGER. Disposable tests reproduce exposure; exact live ACL paths still needed. |
+| New-table client protection | GO for isolated remediation; NO-GO for rollout | Exact broad TABLE defaults confirmed. New-object ACL cleanup and effective assertions deny all eight privileges and function execution to clients; strict invoker state guard closes NULL/RLS bypass. Actual creator/runtime memberships and live-compatible staging still require verification. |
 | PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
 | Deployment readiness | NO-GO | Resolve above gates, Preview isolation, backup/restore/load checks and human acceptance. CI is not production authorization. |
 
@@ -228,10 +241,10 @@ orphan audits, and financial/academic resets with the 22 exact live FK variants.
 No historical migration is rewritten or production FK changed to match Prisma.
 
 Before approval: resolve the two guard bodies and all other parity DDL; sign off
-the preserved historical payroll findings; establish complete identifier history; reconcile the
-three migration records; verify actual roles and resolve the new-table ACL exposure; and validate a live-compatible
-isolated PostgreSQL 17 staging restore with representative load, lock timeouts and
-backup/restore procedures. Keep schema deployments separate from resets.
+the preserved historical payroll findings; establish complete identifier history;
+reconcile the three migration records; verify actual roles; and validate the
+corrected ACL/state model on an isolated PostgreSQL 17 staging restore with
+representative schema, load, lock timeouts and backup/restore procedures. Keep schema deployments separate from resets.
 Green CI and the FK correction alone do not make PR90 merge-ready.
 
 ## Exact comparisons
@@ -242,8 +255,9 @@ checks before and after fixture migration, 18 reset integration tests, and the
 production build. Database validation used PostgreSQL 17.6 on fresh owned loopback
 clusters. The build retains the previously documented ESLint compatibility warning
 and expected static-read errors against an intentionally unavailable dummy DB.
-Only the two PR90 migrations (and their mirrors), not historical applied files,
-changed. CI results and the published commit are recorded in the draft PR.
+The current correction changes only the still-unapplied reset-integrity migration
+pair; teacher parity and historical applied files remain unchanged. Current
+validation results and the published commit are recorded in the draft PR.
 
 <!-- Generated metadata tables follow; no personal or financial records. -->
 
