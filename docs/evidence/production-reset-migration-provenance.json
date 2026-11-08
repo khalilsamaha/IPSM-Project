@@ -5,30 +5,42 @@
   "recorded_versions": [
     {
       "version": "20260731171613",
-      "statement_count": null,
+      "statement_count": 0,
       "statements_hash": null,
       "trusted_original_sql": null,
       "attributable_objects": [],
-      "evidence_quality": "administrator-reported version only; counts 0/1/1 not independently mapped",
-      "unresolved": "original Query16 per-version rows and authentic SQL/deployment source"
+      "evidence_quality": "administrator-supplied Query16 read-only report at 2026-11-08T15:44:55.544114+00:00; per-version count/hash and guard-name mentions observed; SQL source not supplied",
+      "unresolved": "trusted original SQL bytes and deployment provenance; map objects to recorded migration only after comparing authentic source",
+      "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "mentions_availability_guard": false,
+      "mentions_schedule_guard": false,
+      "mentions_enrollment_guard": false
     },
     {
       "version": "20260801163840",
-      "statement_count": null,
+      "statement_count": 1,
       "statements_hash": null,
       "trusted_original_sql": null,
       "attributable_objects": [],
-      "evidence_quality": "administrator-reported version only; counts 0/1/1 not independently mapped",
-      "unresolved": "original Query16 per-version rows and authentic SQL/deployment source"
+      "evidence_quality": "administrator-supplied Query16 read-only report at 2026-11-08T15:44:55.544114+00:00; per-version count/hash and guard-name mentions observed; SQL source not supplied",
+      "unresolved": "trusted original SQL bytes and deployment provenance; map objects to recorded migration only after comparing authentic source",
+      "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+      "mentions_availability_guard": true,
+      "mentions_schedule_guard": true,
+      "mentions_enrollment_guard": false
     },
     {
       "version": "20260801165129",
-      "statement_count": null,
+      "statement_count": 1,
       "statements_hash": null,
       "trusted_original_sql": null,
       "attributable_objects": [],
-      "evidence_quality": "administrator-reported version only; counts 0/1/1 not independently mapped",
-      "unresolved": "original Query16 per-version rows and authentic SQL/deployment source"
+      "evidence_quality": "administrator-supplied Query16 read-only report at 2026-11-08T15:44:55.544114+00:00; per-version count/hash and guard-name mentions observed; SQL source not supplied",
+      "unresolved": "trusted original SQL bytes and deployment provenance; map objects to recorded migration only after comparing authentic source",
+      "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+      "mentions_availability_guard": false,
+      "mentions_schedule_guard": false,
+      "mentions_enrollment_guard": true
     }
   ],
   "recorded_versions_found_in_migration_paths": false,
@@ -61,12 +73,28 @@
     "checked_at": "2026-11-08T11:55:26.324462+00:00",
     "baseline": "40f11670ea5b40d9fcafc3e01fefbbacbd613809",
     "targeted_history_and_migration_list": "denied by IPSM connector",
-    "original_query16_available": false,
+    "original_query16_available": true,
     "future_versions": [
       "20261107000000_teacher_guard_parity",
       "20261107010000_reset_integrity",
       "20261108000000_ipsm_identifiers"
     ],
-    "historical_records_changed": false
+    "historical_records_changed": false,
+    "original_query16_metadata_supplied_at": "2026-11-08T15:44:55.544114+00:00",
+    "original_query16_sql_not_supplied": true
+  },
+  "query16_observation": {
+    "project_ref": "rakzehtbpzseetldbohm",
+    "query_id": "16",
+    "observed_at": "2026-11-08T15:44:55.544114+00:00",
+    "completed": true,
+    "read_only": true,
+    "isolation": "repeatable read",
+    "item_count": 4,
+    "reported_status": "REVIEW_REQUIRED",
+    "prisma_migration_history_present": false,
+    "source": "administrator-provided SQL Editor report",
+    "sql_bodies_present": false,
+    "meaning": "Stored statement counts and joined-statement MD5 are proven by supplied metadata, but original source bytes, repository attribution and release package remain unresolved"
   }
 }
