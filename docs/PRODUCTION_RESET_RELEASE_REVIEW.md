@@ -65,7 +65,7 @@ the selected IPSM grammar in a third delta; historical non-use proof remains pen
   do not invent postings or delete evidence. Recheck if financial data changes.
 - Query 15 confirms families, students, payments and receipts are empty. This
   resolves population uncertainty, **not historical issuance uncertainty**.
-- Query 16 administrator evidence now maps the three Supabase versions to 0/1/1 stored statements and reports no
+- Query 16 administrator evidence maps the three Supabase versions to 0/1/1 stored statements and reports no
   Prisma ledger. These do not reconstruct the schema's full creation history.
 
 ## Query 17 evidence and implemented security model
@@ -216,12 +216,12 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 
 | Gate / owner | Required artifact before advancing |
 | --- | --- |
-| Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; retain mapped Query16 metadata and recover authentic SQL/deployment sources. |
+| Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; retain mapped Query16 metadata and recovered two SQL statements; reconcile original deployment/bootstrap and CLI pending list. |
 | Guards / application owner + DBA | Body, schema and metadata preservation checks are closed for the reported snapshot; no repeat needed. Keep strict assertions. Synthetic delta rehearsal preserves guard catalog entries. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Approved IPSM implementation/tests are prepared; certify historical non-use and complete recovery before activation. No repeated format decision is needed. |
 | ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
-| Provenance / release owner | Privately inspect actual stored statements and trusted deployment artifacts; inventory current objects and explicitly document unrecoverable history. Produce a sanitized current-schema snapshot as a reconstruction baseline, **not a migration claimed to have run**. |
+| Provenance / release owner | The administrator supplied both nonempty stored SQL statements; their MD5 fingerprints match repository historical SQL after only comment/trailing-LF differences. Investigate the empty July 31 record and trusted bootstrap/deployment artifacts; inventory current objects and document unrecoverable history. Produce a sanitized current-schema snapshot as a reconstruction baseline, **not a migration claimed to have run**. |
 | Release packaging / DBA | Isolated release workspace containing only truthful canonical history and the approved future delta. Where old SQL cannot be recovered, resolve the tool's history-matching strategy explicitly before deployment; do not synthesize statements/repair applied rows to make tooling happy. Review the pending list/dry-run and prove it contains only approved new changes. |
 | Staging / QA | Synthetic PG17 delta/role/load/restore rehearsal implemented. Remaining acceptance is actual intended role/membership and representative workload/platform recovery, plus separately isolated Preview/Auth. No production data/credentials in CI. |
 | Approval / owner | Full CI on the final commit, human review, Preview database isolation, maintenance/backup plan and explicit separate migration/deployment authorization. Keep draft until these are satisfied. |
