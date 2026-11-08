@@ -134,16 +134,16 @@ remain responsible for their respective checks.
 The [remaining-gates review](PRODUCTION_RESET_REMAINING_GATES.md) now reconciles the
 original 545-item Query 02 and its 16 teacher-schema observations. Reported enum,
 column/default, CHECK/FK and index properties match; no parity migration change is
-needed. Pretty constraint rendering explains the CHECK hash differences. Only the
-unreported type/constraint/index catalog flags, ownership and remaining guard
-metadata/ACLs require narrow follow-up. This supersedes the earlier broad missing
+needed. Pretty constraint rendering explains the CHECK hash differences. The administrator has since completed Query18 (14 MATCH) and Query19 (four
+REVIEW_REQUIRED, zero blockers); the remaining scoped catalog/metadata review is
+now closed. Actual runtime identity is separate. This supersedes the earlier broad missing
 non-function-definition evidence gate above; body equivalence is unchanged.
 
 ## Remaining release gates
 
 The earlier body-hash mismatch blocker is resolved for the exact reviewed variants.
-Still required: full production attributes/trigger/schema/ACL reconciliation with
-migration assertions; actual Vercel runtime and migration-role verification;
+Queries18/19 close the scoped attributes/trigger/schema/ACL reconciliation.
+Still required: actual Vercel runtime and migration-role verification;
 historical identifier policy; truthful Supabase migration provenance/release
 packaging; preserved-payroll-history acknowledgement; Preview database isolation;
 representative isolated staging, backup/restore and human approval. No new function

@@ -3,8 +3,9 @@
 Files 01–11 are the initial **SQL Editor alternative** to
 [`../production-reset-preflight.sql`](../production-reset-preflight.sql).
 They collect evidence for review; they do not certify compatibility or authorize
-a migration, reset, merge or deployment. The live IPSM schema remains unverified
-until an authorized administrator supplies and reviewers assess these results.
+a migration, reset, merge or deployment. Existing administrator reports now
+support the scoped closures in the reconciliation matrix; the remaining gates
+are summarized below. Do not repeat completed reports for this task.
 Files **12–17** are the targeted follow-ups to the administrator's November 7
 reports; see the [reconciliation matrix](../../PRODUCTION_RESET_RECONCILIATION.md).
 The initial reports need not be repeated merely to collect these follow-ups.
@@ -154,7 +155,7 @@ not contact the Dashboard or live IPSM database. Successful local/CI validation
 therefore demonstrates SQL compatibility with that fixture, not a completed
 live-schema review.
 
-## Targeted remaining gaps (after Query 17 and guard equivalence)
+## Reference: targeted Queries18/19 (now completed)
 
 Do not repeat broad 01–17 reports when the existing evidence suffices. The original
 545-item Query 02 and 16-item teacher-schema extract have now been reconciled: enum
@@ -179,7 +180,8 @@ ledger and administrator checklist](../../PRODUCTION_RESET_REMAINING_GATES.md).
   are preserved by parity; client execution values require interpretation, not
   automatic permission revocation.
 
-Run each entire file separately in the **rakzehtbpzseetldbohm** SQL Editor, verify
+For a separately needed future drift check, run the relevant entire file in the
+**rakzehtbpzseetldbohm** SQL Editor, verify
 project/branch, and share complete metadata JSON with timestamp and reviewed commit.
 Expected counts are exactly **14** and **4**. Both end in ROLLBACK, fix read-only /
 repeatable-read, and set 45s statement/3s lock timeouts. No psql commands, body
@@ -188,3 +190,15 @@ Errors, unsupported catalogs, partial/missing results and timeouts are blockers.
 The reports cannot prove actual runtime identity, every role-assumption path,
 historical identifiers or migration provenance. No production execution occurred
 during their development; tests use only owned disposable PostgreSQL.
+
+## Consolidated closeout status
+
+The administrator has now completed **18 (14/14 MATCH)** and **19 (four
+REVIEW_REQUIRED, zero blockers)** on PG17.6. Their scoped schema/guard metadata
+and candidate ownership/ACL gates are closed; **do not rerun them** for this task.
+The files remain reference diagnostics for future relevant drift. Candidate
+postgres results still do not prove actual Vercel runtime identity. See the
+[final gate ledger](../../PRODUCTION_RESET_REMAINING_GATES.md) and
+[release runbook](../../PRODUCTION_RESET_RELEASE_RUNBOOK.md) for the minimal
+remaining actions: actual identities/authentic history, business/financial
+decisions, and authorized environment isolation/release acceptance.

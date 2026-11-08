@@ -1,0 +1,22 @@
+{
+  "project_ref": "rakzehtbpzseetldbohm",
+  "source": "Administrator summary supplied in the consolidated execution task; not an independently repeated production query",
+  "query18": {
+    "observed_at": "2026-11-08T06:28:58.231143+00:00",
+    "postgresql": "17.6", "completed": true, "items": 14, "match": 14, "blockers": 0,
+    "scope": "Remaining type identity/modifier, constraint inheritance, index flags and ownership"
+  },
+  "query19": {
+    "observed_at": "2026-11-08T06:32:02.008971+00:00",
+    "postgresql": "17.6", "completed": true, "items": 4, "review_required": 4, "blockers": 0,
+    "all_three_guard_metadata_matches": true,
+    "all_function_and_table_owners": "postgres",
+    "candidate_app_role": "postgres", "candidate_migration_role": "postgres",
+    "candidate_roles_can_execute": true,
+    "existing_function_execute_grantees": ["postgres", "service_role"],
+    "anon_effective_execute": false, "authenticated_effective_execute": false,
+    "actual_runtime_identity_verified": false
+  },
+  "raw_query18_19_files_available_locally": false,
+  "interpretation": "Close the reported teacher schema/metadata and existing ACL reconciliation gates; do not infer actual runtime identity or new-object post-installation privileges. No repeat of 18/19 requested."
+}

@@ -115,9 +115,12 @@ backups; SQL cannot recover information that no longer exists in the database.
 Read-only Vercel CLI metadata inspection succeeded using the locally linked IPSM
 project/team after the connector returned 404. The project has production branch
 `main`, default build/install commands, and no custom migration/reset command.
-The inspected deployment for `6031c82` is the feature-branch preview.
+The initial inspected deployment for `6031c82` was the feature-branch preview.
+The consolidated review reconfirmed metadata scopes through the linked CLI; see
+[deployment evidence](evidence/production-reset-deployment-metadata.json).
 
-`DATABASE_URL`, `DIRECT_URL`, and `NEXT_PUBLIC_SUPABASE_URL` each have a **single
+`DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` each have a **single
 shared environment entry targeting both production and preview**. An explicit
 query for `agent/production-reset-integrity` returned no branch-specific overrides.
 Values were neither decrypted, printed nor saved. These settings do not provide

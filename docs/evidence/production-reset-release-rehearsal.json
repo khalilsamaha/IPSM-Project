@@ -1,0 +1,97 @@
+{
+  "recorded_at": "2026-11-08T08:30:44.249725+00:00",
+  "research_baseline": "4f39913c94d565704dad3061a1de6139c0997c60",
+  "environment": "fresh runner-owned loopback PostgreSQL cluster; random server marker verified before destructive work",
+  "synthetic_only": true,
+  "metrics": {
+    "before_dump_ms": 186,
+    "postgresql": "17.6 (Debian 17.6-1)",
+    "synthetic_only": true,
+    "ipsm_rehearsal_restore_before_ms": 235,
+    "preview_2000_rows_ms": 115,
+    "delete_2001_rows_ms": 325,
+    "after_dump_ms": 215,
+    "ipsm_rehearsal_restore_after_ms": 294,
+    "restore_integrity_verified": true
+  },
+  "role_model": {
+    "owner": "ipsm_rehearsal_owner",
+    "superuser": false,
+    "bypassrls": false,
+    "actual_production_runtime_verified": false
+  },
+  "checks": {
+    "prisma_generation": "passed; client 5.22.0 generated",
+    "typescript": "passed",
+    "unit_tests": {
+      "passed": 414,
+      "database_tests_gated_to_runner": 169
+    },
+    "postgresql_suites": {
+      "dashboard_unique_checks": 40,
+      "dashboard_runs": 2,
+      "reset": 18,
+      "security": 33,
+      "teacher_parity": 70,
+      "release_recovery": 8
+    },
+    "historical_migration_fixtures": "passed",
+    "preflight_synthetic_secret_redaction": "passed before and after migration",
+    "exact_guard_catalog_preservation": "passed",
+    "transactional_mid_migration_failure": "SQLSTATE 22012 asserted; logical state unchanged",
+    "repeat_application": "SQLSTATE 42P07 asserted; committed state unchanged",
+    "six_scopes_protected_records_and_tombstones": "passed",
+    "client_privileges": "all eight table privileges false for all five objects and three clients",
+    "stale_preview_and_lock_timeout": "passed; SQLSTATE 55P03 asserted; rollback verified",
+    "pre_and_post_backup_restore": "passed; logical data/schema/ACL/owner/RLS/column/enum/policy/trigger comparison",
+    "production_build": "passed with existing nonfatal ESLint compatibility warning and expected unavailable-loopback static reads",
+    "migration_mirrors": "byte-identical; unchanged from research baseline"
+  },
+  "future_delta": [
+    {
+      "name": "20261107000000_teacher_guard_parity",
+      "filename": "20261107000000_teacher_guard_parity.sql",
+      "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+    },
+    {
+      "name": "20261107010000_reset_integrity",
+      "filename": "20261107010000_reset_integrity.sql",
+      "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+    }
+  ],
+  "package_status": "REHEARSAL_ONLY_PRODUCTION_BLOCKED",
+  "commands": [
+    "npm run prisma:generate",
+    "npm run typecheck",
+    "npm test",
+    "PG_BIN=/usr/lib/postgresql/17/bin npm run test:migration",
+    "npm run build (explicit unavailable-loopback database and Supabase variables; see runbook)"
+  ],
+  "local_artifact_directory": "/tmp/ipsm-release-rehearsal-QgL4z4",
+  "local_logs": {
+    "ipsm-consolidated-generate.log": {
+      "sha256": "4093d81cffe31f60c9c267a45ff8993227cd259dd649c3a4acbfaf27bb793cdc"
+    },
+    "ipsm-consolidated-type-final.log": {
+      "sha256": "deaf364843166054098babdec791230b0b2900708615f211b174032e5c8a34e0"
+    },
+    "ipsm-consolidated-unit.log": {
+      "sha256": "68de4bf1e8ac5da5a0407cee90438d99f92e916fb1739bb9f41542c9c061b231"
+    },
+    "ipsm-consolidated-pg17-final.log": {
+      "sha256": "c468b9bc66e9ae7fe65a939c36e1a65b3e988b4cc9f2d109f4eb221258fa0231"
+    },
+    "ipsm-consolidated-build.log": {
+      "sha256": "dfc5a735261baa6c68920790295ff97a9ac66600a5f9814dd74848359415ad5e"
+    }
+  },
+  "limitations": [
+    "Actual production runtime and intended migration connection identities remain unverified.",
+    "No authentic three-version history package or production CLI pending-list certification.",
+    "Known synthetic identifier reservations only; proposed epoch policy not implemented.",
+    "Restore targets are separate databases in the same disposable cluster with roles already present.",
+    "Auth relations are synthetic mocks; no Supabase Auth/storage/platform recovery certification.",
+    "2000-row load is a regression workload, not production capacity or SLA proof.",
+    "Hosted CI result is recorded separately in the draft PR and final report."
+  ]
+}

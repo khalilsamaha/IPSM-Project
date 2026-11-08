@@ -10,7 +10,7 @@ PROJECT_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 PG_BIN=${PG_BIN:-$(pg_config --bindir)}
 # Child fixtures must use the same PostgreSQL installation as the owned cluster.
 export PATH="$PG_BIN:$PATH"
-for command_name in initdb pg_ctl createdb psql; do
+for command_name in initdb pg_ctl createdb psql pg_dump pg_restore; do
   [[ -x "$PG_BIN/$command_name" ]] || { echo "Missing PostgreSQL test binary: $command_name" >&2; exit 1; }
 done
 TEST_ROOT=$(mktemp -d /tmp/ipsm-reset-tests.XXXXXX)
@@ -107,3 +107,7 @@ echo "Read-only administrator preflight passed before and after the proposed mig
 ./node_modules/.bin/vitest run tests/production-reset-review.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 
 ./node_modules/.bin/vitest run tests/teacher-guard-parity.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+
+# Last: reconstruct a synthetic current schema, rehearse only the future delta,
+# and restore both pre/post backups within this same runner-owned cluster.
+./node_modules/.bin/vitest run tests/production-reset-release.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

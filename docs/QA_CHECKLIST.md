@@ -311,4 +311,18 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] Authorized IPSM administrator has reviewed all results from `docs/sql/production-reset-preflight.sql`.
 - [ ] Preview/staging database and Auth isolation is verified before mutation testing; shared project variables are not treated as isolation.
 - [ ] Migration ownership/RLS/EXECUTE privileges and one canonical migration path are approved.
-- [ ] Hosted CI runs normally after the account billing restriction is resolved; workflow remains unchanged.
+- [ ] Hosted CI passes on the reviewed commit; inspect actual job logs and keep the workflow unchanged.
+
+### PR 90 consolidated release acceptance
+
+Use [the current gate ledger](PRODUCTION_RESET_REMAINING_GATES.md) rather than
+repeating completed administrator Queries18/19. The [release runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md)
+distinguishes synthetic test coverage from pending live-role and human acceptance.
+
+- [ ] Verify the offline future-delta package hashes, mirror equality and order; include no fabricated history.
+- [ ] Run the isolated release suite: owner-only migration, injected rollback, duplicate rejection, all six scopes, lock/load and pre/post backup restore.
+- [ ] Confirm restore retains counters, reservations, registration tombstones, protected rows and effective ACLs.
+- [ ] Obtain actual runtime/migration identity and authentic history evidence; certify only reviewed pending changes.
+- [ ] Approve and implement the identifier policy before issuance; test post-backup issued-code recovery.
+- [ ] Obtain financial-owner acknowledgement and separate Preview database/Auth isolation.
+- [ ] Verify platform/roles/Auth/storage recovery and representative staging load before separate release approval.

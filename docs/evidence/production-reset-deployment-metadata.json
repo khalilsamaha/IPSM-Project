@@ -1,0 +1,21 @@
+{
+  "observed_at": "2026-11-08T08:22:38.801382+00:00",
+  "source": "Vercel CLI 65.11.0 env list without --json/pull/decrypt; exact linked IPSM scope",
+  "project_id": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+  "team_id": "team_evfbYf1gRSSV7wJj7ZELLDzL",
+  "shared_production_preview_variable_names": [
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "variable_type": "Secret; values displayed Hidden",
+  "feature_branch": "agent/production-reset-integrity",
+  "branch_specific_preview_overrides": 0,
+  "values_retrieved_or_recorded": false,
+  "deployed_database_connection_opened": false,
+  "runtime_role_verified": false,
+  "isolation_status": "NOT_ISOLATED_BY_CONFIGURATION",
+  "limits": "Scope metadata, not actual deployed connection or Auth probes; no configuration changes"
+}

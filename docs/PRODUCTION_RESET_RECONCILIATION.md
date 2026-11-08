@@ -4,7 +4,7 @@
 compatibility blocker has an evidence-based correction. Default-ACL and
 invisible-state vulnerabilities are corrected in the unapplied migration pair.
 The reported teacher-body differences are now reproduced exactly and preserved.
-Non-function parity/attribute review, identifier history, migration provenance,
+Teacher schema/metadata reconciliation is closed by administrator Queries18/19. Identifier history, migration provenance,
 actual runtime identity and live-compatible security validation remain unresolved. PR 90 stays draft;
 PR 2 is untouched.
 
@@ -47,22 +47,22 @@ The mirrored unapplied reset-integrity migrations now revoke all non-owner grant
 assert effective client denial including membership paths, and fail closed on
 missing/invisible/invalid generation state without SECURITY DEFINER.
 
-## Scoped follow-up after the guard-equivalence review
+## Consolidated execution and closed evidence
 
-[Remaining evidence, identifier decision and exact administrator actions](PRODUCTION_RESET_REMAINING_GATES.md)
-records what the local evidence actually supports. The original 545-item Query 02
-report and 16-item teacher-schema extract are now available and reconciled. All
-16 extracted items equal the originals; default/index hashes and PostgreSQL pretty
-constraint hashes reproduce the reviewed definitions. All 15 scoped objects are
-present with matching reported properties. Private original guard export
-headers add language/return/argument/search_path evidence for two guards without
-reopening resolved body equivalence. No new production query was performed.
+[Final remaining gates](PRODUCTION_RESET_REMAINING_GATES.md) and the
+[release/recovery runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md) consolidate this
+review. Administrator Query18 reports 14/14 MATCH at 2026-11-08T06:28:58.231143+00:00;
+Query19 reports four REVIEW_REQUIRED items, zero blockers at
+2026-11-08T06:32:02.008971+00:00, both PostgreSQL 17.6. Together with original
+Query02 and prior body verification, this closes the scoped teacher schema,
+function/trigger metadata and existing ACL review. Do not rerun those reports.
 
-Only [18](sql/production-reset-dashboard/18_teacher_schema_gaps.sql) (14 remaining
-catalog flag/ownership items) and [19](sql/production-reset-dashboard/19_teacher_guard_metadata_gaps.sql)
-(four metadata/role items) are new. Reuse retained reports first; do not repeat the
-broad diagnostics. PostgreSQL pretty/default rendering and search_path differences
-are separated from structural drift. Both proposed migration pairs stay unchanged.
+All three function/table owners are postgres; candidate postgres roles can execute.
+Existing guard EXECUTE belongs to postgres/service_role; anon/authenticated have
+no effective EXECUTE. That does not entitle service_role to the new reset tables
+or establish actual Vercel identity. See the [administrator evidence summary](evidence/production-reset-final-admin-summary.json).
+Both migration mirrors remain unchanged. The added rehearsal/package/tests use
+only synthetic data and a verified disposable cluster; no production mutation.
 
 ## GO / NO-GO matrix
 
@@ -74,9 +74,9 @@ are separated from structural drift. Both proposed migration pairs stay unchange
 | Schedule guard source | GO for exact equivalence and preservation | Removing only the 109-byte comment reproduces live MD5 8bf0ff83d02322ec49fb6500f794a74e. No executable difference; positive/negative differential tests pass. |
 | Enrollment guard source | GO for exact equivalence and preservation | Converting 59 LF characters to CRLF reproduces live MD5 2e995c04ca6865d8160d798ee9e5099f. Existing historical guard is validated and preserved. |
 | Parity definitions / reported properties | GO for Query 02 snapshot | Both enum labels/order, all nine displayed types/defaults/nullability/generation flags, two CHECKs and two index definitions/keys/exported flags match. Full original and 16-item extract checked; pretty/default CHECK rendering explains differing hashes. |
-| Unreported schema flags / DDL ownership | NO-GO pending narrow Query 18 | Raw type identity/typmod, constraint local/inheritance flags, index live/exclusion/nulls-not-distinct flags and owners are absent from Query 02. No repeated default/definition query needed. |
-| Availability-course FK | GO for reported definition/actions/validation; flags pending | Reviewed pretty-definition hash and ordered columns match; both deferral flags and SIMPLE match also confirmed in full Query 02; only local/inheritance flags and DDL ownership remain. |
-| Guard metadata / ownership / existing ACLs | Partial GO; remaining assertions NO-GO | Owner postgres, invoker, trigger hashes/O/23/zero args and config hashes confirmed; two headers add shape evidence. Query 19 checks table/migration-role equality, full attributes/overloads/trigger flags and reports ACLs. Existing ACLs are preserved, not allowlisted by parity. |
+| Remaining teacher schema flags / reported ownership | GO for reported Query18/19 snapshot | 14/14 MATCH; table/function ownership postgres reported. Actual migration connection identity remains a separate gate. |
+| Availability-course FK | GO for scoped parity | Query02 definition/actions/validation/deferral and Query18 inheritance checks match. |
+| Guard metadata / reported ownership / existing ACLs | GO for candidate-role snapshot | Query19 confirms all three expected attributes/configuration/triggers and postgres ownership; postgres/service_role EXECUTE, anon/authenticated denied. Preserve these existing guards; actual runtime identity still unverified. |
 | Registration uniqueness | GO for duplicate check; migration pending | Zero duplicate groups. Missing unique indexes require the separately approved canonical rollout. |
 | Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
@@ -86,7 +86,8 @@ are separated from structural drift. Both proposed migration pairs stay unchange
 | Actual Vercel runtime identity | NO-GO | Not independently verified; Query 10 cannot prove which role Prisma uses. |
 | New-table client protection | GO for isolated remediation; NO-GO for rollout | Exact broad TABLE defaults confirmed. New-object ACL cleanup and effective assertions deny all eight privileges and function execution to clients; strict invoker state guard closes NULL/RLS bypass. Actual creator/runtime memberships and live-compatible staging still require verification. |
 | PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
-| Deployment readiness | NO-GO | Resolve above gates, Preview isolation, backup/restore/load checks and human acceptance. CI is not production authorization. |
+| Synthetic release/recovery | GO for isolated scope | Future-delta checksum/order, non-superuser owner, six scopes, rollback/repeat rejection, modest lock/load and pre/post backup restoration tested. Not actual production roles/history/platform recovery. |
+| Deployment readiness | NO-GO | Metadata confirms shared Preview/Production database/Auth entries. Resolve identities, identifier approval/implementation, genuine history, Preview isolation and human/platform acceptance. CI is not production authorization. |
 
 ## FK assessment
 
@@ -137,9 +138,9 @@ values, two rate/unit checks, one FK and two indexes now have structural asserti
 Missing intended objects may be added; conflicting definitions are never silently
 accepted or rewritten. This is not proof that production's remaining parity DDL is
 redundant. The subsequent full Query 02 reconciliation confirms reported definitions
-and presence. Only scoped catalog/ownership gaps in the remaining-gates document
-require new schema evidence; reuse the confirmed definitions in isolated
-live-compatible staging. Remaining strict attributes may correctly block rollout.
+and presence. Administrator Queries18/19 now close the scoped catalog/metadata review; reuse
+these confirmed definitions in staging. Actual runtime and chosen migration
+connection identities remain separate checks. Do not weaken the strict assertions.
 The known body-hash mismatch itself no longer blocks preservation.
 
 ## Payroll classification and backfill safety
@@ -262,8 +263,9 @@ inconsistent payroll postings, refusal to replace unknown guard bodies, preserve
 orphan audits, and financial/academic resets with the 22 exact live FK variants.
 No historical migration is rewritten or production FK changed to match Prisma.
 
-Before approval: reconcile the remaining guard attributes and non-function parity DDL; sign off
-the preserved historical payroll findings; establish complete identifier history;
+The scoped guard attributes and non-function parity DDL review is closed by
+Queries18/19. Before approval: sign off the preserved historical payroll findings;
+approve and implement the proven identifier reservation or namespace policy;
 reconcile the three migration records; verify actual roles; and validate the
 corrected ACL/state model on an isolated PostgreSQL 17 staging restore with
 representative schema, load, lock timeouts and backup/restore procedures. Keep schema deployments separate from resets.
@@ -277,9 +279,11 @@ checks before and after fixture migration, 18 reset integration tests, and the
 production build. Database validation used PostgreSQL 17.6 on fresh owned loopback
 clusters. The build retains the previously documented ESLint compatibility warning
 and expected static-read errors against an intentionally unavailable dummy DB.
-The latest correction changes only the still-unapplied teacher-parity pair. The
-reset-integrity security correction and all historical migrations remain unchanged.
-Current validation results and the published commit are recorded in the draft PR.
+That earlier correction changed the still-unapplied teacher-parity pair. The
+consolidated follow-up changes only release tooling, isolated tests and documents;
+both migration pairs and all historical migrations remain unchanged. Current
+validation results are in the [release rehearsal evidence](evidence/production-reset-release-rehearsal.json)
+and the draft PR, separate from those historical test counts.
 
 <!-- Generated metadata tables follow; no personal or financial records. -->
 

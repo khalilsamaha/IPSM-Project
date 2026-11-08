@@ -7,18 +7,22 @@ The [reconciliation matrix](PRODUCTION_RESET_RECONCILIATION.md) and
 [administrator summary](evidence/production-reset-2026-11-08-summary.json) distinguish
 reported production observations from isolated reproduction.
 
-## Current scoped closeout
+## Consolidated completion
 
-See [remaining evidence and administrator decisions](PRODUCTION_RESET_REMAINING_GATES.md)
-for the 15-object schema ledger, confirmed versus missing function metadata,
-two targeted read-only reports, identifier alternatives and three-record provenance
-worksheet requirements. Exact guard-body equivalence stays resolved. The original
-545-item Query 02 and 16-item teacher extract are now reconciled: all scoped
-objects are present and reported definitions/defaults/flags match. Query 18 is
-narrowed to 14 still-unreported type/constraint/index flags and ownership items.
-Query 19 checks metadata/ownership and reports ACLs
-without fetching bodies. No migration or application behavior changes in this
-follow-up, and no speculative live match is claimed from isolated reference data.
+The [final gate ledger](PRODUCTION_RESET_REMAINING_GATES.md) and
+[release/recovery runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md) replace requests
+for repeated diagnostics. Administrator Queries18/19 are complete: 14/14 schema
+MATCH, four metadata REVIEW_REQUIRED, zero blockers, PG17.6. Teacher schema and
+existing guard attributes/configuration/triggers/ownership/ACL review is closed
+for that snapshot. Candidate postgres execution is confirmed; actual Vercel and
+intended migration connection identities are not.
+
+New independent work: metadata-only Vercel scope inspection confirms shared
+Production/Preview DB/Auth configuration; repository migration-lineage research;
+complete proposed identifier contract; truthful future-delta package/verifier;
+synthetic release/load/backup/restore rehearsal; financial-owner acknowledgement
+and production runbook. Neither proposed migration pair nor application behavior
+changes. Business-facing identifier policy stays unimplemented pending approval.
 
 ## What the new evidence resolves
 
@@ -136,11 +140,10 @@ The older-schema path may create both-absent availability/schedule pairs using t
 original canonical definitions. IPSM reports all three present, so its intended path
 is preservation. Previously implemented reset security migrations remain unchanged.
 
-Non-function parity DDL remains an independent production gate. Exact enum, column,
-default, CHECK, FK and index assertions replace name-only acceptance. Confirm live
-attributes/ownership/ACLs and non-function definitions against the scoped reference,
-then test the approved migration delta in isolated staging. Source equivalence is
-not a certificate for the full production schema or a deployment authorization.
+Administrator Query18/19 now completes the scoped non-function and metadata
+review alongside Query02. The release rehearsal tests the exact approved delta
+against synthetic reconstruction. These scoped findings are not a full production
+history/runtime-role certificate or deployment authorization.
 
 No business rules change: NULL teacher/enrollment behavior, occurrence-based
 registration eligibility, archived handling and time windows remain as before.
@@ -155,14 +158,17 @@ recovered floor. Empty tables make starting FAM at 1 possible in the current
 migration; **this is not safe evidence that 1 was never issued**. Absence of audit
 matches cannot establish historical completeness for any kind/year.
 
-Preferred path: privately reconcile receipts, exports, backups and issuance
-records for every previously issued kind/year; record a reviewed reservation
+If complete historical sources can be certified, privately reconcile receipts,
+exports, backups and issuance records for every previously issued kind/year; record a reviewed reservation
 manifest (owners where proven, ownerless otherwise), highest issued numbers,
 coverage and provenance. Reserve actual known values and disallow new ownership
 of legacy codes. A counter floor alone does not stop explicit imports below it.
 Do not include individual identifiers or owner data in the public review.
 
-If complete recovery is impossible, recommend a **new, approved issuance namespace**
+No complete source was found in available evidence. Recommend the
+[proposed IPSM2 namespace contract](PRODUCTION_RESET_IDENTIFIER_DECISION.md), subject
+to business approval and non-use proof. If complete recovery is impossible, use a
+**new, approved issuance namespace**
 with a non-overlapping format (a dedicated epoch component, not just a larger number
 or new year). Establish that the new format was never historically accepted/issued;
 if this cannot be established, keep issuance blocked. Enforce the namespace on all
@@ -185,14 +191,14 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 
 | Gate / owner | Required artifact before advancing |
 | --- | --- |
-| Evidence / administrator | Reuse retained reports 02/03/10/12–17; original 02/extract now reconciled. Only scoped 18 (14 items) and 19 (four items) are new follow-ups. Confirm actual runtime and migration role names from their existing connection contexts; Dashboard current_user is insufficient. |
-| Guards / application owner + DBA | Exact body equivalence and preserve decision are now verified. Review final assertions and reconcile production attributes/ownership/ACLs plus non-function objects; run the approved delta against isolated live-compatible staging. |
+| Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; provide retained Query16 per-version rows/authentic SQL. |
+| Guards / application owner + DBA | Body, schema and metadata preservation checks are closed for the reported snapshot; no repeat needed. Keep strict assertions. Synthetic delta rehearsal preserves guard catalog entries. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Complete reservation/ownership policy or enforceable proven-disjoint namespace; exercise deleted-history, manual import, concurrent issuance and overflow tests. |
 | ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
 | Provenance / release owner | Privately inspect actual stored statements and trusted deployment artifacts; inventory current objects and explicitly document unrecoverable history. Produce a sanitized current-schema snapshot as a reconstruction baseline, **not a migration claimed to have run**. |
 | Release packaging / DBA | Isolated release workspace containing only truthful canonical history and the approved future delta. Where old SQL cannot be recovered, resolve the tool's history-matching strategy explicitly before deployment; do not synthesize statements/repair applied rows to make tooling happy. Review the pending list/dry-run and prove it contains only approved new changes. |
-| Staging / QA | Build an isolated PG17 database from the reviewed current schema (including guards/default ACLs), replay only the future delta; test rollback, runtime role, permissions, data integrity, identifiers, concurrency/lock load and backup restoration. No production data/credentials needed in CI. |
+| Staging / QA | Synthetic PG17 delta/role/load/restore rehearsal implemented. Remaining acceptance is actual intended role/membership and representative workload/platform recovery, plus separately isolated Preview/Auth. No production data/credentials in CI. |
 | Approval / owner | Full CI on the final commit, human review, Preview database isolation, maintenance/backup plan and explicit separate migration/deployment authorization. Keep draft until these are satisfied. |
 | Future release / authorized operator | Only after separate approval: pause relevant writers, take/verify backup, apply canonical reviewed delta once, run read-only postchecks, then release compatible application version. Treat partial/failed verification as stop; recover using tested procedure, not ad hoc down SQL. Never include a Production Reset execution in deployment validation. |
 
@@ -203,26 +209,32 @@ create diagnostic endpoints, deploy, or change environment variables for this re
 
 ## Validation scope
 
-For this evidence follow-up, Prisma generation, TypeScript and **410 unit tests**
-passed locally. PostgreSQL **17.6** passed the full migration suite, **40 Dashboard
-checks before and after migration**, **18 reset integration tests**, **33 security
-regressions** and **70 teacher-parity tests**. The 161 database tests are gated out
-of the regular unit run. New regressions reproduce the administrator's three
-pretty constraint hashes, verify the nine column/default and two index observations,
-and exercise remaining metadata gaps, missing objects, redaction, role placeholders,
-ownership, configuration, overload and inherited EXECUTE reporting. Both mirrored
-migration pairs and all historical migrations remain unchanged.
+The consolidated follow-up passed Prisma generation, TypeScript and **414 unit
+tests** locally. The **169 database tests** are gated out of the unit run and
+executed by the disposable runner: **40 Dashboard checks before and after the
+migration**, **18 reset integration tests**, **33 security regressions**, **70
+teacher-parity tests**, and **8 new release/recovery tests**. Historical migration
+fixtures, preflight synthetic-secret redaction and byte-identical mirror checks
+also pass. Local PostgreSQL is **17.6**; see the
+[recorded rehearsal evidence](evidence/production-reset-release-rehearsal.json)
+for commands, package hashes, timings and synthetic-only limitations.
+
+The new release tests reconstruct reported live FK/guard/default-ACL behavior,
+apply only the checked future delta under a non-superuser owner, preserve guard
+catalog entries, reject repeated migration, roll back an injected mid-migration
+failure and lock timeout, exercise all six scopes, protect users/audit/Auth mock
+records, and restore pre/post backups with matching logical data/schema/permissions.
+They prove mechanics for synthetic records, not unknown production history or roles.
 
 The production build passed with the existing ESLint compatibility warning and
 expected static reads against an unavailable loopback fixture; this is not a clean
-standalone lint result. An initial sandboxed build stalled and was stopped; the
-successful retry permitted subprocess execution with loopback-only DB/Supabase
-URLs. Next's generated lockfile patch was discarded; no dependency change is part
-of this review. Hosted CI on the follow-up commit is recorded in the PR and final
-completion report, separate from the prior green baseline.
+standalone lint result. Build subprocesses used explicit loopback-only DB/Supabase
+settings. Next's generated lockfile patch was discarded; no dependency change is
+part of this review. Hosted CI and its actual job logs for the final commit are
+recorded in the draft PR and final completion report, separate from local results.
 
-The preceding change modified the unapplied teacher-parity pair. The current
-closeout changes only diagnostics, tests and review documents. Historical migrations and the preceding reset-integrity
-security correction remain unchanged. No production functions, permissions, data,
-environment configuration or history were modified. PR90 remains draft; PR2 is
-unimplemented.
+Both proposed migration pairs, historical migrations, application business logic,
+dependencies and CI workflow remain unchanged. This closeout adds offline release
+tooling, isolated tests and documentation/evidence only. No production functions,
+permissions, data, environment configuration or history were modified. PR90 remains
+draft; PR2 is unimplemented.

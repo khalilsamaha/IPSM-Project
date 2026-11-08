@@ -1,0 +1,60 @@
+{
+  "project_ref": "rakzehtbpzseetldbohm",
+  "research_baseline": "4f39913c94d565704dad3061a1de6139c0997c60",
+  "reachable_commits_examined": 298,
+  "recorded_versions": [
+    {
+      "version": "20260731171613",
+      "statement_count": null,
+      "statements_hash": null,
+      "trusted_original_sql": null,
+      "attributable_objects": [],
+      "evidence_quality": "administrator-reported version only; counts 0/1/1 not independently mapped",
+      "unresolved": "original Query16 per-version rows and authentic SQL/deployment source"
+    },
+    {
+      "version": "20260801163840",
+      "statement_count": null,
+      "statements_hash": null,
+      "trusted_original_sql": null,
+      "attributable_objects": [],
+      "evidence_quality": "administrator-reported version only; counts 0/1/1 not independently mapped",
+      "unresolved": "original Query16 per-version rows and authentic SQL/deployment source"
+    },
+    {
+      "version": "20260801165129",
+      "statement_count": null,
+      "statements_hash": null,
+      "trusted_original_sql": null,
+      "attributable_objects": [],
+      "evidence_quality": "administrator-reported version only; counts 0/1/1 not independently mapped",
+      "unresolved": "original Query16 per-version rows and authentic SQL/deployment source"
+    }
+  ],
+  "recorded_versions_found_in_migration_paths": false,
+  "repository_candidates_not_proven_applications": [
+    {
+      "path": "supabase/migrations/20260730000000_registration_attempts_shift_integrity.sql",
+      "current_sha256": "3f5987bd4c3c98f32c0fa246d4410bcad811d68b18098b27546671966a9a8b53",
+      "production_version_mapping": "unproven; not assigned by date or matching object bodies",
+      "followed_lineage_origin_commit": "9e56a6062da84a93039eb31a4965096b0893520e"
+    },
+    {
+      "path": "supabase/migrations/20260801101500_teacher_consistency.sql",
+      "current_sha256": "b8f224f064ee58dbf1947eef5f2750b136dd2ff9134ded44da5e3a43b29d8107",
+      "production_version_mapping": "unproven; not assigned by date or matching object bodies",
+      "followed_lineage_origin_commit": "2e4410478108e3bc50259f476cba31541f78651a"
+    },
+    {
+      "path": "supabase/migrations/20260801190000_enrollment_teacher_availability.sql",
+      "current_sha256": "a1c7afcdac7bd787a2cc46e438892dd2019eea8b018a50ee41b970baf0c2d98f",
+      "production_version_mapping": "unproven; not assigned by date or matching object bodies",
+      "followed_lineage_origin_commit": "630408b14530e915d6c4656637636064d5c46551"
+    }
+  ],
+  "known_private_history_snippet_bytes": 1,
+  "supabase_read_only_history_probe": "denied by connector; no substitute project accessed",
+  "canonical_future_mechanism": "Supabase",
+  "prisma_use": "schema/client generation and reviewed mirror verification",
+  "package_status": "future-delta rehearsal bundle only; authentic history packaging blocked"
+}
