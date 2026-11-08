@@ -7,7 +7,30 @@ The [reconciliation matrix](PRODUCTION_RESET_RECONCILIATION.md) and
 [administrator summary](evidence/production-reset-2026-11-08-summary.json) distinguish
 reported production observations from isolated reproduction.
 
-## Consolidated completion
+## Approved identifier implementation follow-up
+
+The selected unversioned IPSM format is implemented in a third additive mirrored
+migration and application paths. See [the implementation/security/recovery review](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md).
+The two foundation migration pairs, teacher guards and historical migrations remain
+unchanged. The new objects use the same owner-only effective-ACL enforcement; all
+functions remain SECURITY INVOKER. BIGINT counters, immutable reservations,
+transactional creation, exact-owner restoration/import, payment replay and legacy
+compatibility are covered by the final-schema suite.
+
+Activation is absent by default and requires a separately selected latest enabled
+attestation, historical non-use/recovery evidence and a matching database/server
+lifetime. Restores/restarts fail closed until recertified. This is an explicit
+availability trade-off; read the release runbook before approval. Actual owner/runtime
+role identity remains unverified. No test certificate or environment setting is
+installed in production.
+
+The older foundation-test counts below are historical. Current validation results
+are recorded in the identifier implementation evidence and the final draft PR CI
+report. The [current gate ledger](PRODUCTION_RESET_REMAINING_GATES.md) supersedes
+older identifier-format approval/implementation requests: format approval is complete;
+non-use certification and production activation are not.
+
+## Prior foundation consolidation (before identifier implementation)
 
 The [final gate ledger](PRODUCTION_RESET_REMAINING_GATES.md) and
 [release/recovery runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md) replace requests
@@ -21,8 +44,9 @@ New independent work: metadata-only Vercel scope inspection confirms shared
 Production/Preview DB/Auth configuration; repository migration-lineage research;
 complete proposed identifier contract; truthful future-delta package/verifier;
 synthetic release/load/backup/restore rehearsal; financial-owner acknowledgement
-and production runbook. Neither proposed migration pair nor application behavior
-changes. The `IPSM` display grammar is selected; implementation and historical non-use proof are still pending.
+and production runbook. That earlier consolidation left application behavior and
+the two foundation migration pairs unchanged. The current follow-up implements
+the selected IPSM grammar in a third delta; historical non-use proof remains pending.
 
 ## What the new evidence resolves
 
@@ -150,7 +174,7 @@ registration eligibility, archived handling and time windows remain as before.
 Schedule still relies on other layers for assignment/level revalidation and
 enrollment-date limits; this task does not introduce unrelated rule hardening.
 
-## Identifier policy: no reuse claim without a defensible history
+## Historical identifier rationale (now implemented as inactive IPSM)
 
 The known ledger seed would recover RCPT-2026 through at least sequence 14 and
 STU-2026 through at least 5; the next allocator minima are 15 and 6. FAM has no
@@ -175,10 +199,11 @@ if this cannot be established, keep issuance blocked. Enforce the namespace on a
 new creation/import paths at the database layer, retain legacy reservations and
 allow legacy ownership only through reviewed historical restoration. Update
 allocator/parser/receipt display/export validation and tests together before any
-use. The current allocator and regex backfill do not implement this policy.
+use. The third identifier delta now implements the approved policy and blocks activation
+until certification; the two foundation migrations alone do not.
 An arbitrary large starting number or 2027 rollover is not a proof of non-reuse.
-This recommendation requires a separate focused PR1 correction/approval; nothing
-has been reserved or renumbered in production.
+The focused PR1 implementation is now prepared; nothing has been activated,
+reserved or renumbered in production.
 
 ## Canonical migration path and concrete release sequence
 
@@ -194,7 +219,7 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 | Evidence / administrator | Queries02/18/19 are now reconciled; no repeat requested. Confirm actual runtime/migration role names and membership context through existing connections; provide retained Query16 per-version rows/authentic SQL. |
 | Guards / application owner + DBA | Body, schema and metadata preservation checks are closed for the reported snapshot; no repeat needed. Keep strict assertions. Synthetic delta rehearsal preserves guard catalog entries. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
-| Identifiers / business owner + DBA | Complete reservation/ownership policy or enforceable proven-disjoint namespace; exercise deleted-history, manual import, concurrent issuance and overflow tests. |
+| Identifiers / business owner + DBA | Approved IPSM implementation/tests are prepared; certify historical non-use and complete recovery before activation. No repeated format decision is needed. |
 | ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
 | Provenance / release owner | Privately inspect actual stored statements and trusted deployment artifacts; inventory current objects and explicitly document unrecoverable history. Produce a sanitized current-schema snapshot as a reconstruction baseline, **not a migration claimed to have run**. |
 | Release packaging / DBA | Isolated release workspace containing only truthful canonical history and the approved future delta. Where old SQL cannot be recovered, resolve the tool's history-matching strategy explicitly before deployment; do not synthesize statements/repair applied rows to make tooling happy. Review the pending list/dry-run and prove it contains only approved new changes. |
@@ -207,7 +232,7 @@ separately the selected migration connection, read-only `SELECT current_user,
 session_user`; share only role names/context. Do not retrieve or publish secrets,
 create diagnostic endpoints, deploy, or change environment variables for this review.
 
-## Validation scope
+## Prior foundation validation scope
 
 The consolidated follow-up passed Prisma generation, TypeScript and **414 unit
 tests** locally. The **169 database tests** are gated out of the unit run and
@@ -233,8 +258,15 @@ settings. Next's generated lockfile patch was discarded; no dependency change is
 part of this review. Hosted CI and its actual job logs for the final commit are
 recorded in the draft PR and final completion report, separate from local results.
 
-Both proposed migration pairs, historical migrations, application business logic,
-dependencies and CI workflow remain unchanged. This closeout adds offline release
-tooling, isolated tests and documentation/evidence only. No production functions,
+Those foundation results preceded the current identifier implementation. The two
+foundation migration pairs, historical migrations, dependencies and CI workflow
+remain unchanged. The current follow-up adds the third identifier delta, application
+paths and final-schema tests described above. No production functions,
 permissions, data, environment configuration or history were modified. PR90 remains
 draft; PR2 is unimplemented.
+
+Current identifier validation: [machine-readable evidence](evidence/production-reset-ipsm-identifiers.json)
+records 425 unit tests and 200 disposable PostgreSQL tests (including 31 identifier
+tests), Prisma generation, TypeScript and production build. Hosted CI is recorded
+on the draft PR for the published commit. Local PostgreSQL is 17.6; synthetic
+certificates and roles do not close the production evidence gates.

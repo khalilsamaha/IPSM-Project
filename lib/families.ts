@@ -1,17 +1,21 @@
-import { allocateBusinessIdentifier, type IdentifierStore } from "@/lib/business-identifiers";
+import { randomUUID } from "node:crypto";
+import { allocateBusinessIdentifier, inIdentifierTransaction, type IdentifierStore } from "@/lib/business-identifiers";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 export function formatFamilyLabel(family: { familyCode: string; name: string }) {
   return `${family.familyCode} — ${family.name}`;
 }
 
-export async function generateFamilyCode(client: IdentifierStore, createdAt = new Date()) {
-  return allocateBusinessIdentifier(client, "FAM", createdAt);
+export async function generateFamilyCode(client: IdentifierStore, ownerId: string, createdAt = new Date()) {
+  return allocateBusinessIdentifier(client, "FAM", ownerId, createdAt);
 }
 
 export async function createFamilyWithCode(client: Prisma.TransactionClient | PrismaClient, data: Omit<Prisma.FamilyCreateInput, "familyCode">) {
-  const familyCode = await generateFamilyCode(client);
-  return client.family.create({ data: { ...data, familyCode } });
+  return inIdentifierTransaction(client, async tx => {
+    const id = data.id ?? randomUUID();
+    const familyCode = await generateFamilyCode(tx, id);
+    return tx.family.create({ data: { ...data, id, familyCode } });
+  });
 }
 
 export function familySearchWhere(q: string) {

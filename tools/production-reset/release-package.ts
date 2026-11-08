@@ -4,7 +4,7 @@ import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Offline only: no database client, deployment API or history repair operation.
-export const releaseVersions = ["20261107000000_teacher_guard_parity", "20261107010000_reset_integrity"] as const;
+export const releaseVersions = ["20261107000000_teacher_guard_parity", "20261107010000_reset_integrity", "20261108000000_ipsm_identifiers"] as const;
 const digest = (value: Buffer) => createHash("sha256").update(value).digest("hex");
 export function buildReleasePackage(directory: string, repository = process.cwd()) {
   const migrations = releaseVersions.map(name => {
@@ -21,7 +21,7 @@ export function buildReleasePackage(directory: string, repository = process.cwd(
     historicalSqlIncluded: false, historicalVersions: ["20260731171613", "20260801163840", "20260801165129"],
     historyNote: "Authentic SQL and per-version statement counts unavailable; no substitute history files created.",
     migrations: migrations.map(({ source: _source, ...m }) => m),
-    gates: ["runtime and migration connection identity", "identifier business decision and implementation", "authentic history packaging", "Preview/Auth isolation", "financial acknowledgement", "release approval"],
+    gates: ["runtime and migration connection identity", "historical namespace non-use and recovery certification", "authentic history packaging", "Preview/Auth isolation", "financial acknowledgement", "release approval"],
   };
   writeFileSync(join(directory, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   writeFileSync(join(directory, "README.txt"), "REVIEW / DISPOSABLE REHEARSAL ONLY. Not a Supabase CLI deployment workspace.\nNo original history was recovered. No production apply command is supplied.\nRead docs/PRODUCTION_RESET_RELEASE_RUNBOOK.md before considering a future release.\n");

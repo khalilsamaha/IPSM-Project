@@ -1,0 +1,85 @@
+{
+  "recorded_at": "2026-11-08T11:55:26.324462+00:00",
+  "project_ref": "rakzehtbpzseetldbohm",
+  "implementation_baseline": "40f11670ea5b40d9fcafc3e01fefbbacbd613809",
+  "approved_grammar": "^(FAM|STU|RCPT)-IPSM-[0-9]{4}-[0-9]{6,19}$",
+  "production_activation": "BLOCKED; no certification, activation row or environment setting installed",
+  "historical_non_use_certified": false,
+  "actual_vercel_runtime_identity_verified": false,
+  "local_validation": {
+    "prisma_generation": "passed (5.22.0)",
+    "typescript": "passed",
+    "unit_passed": 425,
+    "database_tests_gated_to_disposable_runner": 200,
+    "postgresql": "17.6",
+    "dashboard_checks": 40,
+    "dashboard_runs": 2,
+    "reset_tests": 18,
+    "foundation_security_tests": 33,
+    "teacher_parity_tests": 70,
+    "foundation_release_restore_tests": 8,
+    "final_identifier_tests": 31,
+    "migration_fixtures_and_redaction": "passed",
+    "production_build": "passed; existing nonfatal ESLint compatibility warning; explicit unavailable-loopback DB/Auth settings",
+    "new_delta_rollback_and_repeat_rejection": "passed",
+    "seed_twice_on_restored_fixture": "passed with preserved guards; synthetic eligibility setup and explicit updates",
+    "same_transaction_ownership_and_payment_replay": "passed",
+    "all_six_scopes_preserve_identifier_history": "passed",
+    "new_function_table_client_acl_paths": "passed; owner-only including PG17 MAINTAIN and inherited roles",
+    "backup_and_post_backup_issuance_recovery": "passed using synthetic independent journal; old restored activation denied",
+    "server_restart_hold": "passed; fresh attestation required",
+    "timezone_regression": "passed; UTC interpretation of Prisma audit timestamps, non-UTC reactivation and pre-activation future-dated overlap"
+  },
+  "future_delta": [
+    {
+      "name": "20261107000000_teacher_guard_parity",
+      "filename": "20261107000000_teacher_guard_parity.sql",
+      "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+    },
+    {
+      "name": "20261107010000_reset_integrity",
+      "filename": "20261107010000_reset_integrity.sql",
+      "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+    },
+    {
+      "name": "20261108000000_ipsm_identifiers",
+      "filename": "20261108000000_ipsm_identifiers.sql",
+      "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+    }
+  ],
+  "package_status": "REHEARSAL_ONLY_PRODUCTION_BLOCKED",
+  "local_logs": {
+    "ipsm-identifier-generate.log": {
+      "sha256": "d2658988433434effb76f9ecce7c6547e542ec5872239a6688e93fc4235b9530"
+    },
+    "ipsm-identifier-type.log": {
+      "sha256": "deaf364843166054098babdec791230b0b2900708615f211b174032e5c8a34e0"
+    },
+    "ipsm-identifier-unit.log": {
+      "sha256": "915f5925b1f4439a0a505ff0d50b0dbcdfda739a22151613b2a41284ccc5280f"
+    },
+    "ipsm-identifier-pg17-final.log": {
+      "sha256": "bab5f722dcd3251659de2aa6045271fb85ba1c4aebb7dfd61541a7fb9d12288e"
+    },
+    "ipsm-identifier-build-final.log": {
+      "sha256": "186aab407bafdc2b028e38da37a3896d9055014d1b6c43336b6e3e4519f6e1cb"
+    }
+  },
+  "external_evidence": {
+    "supabase_history_query": "denied",
+    "supabase_migration_listing": "denied",
+    "supabase_branch_discovery": "denied",
+    "original_query16_records": "not available in known IPSM evidence files",
+    "vercel_metadata": "five DB/Auth entries still shared Production/Preview; branch-specific override check found none",
+    "credential_values_retrieved": false
+  },
+  "limits": [
+    "Synthetic role model is not actual Vercel runtime/migration identity.",
+    "No authentic three-version history/pending-list certification or history repair.",
+    "No real isolated Supabase Auth resource accessible for integration validation.",
+    "Historical non-use and recovery manifest completeness require administrator certification.",
+    "In-place logical restore into the same live database/postmaster is unsupported; use a fresh target and hold issuance.",
+    "Financial-owner acknowledgement of three historical payroll audit orphans remains pending.",
+    "Hosted CI is recorded separately on the draft PR and completion updates."
+  ]
+}

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION, resetTables } from "@/lib/production-reset";
 import { createDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
-import { allocateBusinessIdentifier } from "@/lib/business-identifiers";
+import { allocateBusinessIdentifier } from "./helpers/legacy-identifiers";
 import { ensurePaymentReceipt } from "@/lib/payments/receipt-repair";
 
 const url = process.env.RESET_TEST_DATABASE_URL;

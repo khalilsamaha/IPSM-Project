@@ -326,3 +326,16 @@ distinguishes synthetic test coverage from pending live-role and human acceptanc
 - [ ] Approve and implement the identifier policy before issuance; test post-backup issued-code recovery.
 - [ ] Obtain financial-owner acknowledgement and separate Preview database/Auth isolation.
 - [ ] Verify platform/roles/Auth/storage recovery and representative staging load before separate release approval.
+
+### Approved IPSM identifiers (inactive production)
+
+- [ ] Third migration mirrors match; older two pairs and historical files are unchanged.
+- [ ] No migration/seed creates an activation; unknown/held/stale activation blocks issuance.
+- [ ] FAM/STU/RCPT owner-bound BIGINT allocations and creation commit together; no old-max fallback.
+- [ ] Concurrent/replayed payment requests do not duplicate postings; changed payloads reject.
+- [ ] Legacy repair/display, maximum-length PDF/CSV and numeric receipt ordering preserve exact values.
+- [ ] Manual insert, counter rewind, ledger mutation and unreviewed restoration reject.
+- [ ] Exact-owner manifest restoration/recovery, all six reset scopes and client ACLs pass on PG17.
+- [ ] Fresh restore/server restart rejects the old activation; reconcile independent post-backup issuance before reactivation.
+- [ ] Query20 runs read-only only after the final schema; missing objects are positively tested as blockers.
+- [ ] Non-use certification, actual role identity, authentic history, isolated Preview/Auth and financial acknowledgement remain external release gates.

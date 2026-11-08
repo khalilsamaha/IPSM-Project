@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { allocateFamilyPaymentAutomatically, applyPaymentBalance, isPayableFamilyEnrollment, payableFamilyOutstandingCents, reversePaymentBalance, validateManualFamilyAllocations, validatePaymentAllocations } from "@/lib/payments/payment-allocation";
-import { nextReceiptNumber, parseReceiptNumber } from "@/lib/payments/receipt-number";
+import { parseReceiptNumber } from "@/lib/payments/receipt-number";
 
 describe("payment calculations", () => {
   it("supports partial payments", () => {
@@ -29,15 +29,11 @@ describe("payment calculations", () => {
     expect(reversePaymentBalance(posted, 1500)).toEqual({ paidCents: 1000, remainingCents: 4000 });
   });
 
-  it("parses legacy four-digit receipt numbers", () => {
-    expect(parseReceiptNumber("RCPT-2026-0001")).toEqual({ year: 2026, sequence: 1 });
-    expect(nextReceiptNumber("RCPT-2026-0006", new Date("2026-06-29T00:00:00Z"))).toBe("RCPT-2026-000007");
+  it("parses both legacy and IPSM receipt numbers without allocating", () => {
+    expect(parseReceiptNumber("RCPT-2026-0001")).toEqual({ year: 2026, sequence: BigInt("1"), namespace: "legacy" });
+    expect(parseReceiptNumber("RCPT-IPSM-2027-9223372036854775807")).toEqual({ year: 2027, sequence: BigInt("9223372036854775807"), namespace: "IPSM" });
   });
 
-  it("generates unique six-digit yearly receipt numbers", () => {
-    expect(nextReceiptNumber("RCPT-2026-000009", new Date("2026-06-29T00:00:00Z"))).toBe("RCPT-2026-000010");
-    expect(nextReceiptNumber("RCPT-2025-000009", new Date("2026-01-01T00:00:00Z"))).toBe("RCPT-2026-000001");
-  });
 });
 
 describe("family allocation", () => {

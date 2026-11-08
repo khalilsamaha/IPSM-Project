@@ -202,3 +202,19 @@ postgres results still do not prove actual Vercel runtime identity. See the
 [release runbook](../../PRODUCTION_RESET_RELEASE_RUNBOOK.md) for the minimal
 remaining actions: actual identities/authentic history, business/financial
 decisions, and authorized environment isolation/release acceptance.
+
+## Identifier delta postcheck (Query20)
+
+[20_identifier_activation.sql](20_identifier_activation.sql) is a narrowly scoped,
+strictly read-only **post-installation staging** check for the approved IPSM delta.
+Run it only where the three-delta package has been separately authorized/installed.
+It reports BIGINT type, activation/binding status, aggregate history counts and
+client permissions. Missing objects/errors are blockers, never empty success.
+It does not certify historical non-use, identify the actual runtime connection,
+activate issuance or disclose codes, activation IDs, approvers or audit payloads.
+An empty/disabled activation is the intended pre-certification state.
+
+The separate `../identifier-activation-review-template.sql` is explicitly a
+**modifying, unexecuted review template**, not one of these read-only reports.
+It defaults to a hold and contains invalid placeholders. No production execution
+or environment change is authorized by its presence.

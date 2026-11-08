@@ -1,3 +1,4 @@
+import { parseReceiptNumber } from "@/lib/payments/receipt-number";
 import type { PrismaClient } from "@prisma/client";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -69,8 +70,8 @@ function addText(commands: string[], x: number, y: number, text: string, options
 function addLine(commands: string[], x1: number, y1: number, x2: number, y2: number) { commands.push(`${x1} ${y1} m ${x2} ${y2} l S`); }
 function addRect(commands: string[], x: number, y: number, w: number, h: number) { commands.push(`${x} ${y} ${w} ${h} re S`); }
 
-export async function generateReceiptNumber(store: PaymentStore, date = new Date()) {
-  return generateUniqueReceiptNumber(store, date);
+export async function generateReceiptNumber(store: PaymentStore, paymentId: string, date = new Date()) {
+  return generateUniqueReceiptNumber(store, paymentId, date);
 }
 
 export function receiptPdfPath(paymentId: string) {
@@ -122,7 +123,7 @@ function drawField(commands: string[], x: number, y: number, label: string, valu
 function addDashedLine(commands: string[], x1: number, y: number, x2: number) { commands.push(`[4 3] 0 d ${x1} ${y} m ${x2} ${y} l S [] 0 d`); }
 
 function receiptFacts(payment: ReceiptPayment) {
-  const receiptYear = payment.receiptNumber?.match(/RCPT-(\d{4})-/)?.[1] ?? String(payment.paymentDate.getUTCFullYear());
+  const receiptYear = String(parseReceiptNumber(payment.receiptNumber)?.year ?? payment.paymentDate.getUTCFullYear());
   const students = unique((payment.family.students ?? []).map((student) => `${student.studentCode} - ${student.firstName} ${student.lastName}`));
   const studentIds = unique((payment.family.students ?? []).map((student) => student.studentCode));
   const seasons = unique(payment.items.map((item) => item.enrollment.season.name));
@@ -149,7 +150,8 @@ function drawA5Receipt(payment: ReceiptPayment, copyLabel = "", allocationStart 
     addText(commands, margin + 8, 562, "IPSM", { size: 10, font: "bold" });
     addText(commands, 88, 568, "IPSM Music School", { size: 15, font: "bold" });
     addText(commands, 88, 553, `Official Payment Receipt${copyLabel ? ` - ${copyLabel}` : ""}`, { size: 9 });
-    addText(commands, 260, 570, `Receipt No: ${payment.receiptNumber ?? "Pending"}`, { size: 8, font: "bold" });
+    addText(commands, 260, 582, "Receipt No:", { size: 7 });
+    addText(commands, 260, 570, payment.receiptNumber ?? "Pending", { size: 6.8, font: "bold" });
     addText(commands, 260, 558, `Payment date: ${formatFormalDate(payment.paymentDate)}`, { size: 8 });
     addText(commands, 260, 546, `Year: ${facts.receiptYear}`, { size: 8 });
     addLine(commands, margin, 538, A5.width - margin, 538);

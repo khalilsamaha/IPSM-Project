@@ -5,6 +5,17 @@ permission to perform it. No production SQL mutation, grant, environment change,
 reset, merge or deployment has been performed. All destructive tests use a fresh,
 runner-owned local database; auth rows in the rehearsal are synthetic stand-ins.
 
+## Current identifier delta and activation hold
+
+The business-selected unversioned IPSM format is implemented. Read
+[the identifier enforcement/recovery design](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md)
+and [exact isolated staging procedure](PRODUCTION_RESET_STAGING_SETUP.md). The ordered
+package now has **three** deltas; the third creates no activation. Certify non-use
+and complete recovery before any separate environment/configuration activation.
+A restart/failover or fresh restored database invalidates the selected attestation;
+recertification is required before new issuance. Unsupported in-place logical
+restoration into the same running database must not reuse a deployment binding.
+
 ## Completed gates and scope
 
 - Baseline/branch verified against fetched origin: main `a6abe1e`, PR branch
@@ -109,12 +120,12 @@ The offline builder has no database/deployment dependency:
 ./node_modules/.bin/tsx tools/production-reset/release-package.ts /tmp/ipsm-pr90-review-package
 ```
 
-Use a new output directory. It emits only the two genuine reviewed **future** SQL
-files in `future-delta/`, ordered parity then integrity, plus SHA-256 manifest and
+Use a new output directory. It emits only the three genuine reviewed **future** SQL
+files in `future-delta/`, ordered parity, integrity, then IPSM identifiers, plus SHA-256 manifest and
 an explicit `REHEARSAL_ONLY_PRODUCTION_BLOCKED` status. It refuses mirror drift,
 changed/reordered/extra SQL and overwriting a package. It is intentionally **not**
 a `supabase/migrations` deployment workspace and contains no fabricated old SQL.
-Both existing migration mirrors remain unchanged. The rehearsal applies this
+The two foundation migration pairs remain unchanged; the third pair is additive. The rehearsal applies this
 exact checked bundle and rejects reapplication of the integrity migration.
 
 Supported next provenance step for an authorized administrator: obtain the
@@ -131,8 +142,7 @@ Do not run `migration repair` or accept a `db pull` prompt to modify production
 history under this task. [Supabase history commands](https://supabase.com/docs/reference/cli/supabase-migration-list).
 
 After authentic history is reconciled, the release workspace must show exactly
-the two approved future versions pending (plus any subsequently approved identifier
-correction), and none of the historical repository tree. Review hashes and tool
+the three reviewed future versions pending, and none of the historical repository tree. Review hashes and tool
 version; apply only once through the canonical mechanism. Do not replay both mirrors.
 No CLI production pending-list certification is claimed in the absence of authentic
 history/connection access. Package order/checksums and repeat rejection are proved
@@ -198,7 +208,7 @@ before selecting a production maintenance window.
 
 | Stage | Operator requirement / stop condition |
 | --- | --- |
-| Admission | Close runtime identities, identifier implementation/approval, authentic history/pending list, Preview/Auth isolation and financial sign-off. Obtain explicit migration and application deployment authorization. CI alone cannot admit release. |
+| Admission | Close runtime identities, historical namespace non-use/recovery certification, authentic history/pending list, Preview/Auth isolation and financial sign-off. Obtain explicit migration and application deployment authorization. CI alone cannot admit release. |
 | Freeze | Stop relevant application writes, registration/payment/payroll jobs and cron activity; account for shared previews and external imports. Do not modify user accounts as a maintenance mechanism. Prohibit concurrent schema/function DDL. |
 | Backup | Record recovery point, verified DB/platform/role/storage coverage and checksums. Restore to an authorized isolated target and verify integrity/ACLs before proceeding. Keep an independent issuance record after the backup point; retain it through recovery. |
 | Recheck | Compare only changed evidence since the approved snapshot; verify current schema, roles/memberships, blockers and approved identifiers. Confirm exactly reviewed pending files/hashes. Unknown drift or timeouts stop the release. |
@@ -218,8 +228,7 @@ before selecting a production maintenance window.
    historical non-use or complete reservations, approve operational delivery/recovery
    constraints, and review the full implementation/test contract in
    [identifier decision](PRODUCTION_RESET_IDENTIFIER_DECISION.md); acknowledge the
-   three preserved payroll audit events using the form below. Identifier engineering
-   follows approval and must pass before release; it is not already implemented.
+   three preserved payroll audit events using the form below. Identifier engineering is implemented; no production activation is implied.
 3. **Deployment/release owner:** authorize and establish separate Preview database/
    Auth, attest actual identities without secrets, perform representative staging
    and platform backup/restore, then explicitly authorize any production release.

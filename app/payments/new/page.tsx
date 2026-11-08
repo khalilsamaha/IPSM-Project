@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { createPayment } from "@/actions/payments";
 import { AppShell } from "@/components/records/shell";
@@ -23,6 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
     <form method="get" className="card"><select name="familyId" defaultValue={familyId} className="input"><option value="">Select family</option>{families.map((family) => <option value={family.id} key={family.id}>{family.familyCode} — {family.name}</option>)}</select><button className="btn-secondary mt-2">Load balances</button></form>
     {familyId ? <form action={createPayment} className="card mt-4">
       <input type="hidden" name="familyId" value={familyId}/>
+      <input type="hidden" name="requestId" value={randomUUID()}/>
       <section className="mb-4 grid gap-3 sm:grid-cols-3">{[["Active registered amount", summary.totalAmountCents], ["Paid on active enrollments", summary.paidCents], ["Payable outstanding", payableOutstandingCents]].map(([label, value]) => <div className="rounded border p-3" key={label}><p className="text-xs text-muted-foreground">{label}</p><p className="font-bold">{formatCurrency(value as number)}</p></div>)}</section>
       {payableOutstandingCents > 0 ? <>
         <label className="block font-medium">Amount received<input name="amount" min="0.01" max={(payableOutstandingCents / 100).toFixed(2)} step=".01" type="number" className="input mt-1" required /></label>

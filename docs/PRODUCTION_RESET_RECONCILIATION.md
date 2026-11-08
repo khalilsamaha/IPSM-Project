@@ -4,8 +4,11 @@
 compatibility blocker has an evidence-based correction. Default-ACL and
 invisible-state vulnerabilities are corrected in the unapplied migration pair.
 The reported teacher-body differences are now reproduced exactly and preserved.
-Teacher schema/metadata reconciliation is closed by administrator Queries18/19. Identifier history, migration provenance,
-actual runtime identity and live-compatible security validation remain unresolved. PR 90 stays draft;
+Approved IPSM identifier engineering is implemented but activation remains blocked
+until non-use/recovery certification. Teacher schema/metadata reconciliation is closed by administrator Queries18/19. Identifier history, migration provenance,
+actual runtime identity and live-compatible security validation remain unresolved.
+See [implemented identifier controls](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md)
+and [current remaining gates](PRODUCTION_RESET_REMAINING_GATES.md). PR 90 stays draft;
 PR 2 is untouched.
 
 ## Evidence and limits
@@ -80,14 +83,14 @@ only synthetic data and a verified disposable cluster; no production mutation.
 | Registration uniqueness | GO for duplicate check; migration pending | Zero duplicate groups. Missing unique indexes require the separately approved canonical rollout. |
 | Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
-| Identifier history | NO-GO | Query 15: all four sources empty; RCPT/STU 14/5 remain lower bounds, FAM unknown. Recover complete issuance or adopt an enforced disjoint namespace. |
+| Identifier history | NO-GO | Query 15: all four sources empty; RCPT/STU 14/5 remain lower bounds, FAM unknown. Approved IPSM namespace implemented; certify historical non-use and recovery before activating it. |
 | Migration provenance | NO-GO | Three Supabase versions, statement counts 0/1/1, no Prisma ledger. Counts do not establish object provenance; preserve truthful history and reconcile a future delta. |
 | Candidate database permissions | GO for supplied roles only | Query 10 completed 42/42: postgres/postgres schema access, 25-table DML, BYPASSRLS and teacher-function execution reported. Proposed objects absent. |
 | Actual Vercel runtime identity | NO-GO | Not independently verified; Query 10 cannot prove which role Prisma uses. |
 | New-table client protection | GO for isolated remediation; NO-GO for rollout | Exact broad TABLE defaults confirmed. New-object ACL cleanup and effective assertions deny all eight privileges and function execution to clients; strict invoker state guard closes NULL/RLS bypass. Actual creator/runtime memberships and live-compatible staging still require verification. |
 | PostgreSQL 17 syntax/integrity | GO on fixture | Tested on PostgreSQL 17.6; not a production data, role, load or lock certification. |
 | Synthetic release/recovery | GO for isolated scope | Future-delta checksum/order, non-superuser owner, six scopes, rollback/repeat rejection, modest lock/load and pre/post backup restoration tested. Not actual production roles/history/platform recovery. |
-| Deployment readiness | NO-GO | Metadata confirms shared Preview/Production database/Auth entries. Resolve identities, identifier approval/implementation, genuine history, Preview isolation and human/platform acceptance. CI is not production authorization. |
+| Deployment readiness | NO-GO | Metadata confirms shared Preview/Production database/Auth entries. Resolve identities, historical namespace non-use/recovery certification, genuine history, Preview isolation and human/platform acceptance. CI is not production authorization. |
 
 ## FK assessment
 
@@ -199,7 +202,8 @@ If history cannot be recovered, do not silently start at 1 or claim guaranteed
 non-reuse: obtain an explicitly reviewed disjoint namespace/range strategy and
 test it. Counter floors alone do not reserve manually imported old values; the
 issuance ledger/import rules must implement the chosen policy. Any backfill or
-namespace change requires separate authorization and is not performed here.
+production backfill/activation requires separate authorization. The business-approved
+IPSM implementation is prepared in the third delta; it is not activated here.
 
 ## One canonical migration path
 

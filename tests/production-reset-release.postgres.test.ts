@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { createDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
 import { executeProductionReset, previewProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION } from "@/lib/production-reset";
-import { allocateBusinessIdentifier } from "@/lib/business-identifiers";
+import { allocateBusinessIdentifier } from "./helpers/legacy-identifiers";
 import { buildReleasePackage, verifyReleasePackage, releaseVersions } from "../tools/production-reset/release-package";
 import { guardInstallSql } from "./helpers/teacher-guard-bodies";
 

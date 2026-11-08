@@ -1,5 +1,6 @@
 "use server";
 
+import { compareBusinessIdentifiers } from "@/lib/business-identifiers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -138,6 +139,7 @@ export async function closeShift(formData: FormData) {
       select: { receiptNumber: true },
       orderBy: { receiptNumber: "asc" },
     });
+    receiptNumbers.sort((a,b) => compareBusinessIdentifiers(a.receiptNumber,b.receiptNumber));
     const closedAt = new Date();
     const finalSnapshot = {
       version: 2,

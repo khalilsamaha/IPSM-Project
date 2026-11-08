@@ -1,5 +1,7 @@
 import { Role } from "@prisma/client";
-import { prisma } from "../lib/prisma";
+import { ensurePaymentReceipt } from "../lib/payments/receipt-repair";
+import { allocateBusinessIdentifier } from "../lib/business-identifiers";
+import { prisma as seedClient } from "../lib/prisma";
 
 const families = [
   [
@@ -108,7 +110,7 @@ const students = [
 ] as const;
 
 
-const courseNames = ["Piano", "Guitar", "Saxophone", "Violin", "Dance", "Chess", "Solfège", "Music Theory"] as const;
+const courseNames = ["Piano", "Guitar", "Saxophone", "Violin", "Dance", "Chess", "Solfège", "Music Theory", "Voice", "Drums"] as const;
 const levelNames = ["Beginner", "Level 1", "Level 2", "Advanced"] as const;
 
 const season = {
@@ -144,6 +146,8 @@ const teachers = [
 ] as const;
 
 async function main() {
+  // Certification is never created by seeding. All identifiers and rows commit together.
+  await seedClient.$transaction(async prisma => {
   await prisma.userProfile.upsert({
     where: { email: "admin@ipsm.local" },
     update: { role: Role.SUPER_ADMIN, status: "ACTIVE" },
@@ -155,36 +159,18 @@ async function main() {
     },
   });
 
-  for (const [index, [id, name, email, phone]] of families.entries()) {
-    const familyCode = `FAM-2026-${String(index + 1).padStart(6, "0")}`;
-    await prisma.family.upsert({
-      where: { id },
-      update: { name, email, phone, status: "ACTIVE" },
-      create: { id, familyCode, name, email, phone },
-    });
+  // Known rows are updated explicitly: INSERT/UPSERT must not become a restoration bypass.
+  for (const [id, name, email, phone] of families) {
+    const existing = await prisma.family.findUnique({where:{id}});
+    const data = {name,email,phone};
+    if (existing) await prisma.family.update({where:{id},data:{...data,status:"ACTIVE"}});
+    else await prisma.family.create({data:{...data,id,familyCode:await allocateBusinessIdentifier(prisma,"FAM",id)}});
   }
-
-  for (const [index, [id, familyId, firstName, lastName, dateOfBirth]] of students.entries()) {
-    const studentCode = `STU-2026-${String(index + 1).padStart(6, "0")}`;
-    await prisma.student.upsert({
-      where: { id },
-      update: {
-        familyId,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth),
-        status: "ACTIVE",
-        studentCode,
-      },
-      create: {
-        id,
-        studentCode,
-        familyId,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth),
-      },
-    });
+  for (const [id, familyId, firstName, lastName, dateOfBirth] of students) {
+    const existing = await prisma.student.findUnique({where:{id}});
+    const data = {familyId,firstName,lastName,dateOfBirth:new Date(dateOfBirth)};
+    if (existing) await prisma.student.update({where:{id},data:{...data,status:"ACTIVE"}});
+    else await prisma.student.create({data:{...data,id,studentCode:await allocateBusinessIdentifier(prisma,"STU",id)}});
   }
 
   await prisma.season.upsert({
@@ -261,11 +247,19 @@ async function main() {
   });
 
   for (const enrollment of enrollmentSeeds) {
-    await prisma.enrollment.upsert({
-      where: { id: enrollment.id },
-      update: enrollment,
-      create: enrollment,
-    });
+    // Synthetic seed data must satisfy the preserved production teacher guards.
+    const course = seededCourses.find(row => row.name === (enrollment.courseName === "Advanced Piano" ? "Piano" : enrollment.courseName))!;
+    const level = seededLevels.find(row => row.name === (enrollment.feeCents === 60000 ? "Advanced" : "Beginner"))!;
+    if (!await prisma.teacherCourse.findFirst({where:{teacherId:enrollment.teacherId,courseId:course.id,levelId:null}})) {
+      await prisma.teacherCourse.create({data:{teacherId:enrollment.teacherId,courseId:course.id}});
+    }
+    for (let dayOfWeek=0;dayOfWeek<7;dayOfWeek++) {
+      if (!await prisma.teacherAvailability.findFirst({where:{teacherId:enrollment.teacherId,seasonId:season.id,dayOfWeek,courseId:null}})) {
+        await prisma.teacherAvailability.create({data:{teacherId:enrollment.teacherId,seasonId:season.id,dayOfWeek,startTime:"09:00",endTime:"18:00",effectiveFrom:season.startDate,effectiveTo:season.endDate}});
+      }
+    }
+    const data = {...enrollment,courseId:course.id,levelId:level.id};
+    await prisma.enrollment.upsert({where:{id:enrollment.id},update:data,create:data});
   }
 
 
@@ -292,33 +286,20 @@ async function main() {
   }
 
   const payments = [
-    ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03", "RCPT-2026-000001"],
-    ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15", "RCPT-2026-000002"],
-    ["60000000-0000-0000-0000-000000000003", families[1][0], 36000, "ach", "2026-06-04", "RCPT-2026-000003"],
-    ["60000000-0000-0000-0000-000000000004", families[3][0], 15000, "card", "2026-06-05", "RCPT-2026-000004"],
-    ["60000000-0000-0000-0000-000000000005", families[3][0], 15000, "card", "2026-06-20", "RCPT-2026-000005"],
-    ["60000000-0000-0000-0000-000000000006", families[4][0], 36000, "check", "2026-06-02", "RCPT-2026-000006"],
+    ["60000000-0000-0000-0000-000000000001", families[0][0], 20000, "card", "2026-06-03"],
+    ["60000000-0000-0000-0000-000000000002", families[0][0], 10000, "cash", "2026-06-15"],
+    ["60000000-0000-0000-0000-000000000003", families[1][0], 36000, "ach", "2026-06-04"],
+    ["60000000-0000-0000-0000-000000000004", families[3][0], 15000, "card", "2026-06-05"],
+    ["60000000-0000-0000-0000-000000000005", families[3][0], 15000, "card", "2026-06-20"],
+    ["60000000-0000-0000-0000-000000000006", families[4][0], 36000, "check", "2026-06-02"],
   ] as const;
 
-  for (const [id, familyId, totalAmountCents, paymentMethod, paymentDate, receiptNumber] of payments) {
-    await prisma.payment.upsert({
-      where: { id },
-      update: {
-        familyId,
-        totalAmountCents,
-        paymentMethod,
-        paymentDate: new Date(paymentDate),
-        receiptNumber,
-      },
-      create: {
-        id,
-        familyId,
-        totalAmountCents,
-        paymentMethod,
-        paymentDate: new Date(paymentDate),
-        receiptNumber,
-      },
-    });
+  for (const [id, familyId, totalAmountCents, paymentMethod, paymentDate] of payments) {
+    const existing = await prisma.payment.findUnique({where:{id}});
+    const receiptNumber = existing?.receiptNumber ?? await allocateBusinessIdentifier(prisma,"RCPT",id);
+    const data = {familyId,totalAmountCents,paymentMethod,paymentDate:new Date(paymentDate),receiptNumber};
+    if (existing) await prisma.payment.update({where:{id},data});
+    else await prisma.payment.create({data:{...data,id}});
   }
 
   const paymentItems = [
@@ -338,12 +319,8 @@ async function main() {
     });
   }
 
-  for (const [id, , , , , receiptNumber] of payments) {
-    await prisma.receipt.upsert({
-      where: { paymentId: id },
-      update: { receiptNumber, pdfPath: `/api/receipts/${id}` },
-      create: { paymentId: id, receiptNumber, pdfPath: `/api/receipts/${id}` },
-    });
+  for (const [id] of payments) {
+    await ensurePaymentReceipt(prisma, id);
   }
 
   for (const enrollment of enrollmentSeeds) {
@@ -408,14 +385,15 @@ async function main() {
       },
     });
   }
+  }, {timeout:60000});
 }
 
 main()
   .finally(async () => {
-    await prisma.$disconnect();
+    await seedClient.$disconnect();
   })
   .catch(async (error) => {
     console.error(error);
-    await prisma.$disconnect();
+    await seedClient.$disconnect();
     process.exit(1);
   });

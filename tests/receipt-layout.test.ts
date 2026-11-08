@@ -34,6 +34,13 @@ describe("receipt PDF layout", () => {
       expect(pdf).toContain("/Stamp Do");
     }
   });
+  it("preserves maximum BIGINT IPSM numbers on both copies and uses their issuance year", () => {
+    const number="RCPT-IPSM-2027-9223372036854775807";
+    const pdf=receipt({...payment(1),receiptNumber:number},"a4-two-copies").toString("utf8");
+    expect(pdf.split(number)).toHaveLength(3);
+    expect(pdf).toContain("Year: 2027");
+    expect(pdf).toContain("6.8 Tf");
+  });
   it("uses A5 MediaBox by default", () => {
     expect(receipt(payment()).toString("utf8")).toContain("/MediaBox [0 0 420 595]");
   });

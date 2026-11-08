@@ -19,6 +19,8 @@ export async function createPayment(formData: FormData) {
   const session = await requireSession();
   if (!hasPermission(session.role, "records:write")) throw new Error("Not authorized");
 
+  const requestId = String(formData.get("requestId") ?? "");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)) redirect("/payments/new?error=Reload%20the%20payment%20form.");
   const familyId = String(formData.get("familyId") ?? "");
   if (!familyId) redirect("/payments/new?error=Select%20a%20family.");
 
@@ -55,6 +57,7 @@ export async function createPayment(formData: FormData) {
   let paymentId: string;
   try {
     const payment = await createPaymentWithAllocations(prisma, {
+      requestId,
       familyId,
       paymentDate: new Date(),
       paymentMethod: method,

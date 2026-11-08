@@ -1,17 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { familySearchWhere, formatFamilyLabel, generateFamilyCode } from "@/lib/families";
 import { formatDate, formatFormalDate } from "@/lib/records/format";
 import { formatPaymentMethod, isNewPaymentMethod, newPaymentMethods } from "@/lib/payment-methods";
 
+afterEach(() => vi.unstubAllEnvs());
 describe("family code helpers", () => {
   it("generates the next yearly family code without using family name", async () => {
-    const family = { $queryRaw: async () => [{ value: "FAM-2026-000042" }] } as any;
-    await expect(generateFamilyCode(family, new Date("2026-07-16T00:00:00Z"))).resolves.toBe("FAM-2026-000042");
+    vi.stubEnv("IPSM_IDENTIFIER_ACTIVATION_ID", "00000000-0000-0000-0000-000000000001");
+    const family = { $queryRaw: async () => [{ value: "FAM-IPSM-2026-000042" }] } as any;
+    await expect(generateFamilyCode(family, "00000000-0000-0000-0000-000000000002", new Date("2026-07-16T00:00:00Z"))).resolves.toBe("FAM-IPSM-2026-000042");
   });
 
   it("starts a new year at sequence one", async () => {
-    const family = { $queryRaw: async () => [{ value: "FAM-2027-000001" }] } as any;
-    await expect(generateFamilyCode(family, new Date("2027-01-01T00:00:00Z"))).resolves.toBe("FAM-2027-000001");
+    vi.stubEnv("IPSM_IDENTIFIER_ACTIVATION_ID", "00000000-0000-0000-0000-000000000001");
+    const family = { $queryRaw: async () => [{ value: "FAM-IPSM-2027-000001" }] } as any;
+    await expect(generateFamilyCode(family, "00000000-0000-0000-0000-000000000002", new Date("2027-01-01T00:00:00Z"))).resolves.toBe("FAM-IPSM-2027-000001");
   });
 
   it("builds search clauses for family code, parents, students, phones, and emails", () => {

@@ -56,5 +56,17 @@
   "supabase_read_only_history_probe": "denied by connector; no substitute project accessed",
   "canonical_future_mechanism": "Supabase",
   "prisma_use": "schema/client generation and reviewed mirror verification",
-  "package_status": "future-delta rehearsal bundle only; authentic history packaging blocked"
+  "package_status": "future-delta rehearsal bundle only; authentic history packaging blocked",
+  "identifier_followup": {
+    "checked_at": "2026-11-08T11:55:26.324462+00:00",
+    "baseline": "40f11670ea5b40d9fcafc3e01fefbbacbd613809",
+    "targeted_history_and_migration_list": "denied by IPSM connector",
+    "original_query16_available": false,
+    "future_versions": [
+      "20261107000000_teacher_guard_parity",
+      "20261107010000_reset_integrity",
+      "20261108000000_ipsm_identifiers"
+    ],
+    "historical_records_changed": false
+  }
 }

@@ -8,7 +8,9 @@ import { createDisposableProductionResetTestClient } from "@/lib/production-rese
 const url = process.env.RESET_TEST_DATABASE_URL;
 const db = url ? await createDisposableProductionResetTestClient() : null;
 const directory = path.resolve("docs/sql/production-reset-dashboard");
-const files = readdirSync(directory).filter(name => name.endsWith(".sql")).sort();
+// Query20 requires the final namespace delta; its absent-schema and installed
+// read-only paths are both asserted in ipsm-identifiers.postgres.test.ts.
+const files = readdirSync(directory).filter(name => name.endsWith(".sql") && name !== "20_identifier_activation.sql").sort();
 const sentinel = "IPSM_PREFLIGHT_REDACTION_SENTINEL";
 let inspector: string;
 let installed: boolean;

@@ -27,60 +27,50 @@ only if relevant schema/permissions change before a separately authorized releas
 
 ## Remaining NO-GO gates and smallest administrator actions
 
-| Type / owner | Exact outstanding action | Recommendation and consequence of deferral |
+| Type / owner | Exact outstanding action | Consequence of deferral |
 | --- | --- | --- |
-| Evidence — DBA/deployment owner | Report current_user/session_user through the actual deployed Prisma connection context and intended migration connection; confirm relevant ownership/memberships. Names/context only, no secrets. | Use existing secure clients. SQL Editor postgres is not runtime proof. Keep owner-only protections; a different runtime role requires a separately reviewed entitlement model. No release until verified. |
-| Business decision + dependent engineering — business/financial owner | The IPSM format is selected. Certify non-use across historical/manual/import/external channels or provide complete historical reservations; finalize post-commit delivery and post-backup recovery rules. Implement and validate the approved format before release. | Business-facing IPSM spelling is approved, not its historical non-use. Allow draft implementation and synthetic tests; keep production issuance disabled until disjointness, owner sign-off and recovery constraints are proven. |
-| Evidence / packaging — DBA/release owner | Supply retained original Query16 per-version rows and authentic recorded/deployment SQL; reconcile the three real versions without changing existing history. | Supabase is canonical. Only an offline future-delta rehearsal bundle is prepared; no fabricated history. Fetch authentic history privately with a supported tool if authorized. If accurate pending order cannot be established, no production migration. |
-| Environment authorization — deployment owner | Approve and establish separate Preview/staging PostgreSQL **and Auth**, keys and side-effect isolation; verify non-production identity before mutation testing. | Current metadata confirms all five database/Auth variables shared across Production/Preview, no PR-branch override. Do not mutation-test that Preview or change its variables without approval. |
-| Human acceptance — financial owner | Sign or decline the runbook acknowledgement of three preserved historical payroll audit orphans, zero current payroll/expense populations and unreconstructable historical context. | Preserve audits; do not invent financial postings. Acceptance cannot be inferred from green tests. |
-| Release authorization — application/DBA/security owners | Accept the approved identifier implementation and truthful package; rehearse representative volume and platform/role/Auth/storage recovery with actual intended role model; approve maintenance/deployment explicitly. | Local PG17 recovery is complete for the synthetic schema. It does not certify production volume, external Auth/storage or post-backup issued identifiers. Keep draft until remaining evidence and approvals are satisfied. |
+| Connection evidence — DBA/deployment owner | Verify current_user/session_user in the actual Vercel Prisma and intended migration connection contexts; confirm owner/membership compatibility. Names/context only. | Owner-only protections remain; do not assume SQL Editor postgres or service_role is the app identity. |
+| Historical non-use / recovery certification — business owner + DBA | Certify the approved IPSM grammar was never previously issued across manual/external/import channels. Review private reservation/recovery manifests and sign their coverage. | Implementation is complete, but no activation exists by default. Do not enable issuance without proof or repeat the completed format decision. |
+| Authentic migration history — DBA/release owner | Supply original Query16 per-version rows and authentic stored/deployment SQL for the three recorded Supabase versions. | Counts 0/1/1 remain unmapped. No fabricated history, repair or historical-tree replay. Future-delta package is rehearsal-only until truthful pending order is verified. |
+| Environment access/authorization — deployment owner | Provide/approve independently isolated Preview PostgreSQL17 and Supabase Auth; perform scoped configuration changes and verify deployed identities. | Shared Production/Preview entries remain confirmed. No mutation testing on the shared Preview. No resources purchased or credentials retrieved. |
+| Financial acknowledgement — financial owner | Acknowledge three retained historical payroll audit orphans and the inability to reconstruct their context from available evidence. | Preserve all three; no invented postings, links or deletion. |
+| Release authorization — release/security/DBA owners | Review the final three-delta package, actual role model, representative staging and platform recovery, including restart-triggered issuance holds. Separately authorize any production migration/configuration/deployment. | Local PG17 mechanics do not prove platform recovery, unknown history or production capacity. Keep draft and production NO-GO. |
 
-These are three coordinated administrator workstreams, not additional rounds of
-broad reports: **(1)** identities + authentic history; **(2)** business/financial
-decision; **(3)** isolated environment + release acceptance. No credential retrieval,
-new endpoint, production migration, history repair, reset or deployment is authorized.
+## Completed identifier engineering
 
-## Identifier outcome
+The business-selected FAM/STU/RCPT-IPSM format is implemented. The
+[implementation](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md) covers immutable
+owner reservations, BIGINT allocation, atomic family/student/payment creation,
+registration retries, payment replay, exact-owner manifest restoration, legacy
+receipt compatibility, display/CSV/sorting, reset retention and recovery.
 
-The [complete proposal](PRODUCTION_RESET_IDENTIFIER_DECISION.md) covers allocation,
-ledger immutability, legacy restore/import, receipts, parsing/export, concurrency,
-reset persistence, overflow, rollback, backup gaps and acceptance tests. Selected
-new grammar is KIND-IPSM-YYYY-number, subject to **proof of historical
-non-overlap** and full tested implementation; it is not enabled. Current sources are empty, RCPT/STU 2026 minimums
-14/5 do not establish completeness, and FAM history remains unknown. No private
-issuance backup/import manifest was found. Existing TEXT assignment means an
-arbitrary prefix cannot be certified just from repository generators.
+The third additive mirrored migration is `20261108000000_ipsm_identifiers`.
+Activation requires an explicitly selected latest enabled attestation tied to the
+database and postmaster lifetime, with non-use/recovery evidence. No attestation
+is seeded. A newer disabled record holds issuance; restored/restarted servers need
+fresh recovery review. No generic local bypass or permissive RLS policy exists.
 
-## Provenance outcome
+## External access findings in this cycle
 
-The [worksheet](evidence/production-reset-migration-provenance.json) records all
-three actual versions, unknown per-version count/hash/source/object attribution,
-and candidate repository lineage/hashes. Search covered 298 reachable commits at
-the research baseline; no original files named by those versions were found.
-Counts 0/1/1 remain unmapped without original Query16 rows. The private SQL snippet
-is one byte; available IPSM archive has only schema evidence. Connector denied the
-targeted read-only history query. No other Supabase project was accessed.
+IPSM-only connector calls for targeted history, migration listing and branch
+discovery were denied. Known local evidence still contains Query02/schema extracts,
+not original Query16 rows or authentic historical SQL. Metadata-only Vercel inspection
+still shows all five DB/Auth entries shared across Production/Preview. No existing
+authorized runtime SQL session or isolated Auth resource was exposed to this work.
+These are access/evidence limits, not negative assertions about all resources owned
+by the administrator. No unrelated project was used.
 
-`tools/production-reset/release-package.ts` builds/verifies only the genuine future
-SQL delta and mirror hashes in a fresh output directory. Its status is explicitly
-REHEARSAL_ONLY_PRODUCTION_BLOCKED; no history stub, production apply command or
-independent Prisma migration path exists. See the runbook for the supported private
-history-fetch/reconciliation route and staging validation; no repair was executed.
+Use [the exact staging procedure](PRODUCTION_RESET_STAGING_SETUP.md),
+[release runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md), and
+[provenance worksheet](evidence/production-reset-migration-provenance.json).
+Supabase remains canonical; Prisma is for schema/client generation and mirror checks.
+The offline bundle now contains three genuine ordered future deltas and no fake history.
 
-## Approved decision — 2026-11-08
+## Three coordinated remaining workstreams
 
-The business owner selected `FAM-IPSM-YYYY-serial`, `STU-IPSM-YYYY-serial`
-and `RCPT-IPSM-YYYY-serial` with no numeric namespace-version suffix.
-This is format authorization only. Do not infer historical non-use from the
-old generator regex, current empty source tables or this decision; no
-deployment or production writes are authorized. Engineering in the draft PR
-may proceed behind a fail-closed release gate.
+1. DBA/deployment: actual connection identities, authentic Query16/history and role ownership.
+2. Business/financial: historical non-use/recovery certification and payroll acknowledgement.
+3. Deployment/release: isolated Preview database/Auth, real platform rehearsal and explicit release authorization.
 
-## What changed / stayed deferred
-
-Added consolidated evidence, provenance research, identifier design, deployment
-metadata, financial acknowledgement, release runbook, offline package verifier and
-isolated release/recovery tests. Both proposed migration pairs, historical migrations,
-application business logic, dependencies and CI workflow remain unchanged. Existing
-six reset scopes only; no PR2 work. No production/environment/privilege changes.
+No further broad schema report or Query18/19 repetition is requested. No production
+migration, reset, credential/environment change, merge, deployment or PR2 work occurred.

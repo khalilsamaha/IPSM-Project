@@ -101,16 +101,24 @@ recorded in `reset_registration_submissions`. Database guards reject replay and
 the registration action explains that the operator must start a new registration.
 Financial-only reset retains enrollment/attempt identities and academic status.
 
-Family, student and receipt allocation now uses protected, atomic yearly counters.
-The migration reserves identifiers from existing rows, receipts and recoverable
-audit metadata. Retention triggers also reserve explicitly imported identifiers,
-advance counters and reject reuse by a different record. Issued identifiers are
-immutable, including clearing a payment number or transferring a receipt to another
-payment. Repair of a missing payment number reuses its existing receipt number.
-Counter gaps after failed creation are acceptable; reuse is not.
-Existing mismatched receipt identifiers require reviewed reconciliation; automated repair may no longer rename an already issued identifier.
-Identifiers existing only in previously exported/deleted material cannot be
-recovered automatically: review historical high-water marks before migration.
+New allocation uses `FAM-IPSM-YYYY-serial`, `STU-IPSM-YYYY-serial` and
+`RCPT-IPSM-YYYY-serial`, with atomic BIGINT yearly counters and immutable owner
+reservations. Production issuance remains blocked until historical non-use and
+recovery coverage are certified and the latest enabled database attestation is
+explicitly selected. No activation is seeded. Restores and server restarts require
+fresh review before issuance resumes.
+
+Existing identifiers remain unchanged. Payment and receipt share one reservation;
+repair reuses an existing original number. Imports and restoration require a
+reviewed exact-owner manifest; ordinary creation cannot supply a legacy or arbitrary
+identifier. Counters, allocations, activation records, imports and reservations
+survive every reset scope. Unpublished allocations roll back with their transaction;
+committed numbers remain reserved even after their source records are deleted.
+
+See [identifier implementation and recovery](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md)
+for allocation, legacy compatibility and the independent post-backup issuance
+journal requirement. Current rows and recovered audit maxima cannot prove complete
+historical issuance or historical non-use of the approved IPSM namespace.
 
 ## Always protected
 

@@ -17,8 +17,9 @@ receipt helpers similarly selected current-year maxima. Relevant introductions:
 (receipt repair), `5a24180` (family safety). Current PR90 delegates FAM/STU/RCPT
 allocation to PostgreSQL and retains committed reservations across resets.
 
-`prisma/seed.ts` explicitly assigns legacy-format synthetic FAM/STU/RCPT values;
-seed code is not proof those numbers were issued in production. No trusted IPSM
+The historical `prisma/seed.ts` assigned legacy-format synthetic FAM/STU/RCPT
+values; seed code is not proof those numbers were issued in production. The current
+seed uses certified allocation and preserves existing identifiers on rerun. No trusted IPSM
 issuance export, backup or historical import manifest was found in the known
 private evidence/download locations. Unrelated backups were excluded. The two
 IPSM schema-export files contain metadata only and cannot recover missing codes.
@@ -45,10 +46,11 @@ legacy-shaped codes. These are minimums, not complete issuance or safe restart f
 The separate namespace is maintainable because it separates future issuance from
 unrecoverable old numeric maxima. It does not remove the need to establish that
 namespace's historical non-use. Approval must also cover receipt/export display
-changes and the recovery policy below. No allocator/parser/migration change is
-made by this document; no proposed format is enabled in the application.
+changes and the recovery policy below. The approved format is now implemented in the third unapplied migration and
+application paths. [Implementation and recovery details](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md)
+record enforcement and operational limits. Production activation remains blocked.
 
-## Implementation contract after approval
+## Approved implementation contract
 
 1. **Allocator and limits.** Add an immutable approved epoch configuration and
    database allocation keyed by `(kind, epoch, UTC year)`. Use BIGINT counters,
@@ -119,16 +121,17 @@ made by this document; no proposed format is enabled in the application.
 - Receipt/PDF/CSV/filters/search mixed old/new values; duplicate repair and partial
   registration retries; timezone/year boundary and maximum-length formatting.
 
-These are **planned tests for an unapproved policy**, not claimed implemented
-coverage. The release rehearsal tests the existing approved ledger using synthetic
-known history, not this new format or unknown production history.
+The implementation now exercises this contract in unit and disposable PostgreSQL
+suites, including BIGINT bounds, imports/restoration, permissions, replay, reset
+persistence, external-journal recovery and server restart holds. These synthetic
+tests do not certify unknown production issuance or actual runtime identity.
 
-## Exact approval requested
+## Remaining certification (format approval is complete)
 
-Business/financial owner: select complete reservations **or** approve the proposed
-IPSM grammar subject to a signed non-use assessment across all historical channels.
-Identify any imported/custom formats and choose the after-commit delivery/gap and
-post-backup recovery rules. Share only the decision, coverage and manifest checksum;
-keep individual codes/owners/documents private. Engineering then implements and
-validates that focused PR1 correction before release. Deferral means no production
-migration/application rollout that could issue ambiguous identifiers.
+The selected unversioned IPSM grammar needs **no repeated format approval**.
+The administrator/business owner must certify historical non-use across manual,
+external and import channels, provide private manifest hashes/coverage and approve
+the recovery admission record. If proof is unavailable, keep activation absent or
+held; do not substitute a guessed prefix/floor. Runtime/migration identity,
+canonical history, Preview/Auth isolation, financial acknowledgement and production
+release authorization remain separate gates. No production activation is authorized.

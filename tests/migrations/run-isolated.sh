@@ -37,6 +37,7 @@ cd "$PROJECT_ROOT"
 source tests/migrations/assertions.sh
 cmp prisma/migrations/20261107010000_reset_integrity/migration.sql supabase/migrations/20261107010000_reset_integrity.sql
 cmp prisma/migrations/20261107000000_teacher_guard_parity/migration.sql supabase/migrations/20261107000000_teacher_guard_parity.sql
+cmp prisma/migrations/20261108000000_ipsm_identifiers/migration.sql supabase/migrations/20261108000000_ipsm_identifiers.sql
 bash tests/migrations/family-only.integration.sh
 PSQL=("$PG_BIN/psql" "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
@@ -111,3 +112,6 @@ echo "Read-only administrator preflight passed before and after the proposed mig
 # Last: reconstruct a synthetic current schema, rehearse only the future delta,
 # and restore both pre/post backups within this same runner-owned cluster.
 ./node_modules/.bin/vitest run tests/production-reset-release.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+# Final approved namespace, still inactive by default. Tests certify synthetic
+# evidence only and verify restore/restart bindings on the owned cluster.
+./node_modules/.bin/vitest run tests/ipsm-identifiers.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

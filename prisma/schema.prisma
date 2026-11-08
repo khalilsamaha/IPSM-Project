@@ -709,7 +709,7 @@ model ProductionResetState {
 
 model BusinessIdentifierCounter {
   key String @id
-  value Int
+  value BigInt
   @@map("business_identifier_counters")
 }
 
@@ -717,6 +717,9 @@ model IssuedBusinessIdentifier {
   kind String
   value String
   ownerId String? @map("owner_id") @db.Uuid
+  namespace String?
+  issuanceYear Int? @map("issuance_year")
+  serial BigInt?
   @@id([kind, value])
   @@map("issued_business_identifiers")
 }
@@ -725,4 +728,41 @@ model ResetRegistrationSubmission {
   id String @id @db.Uuid
   resetAt DateTime @default(now()) @map("reset_at")
   @@map("reset_registration_submissions")
+}
+
+
+model BusinessIdentifierActivation {
+  id String @id @db.Uuid
+  namespace String @default("IPSM")
+  enabled Boolean @default(false)
+  nonUseSha256 String @map("non_use_sha256")
+  recoverySha256 String @map("recovery_sha256")
+  approvedBy String @map("approved_by")
+  databaseOid BigInt @map("database_oid")
+  serverStartedAt DateTime @map("server_started_at") @db.Timestamptz(6)
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(6)
+  @@map("business_identifier_activations")
+}
+model BusinessIdentifierAllocation {
+  kind String
+  ownerId String @map("owner_id") @db.Uuid
+  issuanceYear Int @map("issuance_year")
+  activationId String @map("activation_id") @db.Uuid
+  value String
+  transactionId String @map("transaction_id")
+  @@id([kind, ownerId])
+  @@unique([kind, value])
+  @@map("business_identifier_allocations")
+}
+model BusinessIdentifierImport {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind String
+  value String
+  ownerId String? @map("owner_id") @db.Uuid
+  purpose String
+  manifestSha256 String @map("manifest_sha256")
+  approvedBy String @map("approved_by")
+  transactionId String @map("transaction_id")
+  createdAt DateTime @default(dbgenerated("clock_timestamp()")) @map("created_at") @db.Timestamptz(6)
+  @@map("business_identifier_imports")
 }
