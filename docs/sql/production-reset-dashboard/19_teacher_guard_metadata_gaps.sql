@@ -11,6 +11,10 @@ SET LOCAL search_path = pg_catalog, public;
 WITH
 -- Fill only independently verified role NAMES. Dashboard identity is not runtime identity.
 role_input(app_role,migration_role) AS (VALUES ('REPLACE_APP_ROLE'::text,'REPLACE_MIGRATION_ROLE'::text)),
+clients AS (
+ SELECT client.name,r.oid FROM (VALUES ('anon'),('authenticated'),('service_role')) client(name)
+ LEFT JOIN pg_catalog.pg_roles r ON r.rolname=client.name
+),
 roles AS (
  SELECT r.*,a.oid AS app_oid,m.oid AS migration_oid
  FROM role_input r LEFT JOIN pg_catalog.pg_roles a ON a.rolname=r.app_role
@@ -23,6 +27,7 @@ expected(function_name,table_name,trigger_name,trigger_md5,update_columns) AS (V
 compared AS (
  SELECT e.function_name,e.table_name,e.trigger_name,p.oid AS function_oid,p.proowner,
   p.oid IS NOT NULL AS function_exists,t.oid IS NOT NULL AS trigger_exists,
+  (SELECT bool_and(oid IS NOT NULL) FROM clients) AS client_roles_present,
   pg_get_userbyid(p.proowner) AS function_owner,pg_get_userbyid(c.relowner) AS table_owner,
   p.proowner=c.relowner AND p.proowner=r.migration_oid AS owner_matches_selected_migration_role,
   NOT EXISTS (SELECT 1 FROM pg_catalog.pg_proc other JOIN pg_catalog.pg_namespace n ON n.oid=other.pronamespace
@@ -46,11 +51,10 @@ compared AS (
   p.proacl IS NULL AS acl_uses_builtin_default,
   CASE WHEN p.oid IS NOT NULL AND r.app_oid IS NOT NULL THEN has_function_privilege(r.app_oid,p.oid,'EXECUTE') END AS selected_app_can_execute,
   CASE WHEN p.oid IS NOT NULL AND r.migration_oid IS NOT NULL THEN has_function_privilege(r.migration_oid,p.oid,'EXECUTE') END AS selected_migration_can_execute,
-  (SELECT jsonb_agg(jsonb_build_object('role',client.name,'exists',cr.oid IS NOT NULL,
-    'effective_execute',CASE WHEN cr.oid IS NOT NULL AND p.oid IS NOT NULL THEN has_function_privilege(cr.oid,p.oid,'EXECUTE') END)
+  (SELECT jsonb_agg(jsonb_build_object('role',client.name,'exists',client.oid IS NOT NULL,
+    'effective_execute',CASE WHEN client.oid IS NOT NULL AND p.oid IS NOT NULL THEN has_function_privilege(client.oid,p.oid,'EXECUTE') END)
     ORDER BY client.name)
-   FROM (VALUES ('anon'),('authenticated'),('service_role')) client(name)
-   LEFT JOIN pg_catalog.pg_roles cr ON cr.rolname=client.name) AS client_execute_review
+   FROM clients client) AS client_execute_review
  FROM expected e CROSS JOIN roles r
  LEFT JOIN pg_catalog.pg_proc p ON p.oid=to_regprocedure('public.'||e.function_name||'()')
  LEFT JOIN pg_catalog.pg_language l ON l.oid=p.prolang
@@ -65,7 +69,7 @@ findings AS (
    'app_role_exists',app_oid IS NOT NULL,'migration_role_exists',migration_oid IS NOT NULL,
    'dashboard_inspector',current_user,'runtime_identity_proven_by_this_query',false) AS details FROM roles
  UNION ALL SELECT 'guard_metadata',
-  CASE WHEN function_exists AND trigger_exists AND owner_matches_selected_migration_role AND no_overloads
+  CASE WHEN function_exists AND trigger_exists AND client_roles_present AND owner_matches_selected_migration_role AND no_overloads
    AND attributes_match AND configuration_matches AND trigger_matches AND selected_app_can_execute AND selected_migration_can_execute
    THEN 'REVIEW_REQUIRED' ELSE 'BLOCKER' END,
   to_jsonb(c)-'function_oid'-'proowner' FROM compared c

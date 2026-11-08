@@ -126,6 +126,8 @@ describe.skipIf(!url)("SQL Editor preflight on the owned PostgreSQL fixture", ()
     expect(value.item_count).toBe(4);
     expect(value.items.find(i => i.section === "role_input")?.details.runtime_identity_proven_by_this_query).toBe(false);
     expect(report("19", sql("19", false)).status).toBe("BLOCKER");
+    const missingClient = report("19", sql("19").replace("('service_role')", "('ipsm_missing_preflight_client')"));
+    expect(missingClient.items.filter(i => i.section === "guard_metadata").every(i => i.status === "BLOCKER" && i.details.client_roles_present === false)).toBe(true);
     if (installed) {
       expect(value.status).toBe("REVIEW_REQUIRED");
       expect(value.items.filter(i => i.section === "guard_metadata").every(i => i.details.attributes_match && i.details.trigger_matches && i.details.no_overloads && i.details.owner_matches_selected_migration_role)).toBe(true);
