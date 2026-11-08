@@ -1,5 +1,10 @@
 # PR 90 — production preflight reconciliation
 
+> External-gate refresh: exact-IPSM SQL access remains denied; CLI returns no branch
+> records and no verified backup. Preview metadata remains empty. No completed local
+> tests or cleanup were repeated. Use the [administrator handoff](PRODUCTION_RESET_EXTERNAL_HANDOFF.md)
+> and [unsigned certification records](PRODUCTION_RESET_EXTERNAL_SIGNOFFS.md).
+
 > Current operational evidence (2026-11-08): the owner has accepted the
 > existing-database-only provenance scope and supplied conditional migration
 > authority. Five shared Vercel variables now target Production only; all 28

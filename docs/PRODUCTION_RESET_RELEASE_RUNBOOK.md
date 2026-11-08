@@ -255,15 +255,8 @@ complete and the next changes are precisely scoped by those decisions.
 
 ## Financial-owner acknowledgement (pending, not signed)
 
-> I acknowledge the administrator's finding of three historical payroll audit events
-> referencing absent records, with zero current payroll and payroll-expense rows at
-> the observed snapshot. Available evidence cannot establish why the records were
-> removed or reconstruct their postings. The release preserves all three audit
-> events and does not invent expense links, transactions or balances. This acceptance
-> concerns the documented historical limitation, not authorization for deletion or
-> a statement that the missing postings were legitimate.
->
-> Owner/name: ______  Date: ______  Evidence reference: ______
-> Accept documented limitation / request further historical investigation: ______
-
-No engineering test or administrator summary substitutes for this sign-off.
+The canonical unsigned form is now [record B](PRODUCTION_RESET_EXTERNAL_SIGNOFFS.md#b-financial-owner-acknowledgement-of-historical-payroll-audit-orphans).
+Record A separately covers historical namespace non-use and recovery certification.
+Neither record has been signed; no engineering test substitutes for either decision.
+See the [external handoff](PRODUCTION_RESET_EXTERNAL_HANDOFF.md) for the exact remaining
+resource, private-connection, fresh-history and production-backup evidence.

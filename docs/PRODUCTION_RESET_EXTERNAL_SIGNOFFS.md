@@ -1,0 +1,94 @@
+# PR90 — private certification and financial acknowledgement forms
+
+**Templates only. Both decisions are PENDING / UNSIGNED.** Fill and retain the
+completed records in the administrator's private evidence store. Commit only an
+approved status/reference/hash, never personal records, financial audit payloads,
+credentials or signatures. These forms do not create database attestations or
+authorize migration, deployment, reset, new issuance or financial repair.
+
+## A. Historical IPSM namespace and recovery certification
+
+Record ID: ______  Revision: ______  UTC cutoff: ______
+Production project: `rakzehtbpzseetldbohm`
+Business owner / authority: ______  Independent DBA reviewer: ______
+Private evidence location/reference: ______
+
+The already approved format is FAM-IPSM-YYYY-serial, STU-IPSM-YYYY-serial and
+RCPT-IPSM-YYYY-serial. Year is UTC 2000–9999. Serial is positive decimal
+1–9223372036854775807, padded to at least six digits and otherwise canonical.
+Certification covers **every possible valid value**, not only the next year or
+serial; a new-looking prefix alone does not prove non-overlap. Payment and receipt
+share RCPT ownership through the payment UUID; no separate PAY sequence is assumed.
+
+For each source below record the responsible custodian, entire historical period,
+private artifact/reference and SHA-256, review method, coverage gaps and outcome.
+Use “unavailable/unknown” rather than silently treating missing evidence as empty.
+
+| Required historical coverage | Evidence / gaps / outcome — to be completed |
+| --- | --- |
+| Current and archived/deleted-source database history, surviving audit references and trusted backups | ______ |
+| All historical imports, manual SQL/explicit assignments and data corrections | ______ |
+| Issued/exported/printed/shared family, student and receipt documents, including voids/reprints | ______ |
+| External spreadsheets, prior systems and staff/manual/offline issuance channels | ______ |
+| Owners/custodians' substantiated account of the period before surviving records | ______ |
+| Issuance between evidence cutoff and proposed activation; writer containment/review | ______ |
+
+Review raw exact values and possible normalization/printing ambiguities privately;
+do not publish codes linked to people. Repository generators and current zero row
+counts cannot prove absence of historical arbitrary-text assignments. Previously
+reported RCPT2026≥14 and STU2026≥5 are lower bounds; FAM history remains unknown.
+These legacy unknowns must not become guessed floors or a fabricated certificate.
+
+**Non-use conclusion — choose one:**
+
+- [ ] Evidence establishes that no historical channel issued or reserved a value
+      overlapping the approved IPSM namespace through the stated cutoff.
+- [ ] Coverage is incomplete; historical non-use cannot be certified. Keep hold.
+- [ ] An overlap or ambiguous ownership exists; retain private evidence and stop
+      activation pending an explicitly reviewed resolution. Do not silently renumber.
+
+Supporting complete non-use manifest SHA-256: ______
+Unresolved exclusions (must be none for certification): ______
+
+**Separate recovery completeness record:** backup/recovery point ______;
+independent post-backup issuance journal/document coverage ______;
+known legacy exact-value/owner reservations and unresolved ownership ______;
+reviewed restoration/import manifest reference and SHA-256 ______;
+verified restore integrity and immutable reservation retention ______;
+control preventing an issuance gap before activation ______.
+
+Recovery conclusion: [ ] complete and evidenced  [ ] incomplete — keep hold
+Complete recovery-evidence manifest SHA-256: ______
+
+Business owner decision/signature/date: ______
+DBA evidence/recovery review/signature/date: ______
+
+A hash authenticates a particular document, not the truth of its claims. Do not
+supply dummy hashes or reuse synthetic staging evidence. If either conclusion is
+incomplete, Production IPSM_IDENTIFIER_ACTIVATION_ID remains absent and no enabled
+production attestation may be created. Even a completed certificate is evidence
+for a later separately controlled activation; it is not activation itself.
+
+## B. Financial-owner acknowledgement of historical payroll audit orphans
+
+Record ID: ______  UTC review time: ______
+Financial owner / authority: ______
+Private administrator Query14 report reference/time/hash: ______
+Changed evidence since that snapshot, if any: ______
+
+> I acknowledge the reported three historical payroll audit events referencing
+> absent records, and zero current payroll/payroll-expense rows at that reported
+> snapshot. This is not a fresh population check. Available evidence cannot establish
+> why those records disappeared, whether their deletion was legitimate, or reconstruct
+> their postings. PR90 preserves the three events and does not create transactions,
+> links or balances to fill the gap. My decision concerns acceptance of this stated
+> historical limitation; it does not certify accounting completeness, authorize audit
+> deletion or permit an invented financial reconciliation.
+
+Decision: [ ] accept the documented limitation for release review
+          [ ] require further historical investigation — release sign-off pending
+Conditions / investigation owner and evidence needed: ______
+Financial owner signature/date: ______
+
+No engineer, test result or generic project authorization supplies this financial
+acceptance automatically. Keep the original audits unchanged under either decision.
