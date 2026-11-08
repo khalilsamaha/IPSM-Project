@@ -95,9 +95,11 @@ flags. Constraint/index checks include definitions and relevant integrity flags.
 These are scoped checks of the objects this migration touches, not certification
 of every unrelated live table, policy, trigger or extension. The recorded reference
 was generated on an isolated PostgreSQL 17.6 schema from repository fixtures.
-**Actual production column/default/check/index definitions still require reconciliation**
-with that reference and the full current schema; table presence and function hashes
-are insufficient. Do not apply a migration just to discover whether it passes.
+The subsequent Query 02 review below reconciles the reported production
+column/default/check/index definitions with this reference. Unreported catalog
+flags and ownership still require targeted evidence; reported matches do not
+certify the full current schema. Do not apply a migration just to discover whether
+it passes.
 
 ## Isolated comparison and regression tests
 
@@ -126,6 +128,16 @@ recheck teacher-course assignment/level or enforce enrollment-date bounds; the
 NULL-enrollment early return remains. Equivalence does not imply these guards
 alone validate every academic invariant. Existing application/other constraints
 remain responsible for their respective checks.
+
+## Subsequent schema evidence reconciliation
+
+The [remaining-gates review](PRODUCTION_RESET_REMAINING_GATES.md) now reconciles the
+original 545-item Query 02 and its 16 teacher-schema observations. Reported enum,
+column/default, CHECK/FK and index properties match; no parity migration change is
+needed. Pretty constraint rendering explains the CHECK hash differences. Only the
+unreported type/constraint/index catalog flags, ownership and remaining guard
+metadata/ACLs require narrow follow-up. This supersedes the earlier broad missing
+non-function-definition evidence gate above; body equivalence is unchanged.
 
 ## Remaining release gates
 

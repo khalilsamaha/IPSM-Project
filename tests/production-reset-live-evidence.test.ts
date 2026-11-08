@@ -45,3 +45,43 @@ describe("administrator-provided IPSM schema evidence", () => {
     }
   });
 });
+
+describe("administrator Query 02 teacher-schema extract (not fixture evidence)", () => {
+  const evidence = JSON.parse(readFileSync("docs/evidence/production-reset-teacher-schema-query02.json", "utf8"));
+  const reference = JSON.parse(readFileSync("docs/evidence/production-reset-guard-equivalence.json", "utf8")).non_function_reference;
+  const md5 = (s: string) => createHash("md5").update(s).digest("hex");
+  it("retains original provenance and exactly sixteen scoped observations", () => {
+    expect(evidence.source_sha256).toBe("ffca529d1d219385e53f5c63cb8cc322fe0722eacecbdcd2d113a02dbbf10b26");
+    expect(evidence.source_item_count).toBe(545);
+    expect(evidence.items).toHaveLength(16);
+    expect(evidence.verification.all_selected_items_equal_original_items).toBe(true);
+    expect(evidence.items.filter((i: any) => i.section === "enum").map((i: any) => i.details))
+      .toEqual([{ type: "TeacherCompensationBasis", label: "HOURLY", order: 1 }, { type: "TeacherCompensationBasis", label: "SESSION_UNIT", order: 2 }]);
+  });
+  it("matches all nine displayed column types, nullability, generation flags and default hashes", () => {
+    const columns = evidence.items.filter((i: any) => i.section === "column");
+    expect(columns).toHaveLength(9);
+    for (const { details: d } of columns) {
+      const expected = reference.columns.find((c: any) => c.relname === d.table && c.attname === d.name);
+      expect(expected).toBeDefined();
+      expect(d).toMatchObject({ type: expected.type, not_null: expected.attnotnull,
+        identity: "", generated: "", has_default: expected.default_expr !== null,
+        default_md5: expected.default_expr === null ? null : md5(expected.default_expr) });
+    }
+  });
+  it("matches both index definition hashes, ordered keys and exported integrity flags", () => {
+    const indexes = evidence.items.filter((i: any) => i.section === "index");
+    expect(indexes).toHaveLength(2);
+    for (const { details: d } of indexes) {
+      expect(d.definition_md5).toBe(md5(reference.indexes.find((i: any) => i.indexname === d.name).indexdef));
+      expect(d).toMatchObject({ valid: true, ready: true, primary: false, has_expression: false, expression_md5: null });
+      const partial = d.name === "teacher_courses_teacher_course_all_levels_key";
+      expect(d.unique).toBe(partial);
+      expect(d.columns).toEqual(partial ? ["teacher_id", "course_id"] : ["course_id"]);
+      expect(d.key_count).toBe(partial ? 2 : 1);
+      expect(d.attribute_count).toBe(d.key_count);
+      expect(d.has_predicate).toBe(partial);
+      expect(d.predicate_md5).toBe(partial ? md5("(level_id IS NULL)") : null);
+    }
+  });
+});

@@ -47,6 +47,23 @@ The mirrored unapplied reset-integrity migrations now revoke all non-owner grant
 assert effective client denial including membership paths, and fail closed on
 missing/invisible/invalid generation state without SECURITY DEFINER.
 
+## Scoped follow-up after the guard-equivalence review
+
+[Remaining evidence, identifier decision and exact administrator actions](PRODUCTION_RESET_REMAINING_GATES.md)
+records what the local evidence actually supports. The original 545-item Query 02
+report and 16-item teacher-schema extract are now available and reconciled. All
+16 extracted items equal the originals; default/index hashes and PostgreSQL pretty
+constraint hashes reproduce the reviewed definitions. All 15 scoped objects are
+present with matching reported properties. Private original guard export
+headers add language/return/argument/search_path evidence for two guards without
+reopening resolved body equivalence. No new production query was performed.
+
+Only [18](sql/production-reset-dashboard/18_teacher_schema_gaps.sql) (14 remaining
+catalog flag/ownership items) and [19](sql/production-reset-dashboard/19_teacher_guard_metadata_gaps.sql)
+(four metadata/role items) are new. Reuse retained reports first; do not repeat the
+broad diagnostics. PostgreSQL pretty/default rendering and search_path differences
+are separated from structural drift. Both proposed migration pairs stay unchanged.
+
 ## GO / NO-GO matrix
 
 | Gate | Decision | Evidence / required resolution |
@@ -56,7 +73,10 @@ missing/invisible/invalid generation state without SECURITY DEFINER.
 | Availability guard | GO for body/trigger/config parity | All hashes match the PostgreSQL 17 reference; other parity DDL/grants still require review. |
 | Schedule guard source | GO for exact equivalence and preservation | Removing only the 109-byte comment reproduces live MD5 8bf0ff83d02322ec49fb6500f794a74e. No executable difference; positive/negative differential tests pass. |
 | Enrollment guard source | GO for exact equivalence and preservation | Converting 59 LF characters to CRLF reproduces live MD5 2e995c04ca6865d8160d798ee9e5099f. Existing historical guard is validated and preserved. |
-| Remaining teacher parity objects / attributes | NO-GO pending live reconciliation | Strict enum/column/default/check/FK/index and extended function/trigger assertions added. Verify production definitions/ownership/ACLs against the scoped reference before rollout. |
+| Parity definitions / reported properties | GO for Query 02 snapshot | Both enum labels/order, all nine displayed types/defaults/nullability/generation flags, two CHECKs and two index definitions/keys/exported flags match. Full original and 16-item extract checked; pretty/default CHECK rendering explains differing hashes. |
+| Unreported schema flags / DDL ownership | NO-GO pending narrow Query 18 | Raw type identity/typmod, constraint local/inheritance flags, index live/exclusion/nulls-not-distinct flags and owners are absent from Query 02. No repeated default/definition query needed. |
+| Availability-course FK | GO for reported definition/actions/validation; flags pending | Reviewed pretty-definition hash and ordered columns match; both deferral flags and SIMPLE match also confirmed in full Query 02; only local/inheritance flags and DDL ownership remain. |
+| Guard metadata / ownership / existing ACLs | Partial GO; remaining assertions NO-GO | Owner postgres, invoker, trigger hashes/O/23/zero args and config hashes confirmed; two headers add shape evidence. Query 19 checks table/migration-role equality, full attributes/overloads/trigger flags and reports ACLs. Existing ACLs are preserved, not allowlisted by parity. |
 | Registration uniqueness | GO for duplicate check; migration pending | Zero duplicate groups. Missing unique indexes require the separately approved canonical rollout. |
 | Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
@@ -116,9 +136,10 @@ The non-function DDL was reviewed independently: nine column definitions, enum
 values, two rate/unit checks, one FK and two indexes now have structural assertions.
 Missing intended objects may be added; conflicting definitions are never silently
 accepted or rewritten. This is not proof that production's remaining parity DDL is
-redundant. Compare actual columns/defaults/constraints/indexes, ownership and ACLs
-against the manifest and validate an isolated live-compatible staging schema.
-Additional strict attributes not previously reported may correctly block rollout.
+redundant. The subsequent full Query 02 reconciliation confirms reported definitions
+and presence. Only scoped catalog/ownership gaps in the remaining-gates document
+require new schema evidence; reuse the confirmed definitions in isolated
+live-compatible staging. Remaining strict attributes may correctly block rollout.
 The known body-hash mismatch itself no longer blocks preservation.
 
 ## Payroll classification and backfill safety

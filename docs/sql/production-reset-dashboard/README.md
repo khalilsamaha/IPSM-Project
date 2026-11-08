@@ -153,3 +153,38 @@ missing objects, placeholder roles, permission denial and RLS filtering. They do
 not contact the Dashboard or live IPSM database. Successful local/CI validation
 therefore demonstrates SQL compatibility with that fixture, not a completed
 live-schema review.
+
+## Targeted remaining gaps (after Query 17 and guard equivalence)
+
+Do not repeat broad 01–17 reports when the existing evidence suffices. The original
+545-item Query 02 and 16-item teacher-schema extract have now been reconciled: enum
+labels, nine displayed column types/defaults/nullability/generation flags, two CHECKs,
+the FK and two indexes match the reported expectations. See the [scoped evidence
+ledger and administrator checklist](../../PRODUCTION_RESET_REMAINING_GATES.md).
+
+- **18_teacher_schema_gaps.sql**: **14 items** only: nine type identity/modifier
+  and ownership rows, three constraint inheritance rows, two index flags/ownership
+  rows. Enum ownership is reported through its column-type rows. It does not repeat
+  known definitions/defaults/enum labels. Missing objects or mismatching remaining
+  flags are BLOCKER. Use together with Query 02; all MATCH here is not a fresh
+  full-schema certificate or overall release approval. Review reported owners
+  against the independently verified migration role and its effective permissions.
+- **19_teacher_guard_metadata_gaps.sql**: four items: role input and three guard
+  metadata entries. No prosrc/body collection or re-investigation. Complete
+  attribute/overload/owner/trigger checks and expanded/effective EXECUTE ACL review.
+  Fill REPLACE_APP_ROLE and REPLACE_MIGRATION_ROLE only with independently verified
+  role names (escape single quotes as doubled quotes). Dashboard identity alone
+  cannot verify either connection context. Unfilled placeholders deliberately
+  block role approval while still reporting catalog evidence. Existing guard ACLs
+  are preserved by parity; client execution values require interpretation, not
+  automatic permission revocation.
+
+Run each entire file separately in the **rakzehtbpzseetldbohm** SQL Editor, verify
+project/branch, and share complete metadata JSON with timestamp and reviewed commit.
+Expected counts are exactly **14** and **4**. Both end in ROLLBACK, fix read-only /
+repeatable-read, and set 45s statement/3s lock timeouts. No psql commands, body
+execution, grants, schema changes, personal records or financial payloads occur.
+Errors, unsupported catalogs, partial/missing results and timeouts are blockers.
+The reports cannot prove actual runtime identity, every role-assumption path,
+historical identifiers or migration provenance. No production execution occurred
+during their development; tests use only owned disposable PostgreSQL.

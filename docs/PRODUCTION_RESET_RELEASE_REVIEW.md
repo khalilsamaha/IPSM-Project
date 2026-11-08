@@ -7,6 +7,19 @@ The [reconciliation matrix](PRODUCTION_RESET_RECONCILIATION.md) and
 [administrator summary](evidence/production-reset-2026-11-08-summary.json) distinguish
 reported production observations from isolated reproduction.
 
+## Current scoped closeout
+
+See [remaining evidence and administrator decisions](PRODUCTION_RESET_REMAINING_GATES.md)
+for the 15-object schema ledger, confirmed versus missing function metadata,
+two targeted read-only reports, identifier alternatives and three-record provenance
+worksheet requirements. Exact guard-body equivalence stays resolved. The original
+545-item Query 02 and 16-item teacher extract are now reconciled: all scoped
+objects are present and reported definitions/defaults/flags match. Query 18 is
+narrowed to 14 still-unreported type/constraint/index flags and ownership items.
+Query 19 checks metadata/ownership and reports ACLs
+without fetching bodies. No migration or application behavior changes in this
+follow-up, and no speculative live match is claimed from isolated reference data.
+
 ## What the new evidence resolves
 
 - Query 10 completed 42/42 items, no explicit blockers, for supplied roles
@@ -172,7 +185,7 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 
 | Gate / owner | Required artifact before advancing |
 | --- | --- |
-| Evidence / administrator | Raw sanitized 10 and 12–16 reports with timestamps, exact default ACLs (17), actual Vercel-runtime and selected migration-connection role names from their existing authorized connections. Dashboard current_user is insufficient. |
+| Evidence / administrator | Reuse retained reports 02/03/10/12–17; original 02/extract now reconciled. Only scoped 18 (14 items) and 19 (four items) are new follow-ups. Confirm actual runtime and migration role names from their existing connection contexts; Dashboard current_user is insufficient. |
 | Guards / application owner + DBA | Exact body equivalence and preserve decision are now verified. Review final assertions and reconcile production attributes/ownership/ACLs plus non-function objects; run the approved delta against isolated live-compatible staging. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Complete reservation/ownership policy or enforceable proven-disjoint namespace; exercise deleted-history, manual import, concurrent issuance and overflow tests. |
@@ -190,17 +203,26 @@ create diagnostic endpoints, deploy, or change environment variables for this re
 
 ## Validation scope
 
-Prisma generation, TypeScript and 405 unit tests passed locally. PostgreSQL 17.6
-passed all migration fixtures, 29 Dashboard checks before and after migration,
-18 reset integration tests, 33 security/guard regressions and 70 exact teacher-parity
-tests (43 differential behavior cases). The 150 integration tests are gated out
-of the regular unit run. Both mirrored migration pairs remain byte-identical.
-The build passed with the existing ESLint compatibility warning and expected
-static reads against an unavailable loopback fixture; this is not a clean standalone
-lint result. Hosted CI is recorded in the PR and completion report.
+For this evidence follow-up, Prisma generation, TypeScript and **410 unit tests**
+passed locally. PostgreSQL **17.6** passed the full migration suite, **40 Dashboard
+checks before and after migration**, **18 reset integration tests**, **33 security
+regressions** and **70 teacher-parity tests**. The 161 database tests are gated out
+of the regular unit run. New regressions reproduce the administrator's three
+pretty constraint hashes, verify the nine column/default and two index observations,
+and exercise remaining metadata gaps, missing objects, redaction, role placeholders,
+ownership, configuration, overload and inherited EXECUTE reporting. Both mirrored
+migration pairs and all historical migrations remain unchanged.
 
-The latest change modifies only the unapplied teacher-parity pair, diagnostics,
-tests and review documents. Historical migrations and the preceding reset-integrity
+The production build passed with the existing ESLint compatibility warning and
+expected static reads against an unavailable loopback fixture; this is not a clean
+standalone lint result. An initial sandboxed build stalled and was stopped; the
+successful retry permitted subprocess execution with loopback-only DB/Supabase
+URLs. Next's generated lockfile patch was discarded; no dependency change is part
+of this review. Hosted CI on the follow-up commit is recorded in the PR and final
+completion report, separate from the prior green baseline.
+
+The preceding change modified the unapplied teacher-parity pair. The current
+closeout changes only diagnostics, tests and review documents. Historical migrations and the preceding reset-integrity
 security correction remain unchanged. No production functions, permissions, data,
 environment configuration or history were modified. PR90 remains draft; PR2 is
 unimplemented.

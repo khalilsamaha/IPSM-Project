@@ -69,6 +69,91 @@ describe.skipIf(!url)("SQL Editor preflight on the owned PostgreSQL fixture", ()
       writeFileSync("/tmp/ipsm-reviewed-teacher-guards.json", JSON.stringify(value, null, 2));
     }
   });
+  it("limits Query 18 to the fourteen missing catalog flag/ownership items", () => {
+    const value = report("18");
+    expect(value.item_count).toBe(14);
+    expect(value.items.filter(i => i.section === "column_type_and_ownership")).toHaveLength(9);
+    if (installed) expect(value.items.every(i => i.status === "MATCH")).toBe(true);
+    expect(report("18", "SET search_path = pg_catalog;\n" + sql("18")).items).toEqual(value.items);
+  });
+  it("reproduces all three administrator constraint hashes using Query 02 pretty rendering", () => {
+    if (!installed) return;
+    const evidence = JSON.parse(readFileSync("docs/evidence/production-reset-teacher-schema-query02.json", "utf8"));
+    const actual = report("02");
+    for (const row of evidence.items.filter((i: any) => i.section === "constraint")) {
+      const match = actual.items.find(i => i.section === "constraint" && i.details.name === row.details.name);
+      expect(match?.details).toMatchObject(row.details);
+    }
+    const result = run("BEGIN READ ONLY; SET LOCAL search_path=pg_catalog,public; SELECT pg_get_constraintdef(oid),md5(pg_get_constraintdef(oid)),md5(pg_get_constraintdef(oid,true)) FROM pg_constraint WHERE conname='teachers_rates_nonnegative'; ROLLBACK;");
+    expect(result.status, result.stderr).toBe(0);
+    const [definition, ordinary, pretty] = result.stdout.trim().split("|");
+    const reference = JSON.parse(readFileSync("docs/evidence/production-reset-guard-equivalence.json", "utf8"));
+    expect(definition).toBe(reference.non_function_reference.constraints.find((c: any) => c.conname === "teachers_rates_nonnegative").definition);
+    expect(pretty).toBe("a0ba59ce816f85d082988fd91153f0a7");
+    expect(ordinary).not.toBe(pretty);
+  });
+  // Mutations below exist ONLY inside a rolled-back disposable-fixture transaction.
+  // Normal report runs above execute the actual files in READ ONLY mode.
+  function mutatedReport(number: string, mutation: string) {
+    const result = run(sql(number).replace(
+      "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;",
+      `BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ; ${mutation}`));
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).not.toContain(sentinel);
+    return JSON.parse(result.stdout.trim()) as Report;
+  }
+  it("reports missing scoped schema objects explicitly, never as successful parity", () => {
+    const value = mutatedReport("18", "ALTER TABLE public.teacher_payroll_items RENAME TO hidden_parity_items;");
+    const missing = value.items.filter(i => i.details.table_name === "teacher_payroll_items");
+    expect(missing).toHaveLength(2);
+    expect(missing.every(i => i.status === "BLOCKER" && i.details.present === false)).toBe(true);
+  });
+  it("detects an unexpected type identity and constraint inheritance without leaking expressions", () => {
+    if (!installed) return;
+    const value = mutatedReport("18", `ALTER TABLE public.teacher_payroll_items ALTER COLUMN rate_unit_minutes_snapshot TYPE bigint;
+      ALTER TABLE public.teachers DROP CONSTRAINT teachers_rates_nonnegative;
+      ALTER TABLE public.teachers ADD CONSTRAINT teachers_rates_nonnegative CHECK ('${sentinel}' <> '') NO INHERIT;`);
+    expect(value.items.find(i => i.details.column_name === "rate_unit_minutes_snapshot" && i.details.table_name === "teacher_payroll_items")?.status).toBe("BLOCKER");
+    expect(value.items.find(i => i.details.constraint_name === "teachers_rates_nonnegative")?.details.inheritance_matches).toBe(false);
+  });
+  it("detects the unreported NULLS NOT DISTINCT index flag", () => {
+    if (!installed) return;
+    const value = mutatedReport("18", "DROP INDEX public.teacher_courses_teacher_course_all_levels_key; CREATE UNIQUE INDEX teacher_courses_teacher_course_all_levels_key ON public.teacher_courses(teacher_id,course_id) NULLS NOT DISTINCT WHERE level_id IS NULL;");
+    expect(value.items.find(i => i.details.index_name === "teacher_courses_teacher_course_all_levels_key")?.status).toBe("BLOCKER");
+  });
+  it("reports metadata and ACLs without claiming Dashboard proved runtime identity", () => {
+    const value = report("19");
+    expect(value.item_count).toBe(4);
+    expect(value.items.find(i => i.section === "role_input")?.details.runtime_identity_proven_by_this_query).toBe(false);
+    expect(report("19", sql("19", false)).status).toBe("BLOCKER");
+    if (installed) {
+      expect(value.status).toBe("REVIEW_REQUIRED");
+      expect(value.items.filter(i => i.section === "guard_metadata").every(i => i.details.attributes_match && i.details.trigger_matches && i.details.no_overloads && i.details.owner_matches_selected_migration_role)).toBe(true);
+    }
+  });
+  it("blocks new overloads and configuration drift without disclosing configuration values", () => {
+    if (!installed) return;
+    const value = mutatedReport("19", `CREATE FUNCTION public.validate_schedule_teacher_availability(integer) RETURNS integer LANGUAGE sql AS 'SELECT 1';
+      ALTER FUNCTION public.validate_enrollment_teacher_availability() SET app.private_value='${sentinel}';`);
+    expect(value.items.find(i => i.details.function_name === "validate_schedule_teacher_availability")?.details.no_overloads).toBe(false);
+    expect(value.items.find(i => i.details.function_name === "validate_enrollment_teacher_availability")?.details.configuration_matches).toBe(false);
+    expect(value.status).toBe("BLOCKER");
+  });
+  it("blocks differing guard ownership and trigger properties", () => {
+    if (!installed) return;
+    const value = mutatedReport("19", "ALTER FUNCTION public.validate_schedule_teacher_availability() OWNER TO ipsm_preflight_reader; ALTER TABLE public.enrollments DISABLE TRIGGER enrollment_teacher_availability_guard;");
+    expect(value.items.find(i => i.details.function_name === "validate_schedule_teacher_availability")?.details.owner_matches_selected_migration_role).toBe(false);
+    expect(value.items.find(i => i.details.function_name === "validate_enrollment_teacher_availability")?.details.trigger_matches).toBe(false);
+    expect(value.status).toBe("BLOCKER");
+  });
+  it("shows inherited existing guard EXECUTE as a review item without changing ACLs", () => {
+    if (!installed) return;
+    const value = mutatedReport("19", "GRANT EXECUTE ON FUNCTION public.validate_schedule_teacher_availability() TO ipsm_preflight_reader; GRANT ipsm_preflight_reader TO anon;");
+    const guard = value.items.find(i => i.details.function_name === "validate_schedule_teacher_availability")!;
+    expect(guard.details.acl.some((a: any) => a.grantee === "ipsm_preflight_reader" && a.privilege === "EXECUTE")).toBe(true);
+    expect(guard.details.client_execute_review.find((r: any) => r.role === "anon").effective_execute).toBe(true);
+    expect(guard.status).toBe("REVIEW_REQUIRED");
+  });
   it("reports proposed-object absence or existing-installation collisions explicitly", () => {
     const items = report("01").items.filter(item => item.section === "proposed_object");
     expect(items).toHaveLength(5);
