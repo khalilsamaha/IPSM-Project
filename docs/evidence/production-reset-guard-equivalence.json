@@ -1,0 +1,153 @@
+{
+  "project_ref": "rakzehtbpzseetldbohm",
+  "source": "Administrator-reported live prosrc MD5 hashes and formatting observations; reconstruction from unchanged historical repository files, not a direct production query",
+  "review_baseline": "9890bb25910e58924e10c9e39c930e0b0e98c106",
+  "guards": [
+    {
+      "name": "validate_teacher_availability_scope",
+      "source": "supabase/migrations/20260801101500_teacher_consistency.sql",
+      "canonical_md5": "ce495851f4dce1da05f507f4af587a61",
+      "reconstructed_live_md5": "ce495851f4dce1da05f507f4af587a61",
+      "canonical_sha256": "12300a51ca480bbb70030f285e343c46387ffdb50dbed65797e00a9cdfbd106b",
+      "reconstructed_live_sha256": "12300a51ca480bbb70030f285e343c46387ffdb50dbed65797e00a9cdfbd106b",
+      "canonical_bytes": 1128,
+      "reconstructed_live_bytes": 1128,
+      "transform": "Identity",
+      "changed_newlines_or_removed_bytes": 0
+    },
+    {
+      "name": "validate_schedule_teacher_availability",
+      "source": "supabase/migrations/20260801101500_teacher_consistency.sql",
+      "canonical_md5": "e9d829cecb69aedc692d7b1a5fdaaf07",
+      "reconstructed_live_md5": "8bf0ff83d02322ec49fb6500f794a74e",
+      "canonical_sha256": "4a41e95237e568951783c6b0d3f82ca87c9b5abe2fd772ab4855c9d13e4d7121",
+      "reconstructed_live_sha256": "67a8e09e7ca17e1670ba40ad8158433d78c38edcac879f5635a2196fbd7cab95",
+      "canonical_bytes": 1302,
+      "reconstructed_live_bytes": 1193,
+      "transform": "Remove exactly the two-line legacy/import comment, including its two LF terminators",
+      "changed_newlines_or_removed_bytes": 109
+    },
+    {
+      "name": "validate_enrollment_teacher_availability",
+      "source": "prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql",
+      "canonical_md5": "e85ba87b42cfa5e5b60c2d3aaa0ccfc1",
+      "reconstructed_live_md5": "2e995c04ca6865d8160d798ee9e5099f",
+      "canonical_sha256": "32a800679d16557dc324e867a716b4a05a77211bc75c580226236be16ef6418b",
+      "reconstructed_live_sha256": "31cc1cd6bfdf4508da8c7dfa56c5ecca302f112b01bcd15b0f97271bd2b74ff8",
+      "canonical_bytes": 1880,
+      "reconstructed_live_bytes": 1939,
+      "transform": "Replace every LF with CRLF; no other byte changes",
+      "changed_newlines_or_removed_bytes": 59
+    }
+  ],
+  "non_function_reference": {
+    "columns": [
+      {
+        "type": "uuid",
+        "attname": "course_id",
+        "relname": "teacher_availability",
+        "attnotnull": false,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": null
+      },
+      {
+        "type": "\"TeacherCompensationBasis\"",
+        "attname": "compensation_basis_snapshot",
+        "relname": "teacher_payroll_items",
+        "attnotnull": false,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": null
+      },
+      {
+        "type": "integer",
+        "attname": "rate_unit_minutes_snapshot",
+        "relname": "teacher_payroll_items",
+        "attnotnull": false,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": null
+      },
+      {
+        "type": "\"TeacherCompensationBasis\"",
+        "attname": "compensation_basis_snapshot",
+        "relname": "teacher_payrolls",
+        "attnotnull": false,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": null
+      },
+      {
+        "type": "integer",
+        "attname": "rate_unit_minutes_snapshot",
+        "relname": "teacher_payrolls",
+        "attnotnull": false,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": null
+      },
+      {
+        "type": "integer",
+        "attname": "hourly_rate_cents",
+        "relname": "teachers",
+        "attnotnull": true,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": "0"
+      },
+      {
+        "type": "\"TeacherCompensationBasis\"",
+        "attname": "compensation_basis",
+        "relname": "teachers",
+        "attnotnull": true,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": "'HOURLY'::\"TeacherCompensationBasis\""
+      },
+      {
+        "type": "integer",
+        "attname": "session_rate_cents",
+        "relname": "teachers",
+        "attnotnull": false,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": null
+      },
+      {
+        "type": "integer",
+        "attname": "session_unit_minutes",
+        "relname": "teachers",
+        "attnotnull": true,
+        "attidentity": "",
+        "attgenerated": "",
+        "default_expr": "30"
+      }
+    ],
+    "indexes": [
+      {
+        "indexdef": "CREATE INDEX teacher_availability_course_id_idx ON public.teacher_availability USING btree (course_id)",
+        "indexname": "teacher_availability_course_id_idx"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX teacher_courses_teacher_course_all_levels_key ON public.teacher_courses USING btree (teacher_id, course_id) WHERE (level_id IS NULL)",
+        "indexname": "teacher_courses_teacher_course_all_levels_key"
+      }
+    ],
+    "constraints": [
+      {
+        "conname": "teacher_availability_course_id_fkey",
+        "definition": "FOREIGN KEY (course_id) REFERENCES courses(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "conname": "teachers_rates_nonnegative",
+        "definition": "CHECK (((hourly_rate_cents >= 0) AND ((session_rate_cents IS NULL) OR (session_rate_cents >= 0))))"
+      },
+      {
+        "conname": "teachers_session_unit_positive",
+        "definition": "CHECK ((session_unit_minutes > 0))"
+      }
+    ]
+  },
+  "non_function_reference_source": "Owned disposable PostgreSQL 17.6 using reset-baseline.sql, reset-bootstrap.sql and the parity migration at 9890bb25910e58924e10c9e39c930e0b0e98c106; not a production schema report"
+}

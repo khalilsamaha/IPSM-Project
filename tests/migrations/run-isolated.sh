@@ -36,11 +36,14 @@ export RESET_TEST_DATABASE_URL="$DATABASE_URL"
 cd "$PROJECT_ROOT"
 source tests/migrations/assertions.sh
 cmp prisma/migrations/20261107010000_reset_integrity/migration.sql supabase/migrations/20261107010000_reset_integrity.sql
+cmp prisma/migrations/20261107000000_teacher_guard_parity/migration.sql supabase/migrations/20261107000000_teacher_guard_parity.sql
 bash tests/migrations/family-only.integration.sh
 PSQL=("$PG_BIN/psql" "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
 "${PSQL[@]}" -f tests/migrations/reset-baseline.sql
 "${PSQL[@]}" -f tests/migrations/reset-bootstrap.sql
+# Historical enrollment guard is a prerequisite, not replaced by the parity delta.
+"${PSQL[@]}" -f prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql
 # Synthetic sentinel only: ensure administrator reports do not reveal webhook
 # arguments, function bodies/configuration or column-default literals.
 "${PSQL[@]}" <<'SQL'
@@ -61,7 +64,6 @@ DROP FUNCTION public.preflight_redaction_probe();
 ALTER TABLE public.families DROP COLUMN preflight_redaction_probe;
 SQL
 "${PSQL[@]}" -f prisma/migrations/20261107000000_teacher_guard_parity/migration.sql
-"${PSQL[@]}" -f prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql
 # Model the reported broad creator defaults ONLY in this owned disposable cluster.
 # Supabase Query 17 grants ALL eight table privileges on PG17 (including MAINTAIN).
 # Also exercise PUBLIC/custom inherited defaults, without touching production.
@@ -103,3 +105,5 @@ echo "Read-only administrator preflight passed before and after the proposed mig
 ./node_modules/.bin/vitest run tests/production-reset-dashboard.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 ./node_modules/.bin/vitest run tests/production-reset-review.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+
+./node_modules/.bin/vitest run tests/teacher-guard-parity.postgres.test.ts --pool=threads --poolOptions.threads.singleThread

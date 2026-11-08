@@ -39,7 +39,7 @@ post-installation effective permissions and not Vercel runtime identity. Exact
 function defaults, full role graph, raw report and timestamp were not supplied.
 The correction removes any non-owner default-function grants as well.
 
-Only `20261107010000_reset_integrity` and its byte-identical mirror change. They
+The unchanged `20261107010000_reset_integrity` pair provides the security correction. They
 create five tables: `production_reset_requests`, `production_reset_state`,
 `reset_registration_submissions`, `business_identifier_counters` and
 `issued_business_identifiers`. All remain RLS-enabled with no policies.
@@ -104,46 +104,35 @@ protection; use it on an approved isolated staging copy with the actual creator 
 role graph before release. It supplements the transactional migration assertions,
 not the still-missing runtime identity check.
 
-## Teacher guards: preserve-or-change decision
+## Teacher guards: verified preserve decision
 
-**Recommendation: preserve live behavior pending semantic evidence. Do not approve
-replacement based on hashes.** The live function bodies/sanitized rule diff are not
-available. The following is analysis of repository SQL, backed by isolated tests,
-not a claim about the two different live functions.
+**Preserve the exact approved live bodies.** Both reported differences now reproduce
+exactly: 59 LF→CRLF conversions for enrollment; removal of only the 109-byte two-line
+comment for schedule. Availability is unchanged. PostgreSQL 17 confirms the reported
+prosrc hashes and identical outcomes across 43 differential behavior cases.
 
-| Rule | Reviewed repository behavior | Decision evidence needed |
-| --- | --- | --- |
-| Availability | Seasonal rows require both dates inside season; course-scoped rows require an active, unarchived course assignment. Assignment level is not checked here. | Body/config/trigger hashes already match; preserve when the other parity objects are verified. |
-| Enrollment without teacher | Returns immediately from this guard; other constraints still apply. | Does live permit this historical/unassigned case? |
-| Enrollment with teacher | Dates inside season; active/unarchived course assignment at exact level or NULL (all levels); at least one actual weekday occurrence inside the intersection of enrollment and availability dates. Global and seasonal/course-specific availability are supported. | Is live full-period coverage stricter, does it require an occurrence, and how does it handle archived/NULL cases? |
-| Schedule with enrollment | Checks teacher, weekday, active/unarchived availability, enrollment's course/season scope, effective dates and inclusive start/end containment. Time comparison uses text (requires normalized HH:MM). | Compare boundary, format, global/season/course scoping and status behavior. |
-| Schedule without enrollment | Explicit early return (legacy/import behavior). | Is live stricter? Do not introduce a bypass through parity replacement. |
-| Schedule eligibility limits | Does not recheck teacher-course level/active assignment or require its teacher/student to equal enrollment's. Does not itself enforce enrollment date bounds or session season equality; relies on other layers. | Inventory other live checks/app validation and decide whether the live guard supplies any of these protections. |
-| Trigger reach | Guard runs on INSERT and listed UPDATE columns, not DELETE. Editing parent availability/assignment does not revalidate existing enrollments/sessions. Balance-only updates do not fire enrollment guard. | Are protections implemented elsewhere? Matching trigger hashes do not establish body equivalence. |
+The [equivalence and non-function DDL review](PRODUCTION_RESET_GUARD_EQUIVALENCE.md)
+records precise hashes, transformations, tests and limitations. The unapplied parity
+pair accepts exact canonical/live strings with strict function/configuration/owner
+and trigger assertions, then leaves existing definitions and ACLs untouched. It
+never normalizes incoming arbitrary source to force a match. Unknown variants,
+attributes, triggers and schema definitions still fail closed.
 
-New isolated tests characterize inclusive lesson boundaries, wrong weekday,
-effective dates, time overflow, archived availability, global availability,
-NULL-enrollment bypass, missing assignment revalidation, occurrence-based enrollment
-coverage, exact/all-level assignment, NULL teacher and seasonal availability dates.
-Existing tests prove the parity migration refuses an unknown body or changed
-trigger. They deliberately do not install a guessed live body.
+The historical enrollment function must exist; it is neither fabricated nor replaced.
+The older-schema path may create both-absent availability/schedule pairs using their
+original canonical definitions. IPSM reports all three present, so its intended path
+is preservation. Previously implemented reset security migrations remain unchanged.
 
-Two reviewable paths:
+Non-function parity DDL remains an independent production gate. Exact enum, column,
+default, CHECK, FK and index assertions replace name-only acceptance. Confirm live
+attributes/ownership/ACLs and non-function definitions against the scoped reference,
+then test the approved migration delta in isolated staging. Source equivalence is
+not a certificate for the full production schema or a deployment authorization.
 
-1. **Preserve (recommended):** administrator privately supplies a sanitized semantic
-   diff/equivalence assessment tied to the recorded live hashes. Reproduce approved
-   behavior in isolated staging. Prepare a future validate-and-preserve delta that
-   verifies exact approved objects and skips their replacement. Independently verify
-   compensation columns/checks, availability FK/index, payroll snapshot columns,
-   NULL-level uniqueness and grants; function presence does not waive this work.
-2. **Change:** explicitly approve each before/after business rule, provide negative
-   and boundary cases for both implementations, check existing records for rejected
-   cases read-only, and review an additive replacement migration with recovery plan.
-   This is a separate intentional behavior change, not parity cleanup.
-
-The current parity migration deliberately stops at the live schedule hash.
-Enrollment is not replaced by it. Do not add live hashes to its exception list
-while leaving CREATE OR REPLACE to overwrite them. No choice is implemented here.
+No business rules change: NULL teacher/enrollment behavior, occurrence-based
+registration eligibility, archived handling and time windows remain as before.
+Schedule still relies on other layers for assignment/level revalidation and
+enrollment-date limits; this task does not introduce unrelated rule hardening.
 
 ## Identifier policy: no reuse claim without a defensible history
 
@@ -184,7 +173,7 @@ attribute objects. Do not reconstruct or label fictitious historical executions.
 | Gate / owner | Required artifact before advancing |
 | --- | --- |
 | Evidence / administrator | Raw sanitized 10 and 12–16 reports with timestamps, exact default ACLs (17), actual Vercel-runtime and selected migration-connection role names from their existing authorized connections. Dashboard current_user is insufficient. |
-| Guards / application owner + DBA | Signed preserve/change rule comparison, full non-guard parity object review and live-compatible isolated tests. Current parity remains blocked. |
+| Guards / application owner + DBA | Exact body equivalence and preserve decision are now verified. Review final assertions and reconcile production attributes/ownership/ACLs plus non-function objects; run the approved delta against isolated live-compatible staging. |
 | Financial history / financial owner | Acknowledge three preserved absent-record audits; no current financial repair authorized. Recheck payroll aggregates if records change. |
 | Identifiers / business owner + DBA | Complete reservation/ownership policy or enforceable proven-disjoint namespace; exercise deleted-history, manual import, concurrent issuance and overflow tests. |
 | ACLs / security reviewer + DBA | Correction implemented and isolated tests added. Review final SQL; verify actual creator/runtime ownership and memberships in isolated staging. Post-installation effective permissions remain unverified in production (objects absent). |
@@ -201,20 +190,17 @@ create diagnostic endpoints, deploy, or change environment variables for this re
 
 ## Validation scope
 
-The earlier exposure-characterization tests are replaced by regression tests that
-require denial. All destructive/role/corruption probes run in the owned disposable
-loopback cluster and roll back. The fixture reproduces the real eight-privilege
-Supabase defaults and adds PUBLIC/inherited grants to test additional paths.
-Migration negative fixtures positively verify rollback on unsafe memberships and
-predefined-role access; historical payroll audits remain preserved.
-
 Prisma generation, TypeScript and 405 unit tests passed locally. PostgreSQL 17.6
-passed all migration fixtures, 29 Dashboard tests before and after migration,
-18 reset integration tests and 33 security/guard tests. The 80 integration tests
-are gated out of the ordinary unit run. The production build passed with the
-existing ESLint compatibility warning and expected static-read failures against
-an unavailable loopback fixture; this is not a clean standalone lint result.
-Hosted CI is recorded in the PR and completion report. No production database was accessed for implementation.
-No teacher-guard migration, application business logic, dependency version or CI
-workflow is changed by this correction. Only the still-unapplied reset-integrity
-migration pair changes; historical migrations remain unchanged.
+passed all migration fixtures, 29 Dashboard checks before and after migration,
+18 reset integration tests, 33 security/guard regressions and 70 exact teacher-parity
+tests (43 differential behavior cases). The 150 integration tests are gated out
+of the regular unit run. Both mirrored migration pairs remain byte-identical.
+The build passed with the existing ESLint compatibility warning and expected
+static reads against an unavailable loopback fixture; this is not a clean standalone
+lint result. Hosted CI is recorded in the PR and completion report.
+
+The latest change modifies only the unapplied teacher-parity pair, diagnostics,
+tests and review documents. Historical migrations and the preceding reset-integrity
+security correction remain unchanged. No production functions, permissions, data,
+environment configuration or history were modified. PR90 remains draft; PR2 is
+unimplemented.

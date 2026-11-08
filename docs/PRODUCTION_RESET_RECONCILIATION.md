@@ -3,8 +3,9 @@
 **Overall: NO-GO for migration, reset, merge or production deployment.** The FK
 compatibility blocker has an evidence-based correction. Default-ACL and
 invisible-state vulnerabilities are corrected in the unapplied migration pair.
-Guard semantics, identifier history, migration provenance, actual runtime identity
-and live-compatible security validation remain unresolved. PR 90 stays draft;
+The reported teacher-body differences are now reproduced exactly and preserved.
+Non-function parity/attribute review, identifier history, migration provenance,
+actual runtime identity and live-compatible security validation remain unresolved. PR 90 stays draft;
 PR 2 is untouched.
 
 ## Evidence and limits
@@ -53,8 +54,9 @@ missing/invisible/invalid generation state without SECURITY DEFINER.
 | Core table presence | GO for this check | All 25 reported present; not a full schema/permissions certificate. |
 | FK deletion compatibility | GO with this correction | 23 original matches plus 22 exact NO ACTION variants; ordered columns and delete actions unchanged. New payroll FK remains separately proposed. |
 | Availability guard | GO for body/trigger/config parity | All hashes match the PostgreSQL 17 reference; other parity DDL/grants still require review. |
-| Schedule guard | NO-GO | Body differs; private semantic comparison and an explicit preserve/change decision required. |
-| Enrollment guard | NO-GO pending baseline review | Body differs from repository and checked history. PR90 parity does not replace it; confirm intended behavior in isolated staging. |
+| Schedule guard source | GO for exact equivalence and preservation | Removing only the 109-byte comment reproduces live MD5 8bf0ff83d02322ec49fb6500f794a74e. No executable difference; positive/negative differential tests pass. |
+| Enrollment guard source | GO for exact equivalence and preservation | Converting 59 LF characters to CRLF reproduces live MD5 2e995c04ca6865d8160d798ee9e5099f. Existing historical guard is validated and preserved. |
+| Remaining teacher parity objects / attributes | NO-GO pending live reconciliation | Strict enum/column/default/check/FK/index and extended function/trigger assertions added. Verify production definitions/ownership/ACLs against the scoped reference before rollout. |
 | Registration uniqueness | GO for duplicate check; migration pending | Zero duplicate groups. Missing unique indexes require the separately approved canonical rollout. |
 | Payroll | GO for no current posting mismatch; historical sign-off pending | Query 14: three absent-record audit events, zero current payroll and payroll expenses. Preserve audits; absence does not establish legitimate deletion. |
 | Receipts / balances | GO for reported checks | Four checks returned zero; retain evidence and recheck before rollout. |
@@ -85,40 +87,39 @@ distinguishing reviewed variants from new drift.
 
 ## Teacher guards and parity migration
 
-The [PostgreSQL 17 reference](evidence/production-reset-guard-reference-pg17.json)
-establishes that all three supplied trigger-definition hashes and configuration
-hashes match, as do enabled state O, type bits 23, zero argument counts and
-SECURITY INVOKER flags. Production owner `postgres` does not identify Prisma's
-runtime role. The body comparison appears below.
+The [exact equivalence review](PRODUCTION_RESET_GUARD_EQUIVALENCE.md) and
+[reconstruction manifest](evidence/production-reset-guard-equivalence.json) supersede
+the earlier unresolved body-hash comparison. From unchanged historical sources:
 
-Before this correction, the parity migration was the historical Supabase teacher
-consistency SQL wrapped in a transaction. It replaces availability and schedule
-functions/triggers, adds/checks compensation columns and constraints, availability
-course FK/index, payroll snapshots and NULL-level assignment uniqueness, and
-revokes function execution from public client roles. It does **not** replace the
-enrollment guard. Presence alone does not make this entire migration redundant;
-IF NOT EXISTS does not verify preexisting definitions.
+- Enrollment: all 59 LF characters changed to CRLF, with no other change,
+  reproduces `2e995c04ca6865d8160d798ee9e5099f` exactly.
+- Schedule: remove only the two-line legacy/import comment (109 bytes), retaining
+  LF elsewhere, to reproduce `8bf0ff83d02322ec49fb6500f794a74e` exactly.
+- Availability: unchanged body remains `ce495851f4dce1da05f507f4af587a61`.
 
-Availability's body is identical. Schedule would be replaced with different text.
-Hashes cannot establish whether the difference is semantic or just formatting,
-so replacement cannot be approved from this evidence. Neither different live
-body matched the relevant historical revisions checked: schedule `2e441047`;
-enrollment `630408b1`, `6009207f`, `d4e13ab3`, `da89cc3f`, `32237ea1`.
+PostgreSQL 17 tests install the candidates, verify its own prosrc hashes and compare
+43 positive/negative/boundary cases across both variants. No executable difference
+was found or needed to reproduce either reported hash. The live NULL-enrollment
+return already exists; it is not introduced by this PR. The previously supplied
+three trigger/configuration hashes still match the reference.
 
-The **unapplied** parity migration now rejects an existing target function with
-different body/attributes/configuration or a target trigger with different
-function, timing/events, update columns, condition or enabled state. The known
-live schedule body will deliberately abort it before DDL. Both migration copies
-remain identical; this is a rollout blocker, not a guard to bypass.
+The two unapplied parity migrations now validate exact complete source strings
+(canonical or the one reviewed live variant), strict function attributes/config,
+owner/migration context and exact trigger definitions. They preserve approved
+existing functions/triggers without CREATE OR REPLACE, ALTER, DROP/recreation or
+ACL changes. Unknown source, overload, configuration, trigger or touched schema
+shape aborts the transaction. Enrollment is a required historical prerequisite;
+only both-absent availability/schedule pairs on the documented older schema path
+may receive their original canonical definition.
 
-Required resolution: privately compare schedule/enrollment course/season scope,
-time-window containment, NULL-enrollment behavior, active course/level assignment,
-season bounds and the occurrence test within enrollment dates. Supply a sanitized
-business-rule diff or authorized equivalence assessment. Query 13 exposes only
-hashes/attributes. If live behavior should remain, prepare a reviewed
-validate-and-preserve migration; if it should change, approve and test that change
-explicitly. **Do not add the different hash to an exception list and then overwrite
-it.** Review other parity columns/indexes/checks/grants separately.
+The non-function DDL was reviewed independently: nine column definitions, enum
+values, two rate/unit checks, one FK and two indexes now have structural assertions.
+Missing intended objects may be added; conflicting definitions are never silently
+accepted or rewritten. This is not proof that production's remaining parity DDL is
+redundant. Compare actual columns/defaults/constraints/indexes, ownership and ACLs
+against the manifest and validate an isolated live-compatible staging schema.
+Additional strict attributes not previously reported may correctly block rollout.
+The known body-hash mismatch itself no longer blocks preservation.
 
 ## Payroll classification and backfill safety
 
@@ -240,7 +241,7 @@ inconsistent payroll postings, refusal to replace unknown guard bodies, preserve
 orphan audits, and financial/academic resets with the 22 exact live FK variants.
 No historical migration is rewritten or production FK changed to match Prisma.
 
-Before approval: resolve the two guard bodies and all other parity DDL; sign off
+Before approval: reconcile the remaining guard attributes and non-function parity DDL; sign off
 the preserved historical payroll findings; establish complete identifier history;
 reconcile the three migration records; verify actual roles; and validate the
 corrected ACL/state model on an isolated PostgreSQL 17 staging restore with
@@ -255,9 +256,9 @@ checks before and after fixture migration, 18 reset integration tests, and the
 production build. Database validation used PostgreSQL 17.6 on fresh owned loopback
 clusters. The build retains the previously documented ESLint compatibility warning
 and expected static-read errors against an intentionally unavailable dummy DB.
-The current correction changes only the still-unapplied reset-integrity migration
-pair; teacher parity and historical applied files remain unchanged. Current
-validation results and the published commit are recorded in the draft PR.
+The latest correction changes only the still-unapplied teacher-parity pair. The
+reset-integrity security correction and all historical migrations remain unchanged.
+Current validation results and the published commit are recorded in the draft PR.
 
 <!-- Generated metadata tables follow; no personal or financial records. -->
 
@@ -290,8 +291,8 @@ All 22 update differences are **CASCADE (expected) → NO ACTION (live)**.
 
 | Teacher function | Live body MD5 | Repository body MD5 | Result |
 | --- | --- | --- | --- |
-| validate_enrollment_teacher_availability | 2e995c04ca6865d8160d798ee9e5099f | e85ba87b42cfa5e5b60c2d3aaa0ccfc1 | Differs; semantics unresolved |
-| validate_schedule_teacher_availability | 8bf0ff83d02322ec49fb6500f794a74e | e9d829cecb69aedc692d7b1a5fdaaf07 | Differs; semantics unresolved |
+| validate_enrollment_teacher_availability | 2e995c04ca6865d8160d798ee9e5099f | e85ba87b42cfa5e5b60c2d3aaa0ccfc1 | Exact CRLF variant reproduced; preserved |
+| validate_schedule_teacher_availability | 8bf0ff83d02322ec49fb6500f794a74e | e9d829cecb69aedc692d7b1a5fdaaf07 | Exact comment-only variant reproduced; preserved |
 | validate_teacher_availability_scope | ce495851f4dce1da05f507f4af587a61 | ce495851f4dce1da05f507f4af587a61 | Matches |
 
 <details>

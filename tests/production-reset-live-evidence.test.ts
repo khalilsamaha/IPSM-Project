@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { teacherGuards } from "./helpers/teacher-guard-bodies";
 import { productionResetForeignKeys } from "@/lib/production-reset-foreign-keys";
 
 const evidence = JSON.parse(readFileSync("docs/evidence/production-reset-2026-11-07.json", "utf8")) as {
@@ -29,15 +30,18 @@ describe("administrator-provided IPSM schema evidence", () => {
     expect(productionResetForeignKeys.has("public.payments.family_id->public.families.id:ca")).toBe(false);
     expect(productionResetForeignKeys.has("public.payments.unknown_id->public.families.id:ra")).toBe(false);
   });
-  it("records one matching guard body and two genuine hash differences without claiming semantic equivalence", () => {
+  it("reconstructs only the exact approved live prosrc bytes from unchanged historical bodies", () => {
     const parity = readFileSync("prisma/migrations/20261107000000_teacher_guard_parity/migration.sql", "utf8");
-    const enrollment = readFileSync("prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql", "utf8");
-    const bodyHashes = new Map([...`${parity}\n${enrollment}`.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\(\)[\s\S]*?AS \$\$([\s\S]*?)\$\$;/g)]
-      .map(match => [match[1], createHash("md5").update(match[2]).digest("hex")]));
-    for (const guard of evidence.teacher_guards) {
-      expect(bodyHashes.has(guard.name)).toBe(true);
-      expect(bodyHashes.get(guard.name) === guard.function_body_md5).toBe(guard.name === "validate_teacher_availability_scope");
-      expect(readFileSync("docs/sql/production-reset-dashboard/13_teacher_guard_parity.sql", "utf8")).toContain(bodyHashes.get(guard.name)!);
+    for (const guard of teacherGuards) {
+      expect(createHash("md5").update(guard.canonical).digest("hex")).toBe(guard.canonicalMd5);
+      expect(createHash("md5").update(guard.live).digest("hex")).toBe(guard.liveMd5);
+      expect(evidence.teacher_guards.find(row => row.name === guard.name)?.function_body_md5).toBe(guard.liveMd5);
+      const literal = parity.split(`$${guard.tag}_body$`)[1];
+      expect(literal).toBe(guard.canonical);
+      expect(parity).toContain(guard.liveMd5);
+      const report = readFileSync("docs/sql/production-reset-dashboard/13_teacher_guard_parity.sql", "utf8");
+      expect(report).toContain(guard.canonicalMd5);
+      expect(report).toContain(guard.liveMd5);
     }
   });
 });
