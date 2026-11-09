@@ -1,5 +1,11 @@
 # Identifier decision for PR90 — IPSM namespace selected; activation blocked
 
+**Implementation status:** the approved format was deployed and activated under
+owner approval on 2026-11-09. See [release evidence](https://github.com/khalilsamaha/IPSM-Project/blob/b73fd1666d6f2c9e87e3a5781325ff247dec346c/docs/PRODUCTION_RESET_FINAL_DELIVERY.md)
+and [recovery operations](IDENTIFIER_RECOVERY_RUNBOOK.md). The decision and its
+pre-release conditions below are preserved as historical context.
+
+
 **Business-format decision (2026-11-08):** The owner selected the unversioned `IPSM`
 namespace for new FAM/STU/RCPT identifiers, rather than versioned `IPSM1` or `IPSM2`.
 This approves the display grammar and preparation of draft-PR implementation;
