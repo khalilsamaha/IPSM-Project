@@ -1,4 +1,6 @@
-# Production Reset — fourteen groups (stacked feature release)
+# Production Reset — fourteen groups (live)
+
+Identifier monitoring and administrator-controlled recovery: [runbook](IDENTIFIER_RECOVERY_RUNBOOK.md).
 
 Production Reset at `/settings/production-reset` requires an active, non-archived
 SUPER_ADMIN. Preview and execution each verify the profile in PostgreSQL; the

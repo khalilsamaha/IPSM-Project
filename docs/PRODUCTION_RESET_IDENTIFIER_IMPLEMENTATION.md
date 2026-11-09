@@ -1,11 +1,14 @@
-# Approved IPSM identifiers — implemented, activation still blocked
+# Approved IPSM identifiers — deployed; recovery remains administrator-controlled
 
-The business approved `FAM-IPSM-YYYY-serial`, `STU-IPSM-YYYY-serial` and
-`RCPT-IPSM-YYYY-serial` on 2026-11-08. The implementation is in the
-**third**, unapplied mirrored delta `20261108000000_ipsm_identifiers`. The two
-previously reviewed deltas and all historical migrations remain unchanged.
-Production issuance is **not enabled**. Neither migration nor seed creates an
-activation. No environment variable was installed by this work.
+The approved unversioned FAM/STU/RCPT-IPSM-YYYY-serial format is live at
+`c5de2a062db5f38e15f09aeb51cc1b5d9af2075d`. All three reviewed migrations applied
+on 2026-11-09, and the owner-approved activation and matching Production-only
+Vercel setting were verified. [Completed release evidence](PRODUCTION_RESET_FINAL_DELIVERY.md)
+records scope and validation; no historical evidence is rewritten here.
+
+Use the [operational recovery runbook and read-only health command](IDENTIFIER_RECOVERY_RUNBOOK.md)
+for routine monitoring and restart/recovery. This maintenance documentation does
+not authorize another attestation, restore, deployment or configuration change.
 
 ## Allocation and persistence
 
@@ -30,7 +33,7 @@ activation. No environment variable was installed by this work.
   import manifests and activations are immutable; ordinary direct INSERT into the
   ledger/counters and UPDATE/DELETE/TRUNCATE are rejected. Counter advancement is
   confined to allocation/import triggers. Existing generation barriers remain.
-- The six reset scopes preserve all identifier history. Counter/issued-ledger
+- All fourteen reset scopes preserve all identifier history. Counter/issued-ledger
   changes affect the existing reset fingerprint; new history tables are never in
   deletion plans. Their writes also run the fail-closed generation guard.
 - The old two-argument allocator now raises. Older application code cannot resume
@@ -70,7 +73,8 @@ no permissive policies, SECURITY INVOKER/empty-search-path functions. The same
 object-scoped ACL sweep and effective membership checks cover all eight PG17
 privileges and EXECUTE, including service_role despite BYPASSRLS.
 
-The actual production runtime/migration identities remain unverified. A database
+The Production runtime and migration profiles were verified as effective/login
+`postgres` during release. This is dated evidence, not a perpetual identity guarantee. A database
 owner can intentionally alter objects or submit a dishonest attestation; SQL cannot
 constrain that trusted administrator. If the runtime is the owner, approved operator
 procedures and trusted server code distinguish operations; there is no claim of
@@ -149,6 +153,7 @@ values exceed its historical INTEGER range. Current reported maxima 14/5 do not
 trigger this. Review any changed source history before applying the package;
 never silently truncate out-of-range historical values to make migration succeed.
 
-Activation/recovery engineering is implemented; historical non-use certification,
-authentic migration packaging, actual role identity and isolated Preview/Auth are
-still external gates. The production deployment itself requires separate approval.
+The initial release prerequisites were closed under explicit owner approval; the
+three deltas are already applied. Do not replay them for a restart. Future recovery
+requires its own evidence review and approval using the runbook above. Existing
+fail-closed bindings, immutable history and restoration restrictions remain intact.

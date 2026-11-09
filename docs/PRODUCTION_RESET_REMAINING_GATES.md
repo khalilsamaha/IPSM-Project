@@ -1,5 +1,17 @@
 # PR90 — final consolidated gates
 
+**Current status — released 2026-11-09:** PR90 and PR92 are merged; all fourteen
+reset groups, the three reviewed migrations and approved identifier activation
+are live at `c5de2a062db5f38e15f09aeb51cc1b5d9af2075d`. Public access is restored.
+See [completed release evidence](PRODUCTION_RESET_FINAL_DELIVERY.md) and the
+[current identifier recovery runbook](IDENTIFIER_RECOVERY_RUNBOOK.md).
+No new backup, reactivation, migration or deployment is authorized by this update.
+
+## Historical pre-release checkpoints (superseded)
+
+The pending/NO-GO decisions below record their original pre-release stages; they
+are not current operational status or instructions to repeat the release.
+
 > **Latest final-delivery evidence:** [coordinated fourteen-group release](PRODUCTION_RESET_FINAL_DELIVERY.md).
 > Both actual Production connection profiles, exact remote history/three-delta
 > dry-run, unchanged backup fingerprints and zero retained IPSM namespace matches
