@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
-import { emptyProductionResetSelection, getProductionResetPlan, parseProductionResetSelection, previewProductionReset, executeProductionReset, productionResetScopes, resetTables, RESET_CONFIRMATION, canonical, type ProductionResetSelection } from "@/lib/production-reset";
+import { emptyProductionResetSelection, getProductionResetPlan, parseProductionResetSelection, previewProductionReset, executeProductionReset, productionResetScopes, resetTables, resetOptions, resetOperationalDefaults, RESET_CONFIRMATION, canonical, type ProductionResetSelection } from "@/lib/production-reset";
 import type { PrismaClient } from "@prisma/client";
 
 // Mocked clients exercise normal production authorization; they never connect.
@@ -20,6 +20,10 @@ function fixture(initial: Record<string, any[]> = {}) {
   let status = "ACTIVE";
   const count = (table: string, field?: string) => async (args?: any) => (data[table] ?? []).filter(row => !args?.where || (field && row[field] != null)).length;
   const tx: any = {
+    operationalSettings: {
+      findUnique: async () => data.operational_settings?.[0] ? Object.fromEntries(Object.keys(resetOperationalDefaults).map(key => [key, data.operational_settings[0][key]])) : null,
+      updateMany: async ({ data: value }: any) => { Object.assign(data.operational_settings[0], value); return { count: 1 }; },
+    },
     userProfile: { findUnique: async () => ({ id: actorId, role, status, archivedAt: null }) },
     expense: { count: async () => (data.expenses ?? []).filter(row => row.payrollId != null || row.category?.toLowerCase() === "teacher payroll").length },
     enrollment: { count: count("enrollments", "teacherId") },
@@ -36,7 +40,8 @@ function fixture(initial: Record<string, any[]> = {}) {
     auditLog: { create: async ({ data: value }: any) => { if (failure === "audit") throw new Error("audit unavailable"); audit.push(value); return value; } },
     $queryRawUnsafe: async (sql: string) => {
       const table = sql.match(/public\."(\w+)"/)![1];
-      const rows = (data[table] ?? []).filter(row => !sql.includes("season_id IS NOT NULL") || row.seasonId != null || (sql.includes("OR enrollment_id") && row.enrollmentId != null) || (sql.includes("OR schedule_pattern_id") && row.schedulePatternId != null));
+      if (sql.includes(" JOIN ")) return [{ count: 0 }]; // Logical/FK joins are verified on real PostgreSQL.
+      const rows = (data[table] ?? []).filter(row => (!sql.includes("season_id IS NULL") || row.seasonId == null) && (!sql.includes("season_id IS NOT NULL") || row.seasonId != null || (sql.includes("OR enrollment_id") && row.enrollmentId != null) || (sql.includes("OR schedule_pattern_id") && row.schedulePatternId != null)));
       return [{ count: rows.length, hash: createHash("sha256").update(canonical(rows)).digest("hex") }];
     },
     $queryRaw: async (strings: TemplateStringsArray) => {
@@ -49,7 +54,7 @@ function fixture(initial: Record<string, any[]> = {}) {
       const table = sql.match(/public\."(\w+)"/)![1];
       if (failure === table) throw new Error("foreign key blocker");
       const before = data[table] ?? [];
-      const retained = sql.includes("season_id IS NOT NULL") ? before.filter(row => row.seasonId == null && (!sql.includes("OR enrollment_id") || row.enrollmentId == null) && (!sql.includes("OR schedule_pattern_id") || row.schedulePatternId == null)) : [];
+      const retained = sql.includes("season_id IS NULL") ? before.filter(row => row.seasonId != null) : sql.includes("season_id IS NOT NULL") ? before.filter(row => row.seasonId == null && (!sql.includes("OR enrollment_id") || row.enrollmentId == null) && (!sql.includes("OR schedule_pattern_id") || row.schedulePatternId == null)) : [];
       data[table] = retained;
       return before.length - retained.length;
     },
@@ -195,5 +200,68 @@ describe("reset server-side authorization and confirmation", () => {
     const db = fixture(); const p = await previewProductionReset(db.prisma, actorId, selection({ financialData: true }));
     for (const patch of [{ reviewed: false }, { confirmation: "RESET" }, { financialAcknowledged: false }, { actorId: "another-user" }]) await expect(execute(db,p.id,patch)).rejects.toThrow();
     db.status("INACTIVE"); await expect(execute(db,p.id)).rejects.toMatchObject({ code: "not-authorized" });
+  });
+});
+
+
+describe("fourteen independently selectable scopes", () => {
+  it("centralizes fourteen unique labels and parses every independent option", () => {
+    expect(resetOptions).toHaveLength(14);
+    expect(new Set(productionResetScopes).size).toBe(14);
+    for (const key of productionResetScopes) {
+      const form = new FormData(); form.set(key, "on");
+      expect(parseProductionResetSelection(form)).toEqual(selection({ [key]: true }));
+    }
+  });
+  it("plans every nonempty fourteen-scope combination without duplicate deletions or unsafe ordering", () => {
+    const edges = [["coursePricing", "course"], ["coursePricing", "courseLevel"], ["coursePricing", "season"], ["teacherCourse", "course"], ["teacherCourse", "courseLevel"], ["teacherAvailability", "course"], ["teacherAvailability", "season"], ["scheduleSession", "room"], ["schedulePattern", "room"], ["enrollment", "course"], ["enrollment", "courseLevel"]];
+    for (let mask = 1; mask < 2 ** productionResetScopes.length; mask++) {
+      const selected = Object.fromEntries(productionResetScopes.map((key, i) => [key, Boolean(mask & (1 << i))])) as ProductionResetSelection;
+      const plan = getProductionResetPlan(selected), models: string[] = plan.map(row => row.model);
+      if (new Set(models).size !== models.length) throw new Error(`Duplicate model at ${mask}`);
+      for (const [child, parent] of edges) if (models.includes(child) && models.includes(parent) && models.indexOf(child) >= models.indexOf(parent)) throw new Error(`Unsafe ${child}/${parent} ordering at ${mask}`);
+      if (models.includes("payment") !== selected.financialData) throw new Error(`Implicit financial deletion at ${mask}`);
+      if (models.includes("enrollment") !== (selected.operationalData || selected.studentsFamilies || selected.seasons)) throw new Error(`Implicit enrollment deletion at ${mask}`);
+    }
+  });
+  it("keeps independent configuration selections narrow and merges overlapping pricing/availability scopes", () => {
+    for (const [scope, model] of [["courses", "course"], ["courseLevels", "courseLevel"], ["rooms", "room"], ["schoolClosures", "schoolClosure"], ["teacherAvailability", "teacherAvailability"], ["teacherCourseAssignments", "teacherCourse"]]) {
+      expect(getProductionResetPlan(selection({ [scope]: true })).map(row => row.model)).toEqual([model]);
+    }
+    expect(getProductionResetPlan(selection({ operationalSettings: true }))).toEqual([]);
+    const plan = getProductionResetPlan(selection({ seasons: true, globalCoursePricing: true, teacherAvailability: true }));
+    expect(plan.filter(row => row.model === "coursePricing")).toMatchObject([{ filter: "all" }]);
+    expect(plan.filter(row => row.model === "teacherAvailability")).toMatchObject([{ filter: "all" }]);
+  });
+  it("deletes global pricing alone and retains seasonal pricing", async () => {
+    const db = fixture({ course_pricings: [{ id: "global", seasonId: null }, { id: "seasonal", seasonId: "s" }] });
+    const p = await previewProductionReset(db.prisma, actorId, selection({ globalCoursePricing: true }));
+    expect(p.preview.retained.find(row => row.table === "course_pricings")?.count).toBe(1);
+    expect((await execute(db, p.id)).deleted.coursePricingGlobalScoped).toBe(1);
+    expect(db.data().course_pricings).toEqual([{ id: "seasonal", seasonId: "s" }]);
+  });
+  it("audits settings before/after, preserves the row and makes repeated restoration a no-op", async () => {
+    const before = { attendanceAutoFinalizeEnabled: false, attendanceFinalizeGraceMinutes: 60, allowPayableMissedLessons: true };
+    const db = fixture({ operational_settings: [{ id: "school-default", ...before }] });
+    const p = await previewProductionReset(db.prisma, actorId, selection({ operationalSettings: true }));
+    expect(p.preview.settings).toEqual({ before, after: resetOperationalDefaults });
+    expect(p.preview.totals).toEqual({ deleted: 0, updated: 1, affected: 1 });
+    expect((await execute(db, p.id)).updated.operationalSettings).toBe(1);
+    expect(db.data().operational_settings[0]).toMatchObject({ id: "school-default", ...resetOperationalDefaults });
+    expect(db.audit()[0].metadata.preview.settings).toEqual(p.preview.settings);
+    const q = await previewProductionReset(db.prisma, actorId, selection({ operationalSettings: true }));
+    expect((await execute(db, q.id)).updated.operationalSettings).toBe(0);
+  });
+  it("uses implicit defaults for a missing settings row without inventing a deletion or update", async () => {
+    const db = fixture(); const p = await previewProductionReset(db.prisma, actorId, selection({ operationalSettings: true }));
+    expect(p.preview.settings).toEqual({ before: null, after: resetOperationalDefaults });
+    expect((await execute(db, p.id)).totals).toEqual({ deleted: 0, updated: 0 });
+  });
+  it("rolls back configuration deletions and settings restoration if the audit fails", async () => {
+    const db = fixture({ school_closures: [{ id: "closure" }], operational_settings: [{ id: "school-default", attendanceAutoFinalizeEnabled: false, attendanceFinalizeGraceMinutes: 0, allowPayableMissedLessons: true }] });
+    const before = structuredClone(db.data());
+    const p = await previewProductionReset(db.prisma, actorId, selection({ schoolClosures: true, operationalSettings: true }));
+    db.fail("audit"); await expect(execute(db, p.id)).rejects.toThrow("audit unavailable");
+    expect(db.data()).toEqual(before); expect(db.requests()[p.id].consumedAt).toBeNull();
   });
 });

@@ -339,3 +339,17 @@ distinguishes synthetic test coverage from pending live-role and human acceptanc
 - [ ] Fresh restore/server restart rejects the old activation; reconcile independent post-backup issuance before reactivation.
 - [ ] Query20 runs read-only only after the final schema; missing objects are positively tested as blockers.
 - [ ] Non-use certification, actual role identity, authentic history, isolated Preview/Auth and financial acknowledgement remain external release gates.
+
+## Fourteen-group reset feature (stacked PR, isolated data only)
+
+- [ ] All eight new groups work alone on empty and populated data, or report exact retained dependencies.
+- [ ] All 16,383 nonempty selection combinations have unique operations and safe planner ordering.
+- [ ] All fourteen selected deletes every selected domain row while preserving users, Auth, audits, identifier reservations and reset infrastructure.
+- [ ] Global-only pricing preserves seasonal rows; overlapping availability/pricing selections count and delete each row once.
+- [ ] Archived courses, levels, rooms, closures and assignments follow the explicit selection.
+- [ ] Retained enrollment course/level/pricing references, teacher eligibility and room assignments block rather than cascade or detach.
+- [ ] Settings preview and audit show previous/restored values; repeated restoration is zero updates; unrelated settings IDs survive.
+- [ ] Closure deletion does not generate lessons or modify existing attendance/patterns.
+- [ ] New configuration scopes reject stale/expired/reused previews and wrong confirmations; audit failure rolls back deletions and settings.
+- [ ] The full six-scope regression, migration/security, teacher guards and backup/restore suite still passes.
+- [ ] No reset runs against live data; no application deployment or identifier activation is implied by feature validation.
