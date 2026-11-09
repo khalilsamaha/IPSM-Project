@@ -1,5 +1,11 @@
 # PR90 — security remediation and release decision
 
+> Current decision: **NO-GO pending scoped recovery/maintenance admission and
+> financial acknowledgement; identifier activation additionally requires record A.**
+> The [minimal admission package](PRODUCTION_RESET_RELEASE_ADMISSION.md) describes
+> a maintenance-only option without reopening legacy issuance. It is proposed,
+> not accepted. The actual exported-database recovery gate remains CLOSED.
+
 > **Actual Production recovery update — 2026-11-09 14:05Z:** the supplied archive
 > passes isolated PG17.6 restoration: 63/63 tables, sequence state, schema/ACLs,
 > Auth, protected audits and the three historical migration rows. One documented

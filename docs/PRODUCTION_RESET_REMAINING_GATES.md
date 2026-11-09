@@ -1,5 +1,11 @@
 # PR90 — final consolidated gates
 
+> **Final admission package:** [scope, decision table and coordinated release order](PRODUCTION_RESET_RELEASE_ADMISSION.md).
+> Exported-database recovery is CLOSED; no repeat restoration is requested. The
+> remaining recovery decision is acceptance of a scoped pre-activation in-place
+> strategy retaining managed services (private record C), not proof of a new full
+> platform backup. Records A/B remain unsigned; all release actions remain held.
+
 ## Current release checklist — 2026-11-09
 
 This section incorporates the actual Production archive recovery verified at

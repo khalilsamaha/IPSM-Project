@@ -1,5 +1,10 @@
 # PR90 — consolidated release preparation and runbook
 
+> Use the [final minimal admission package](PRODUCTION_RESET_RELEASE_ADMISSION.md)
+> for the current release order and outstanding human decisions. It keeps the
+> actual restore gate closed and proposes a pre-activation in-place recovery scope
+> for explicit owner acceptance. No release or identifier activation is performed.
+
 > **Actual Production recovery update — 2026-11-09 14:05Z:** the supplied archive
 > passes isolated PG17.6 restoration: 63/63 tables, sequence state, schema/ACLs,
 > Auth, protected audits and the three historical migration rows. One documented

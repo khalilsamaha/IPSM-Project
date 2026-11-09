@@ -1,10 +1,14 @@
 # PR90 — private certification and financial acknowledgement forms
 
-**Templates only. Both decisions are PENDING / UNSIGNED.** Fill and retain the
+**Templates only. All decisions are PENDING / UNSIGNED.** Fill and retain the
 completed records in the administrator's private evidence store. Commit only an
 approved status/reference/hash, never personal records, financial audit payloads,
 credentials or signatures. These forms do not create database attestations or
 authorize migration, deployment, reset, new issuance or financial repair.
+
+Use these records with the [minimal release admission package](PRODUCTION_RESET_RELEASE_ADMISSION.md).
+Record C is the proposed scoped recovery/maintenance decision; it does not reopen
+the completed exported-database restoration gate.
 
 ## A. Historical IPSM namespace and recovery certification
 
@@ -12,6 +16,16 @@ Record ID: ______  Revision: ______  UTC cutoff: ______
 Production project: `rakzehtbpzseetldbohm`
 Business owner / authority: ______  Independent DBA reviewer: ______
 Private evidence location/reference: ______
+
+**Verified inputs, not a signed conclusion:** the actual Production archive with
+SHA-256 `c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa`
+restored successfully; all 63 exported table contents match, including 505 audits.
+At that backup snapshot, families/students/payments/receipts were empty; recoverable
+legacy 2026 audit maxima were RCPT 14 and STU 5, with no FAM maximum recovered.
+New identifier infrastructure was absent, as expected before migration. These are
+lower bounds on surviving **legacy** evidence, not complete historical reservations
+or proof of IPSM namespace non-use. Deleted/external/manual/import history and the
+interval after export remain uncertified. See the [actual recovery record](PRODUCTION_RESET_PRODUCTION_RECOVERY.md).
 
 The already approved format is FAM-IPSM-YYYY-serial, STU-IPSM-YYYY-serial and
 RCPT-IPSM-YYYY-serial. Year is UTC 2000–9999. Serial is positive decimal
@@ -92,3 +106,39 @@ Financial owner signature/date: ______
 
 No engineer, test result or generic project authorization supplies this financial
 acceptance automatically. Keep the original audits unchanged under either decision.
+
+**Evidence available for record B:** actual archive recovery verified on
+2026-11-09T14:05:19Z preserved all 505 audits and the three historical payroll
+events. Of those three, two lack an expense-reference key; all reference absent
+payroll/expense records. Restored current payroll/payroll-expense counts are zero.
+The two missing references overlap the three events; they are not five events.
+The existing read-only Query14 still classifies the historical findings as BLOCKER.
+Financial acknowledgement accepts the documented historical limitation only;
+any new live inconsistency remains a blocker. No signature or fresh live-population
+claim is supplied by this snapshot verification.
+
+## C. Scoped recovery and maintenance admission — owner/release operator
+
+Record ID / date: ______  Owner / release operator: ______
+Approved application SHA/artifact and scope (PR90; optionally separately approved PR92): ______
+Maintenance window and effective ingress/job/import/direct-client hold: ______
+Recovery operator and confirmed privileges for the affected objects: ______
+Private backup custody / approved recovery point / post-backup change coverage: ______
+Explicit permitted data-loss boundary (do not assume zero or accept unreviewed loss): ______
+
+- [ ] Accept the existing-platform, pre-activation recovery boundary in admission
+      section 1, retaining Supabase-managed services. No full-platform recovery
+      claim; escalate if retained services fail or a safe object restore is unavailable.
+- [ ] Accept continued maintenance and identifier hold after the three deltas and
+      compatible application rollout. No ordinary registration/payment reopening,
+      old-writer fallback or enabled attestation is authorized by this admission.
+- [ ] Alternatively, defer installation until normal-service admission, including
+      record A and a separate activation decision, is possible.
+
+Selected option / conditions / recovery decision authority: ______
+Owner approval / operator acknowledgement / date: ______
+
+Acceptance here is a prepared decision record, not an executed release command.
+Merge, deployment, Production migration execution, restoration and activation must
+remain within their separately authorized scope. Record A remains mandatory before
+identifier activation even if maintenance-only installation is approved.
