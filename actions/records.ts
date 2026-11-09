@@ -22,6 +22,7 @@ import {
   createStudentWithCode,
   type StudentCreateWithoutCode,
 } from "@/lib/students";
+import { retryIdentifierTransaction } from "@/lib/business-identifiers";
 import { createFamilyWithCode } from "@/lib/families";
 import { isNewPaymentMethod } from "@/lib/payment-methods";
 import { requireCurrentOpenShift } from "@/lib/shifts/service";
@@ -116,7 +117,7 @@ export async function saveFamily(formData: FormData) {
   const data = familySchema.parse(Object.fromEntries(formData));
   const row = data.id
     ? await prisma.family.update({ where: { id: data.id }, data })
-    : await prisma.$transaction((tx) => createFamilyWithCode(tx, data));
+    : await createFamilyWithCode(prisma, data);
   await audit(data.id ? "update" : "create", "Family", row.id, data);
   revalidatePath("/families");
 }
@@ -163,7 +164,7 @@ export async function saveStudent(formData: FormData) {
   try {
     const row = studentId
       ? await prisma.student.update({ where: { id: studentId }, data })
-      : await createStudentWithCode(prisma.student, data);
+      : await createStudentWithCode(prisma, data);
     await audit(studentId ? "update" : "create", "Student", row.id, data);
     revalidatePath("/students");
   } catch (error) {
@@ -738,6 +739,7 @@ export async function archiveTeacherAvailability(formData: FormData) {
 }
 
 const paymentSchema = z.object({
+  requestId: z.string().uuid(),
   familyId: id,
   paymentDate: z
     .string()
@@ -1228,6 +1230,9 @@ export async function registerStudentWorkflow(formData: FormData) {
 
 
   try {
+    if (await prisma.resetRegistrationSubmission.findUnique({ where: { id: parsed.registrationSubmissionId } })) {
+      registrationErrorRedirect("This registration was reset. Start a new registration instead of resubmitting the old form.");
+    }
     const prior = await prisma.enrollment.findUnique({
       where: { registrationSubmissionId: parsed.registrationSubmissionId },
       select: {
@@ -1241,7 +1246,7 @@ export async function registerStudentWorkflow(formData: FormData) {
       redirect(
         `/register-student?success=1&enrollmentId=${prior.id}&familyId=${prior.student.familyId}${prior.paymentItems[0]?.paymentId ? `&paymentId=${prior.paymentItems[0].paymentId}` : ""}${prior.scheduleSessions[0]?.id ? `&sessionId=${prior.scheduleSessions[0].id}` : ""}`,
       );
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await retryIdentifierTransaction(() => prisma.$transaction(async (tx) => {
       const normalizedRegistrationType = parsed.registrationType;
       let familyId =
         normalizedRegistrationType === "existing_family"
@@ -1336,7 +1341,7 @@ export async function registerStudentWorkflow(formData: FormData) {
           dateOfBirth: row.dateOfBirth ?? null,
           family: { connect: { id: resolvedFamilyId } },
         };
-        const student = await createStudentWithCode(tx.student, studentData);
+        const student = await createStudentWithCode(tx, studentData);
         createdStudentIds.push(student.id);
         await tx.auditLog.create({
           data: {
@@ -1471,7 +1476,7 @@ export async function registerStudentWorkflow(formData: FormData) {
         paymentId,
         createdStudentCount: createdStudentIds.length,
       };
-    });
+    }, { isolationLevel: "Serializable" }));
 
     await prisma.registrationAttempt.upsert({
       where: { id: parsed.registrationSubmissionId },

@@ -122,3 +122,10 @@ Family -> Students -> Enrollments -> SchedulePattern -> ScheduleSessions
 Person and family deletion uses serializable transactions and fresh dependency counts. Audit rows retain the deleted entity UUID without a foreign-key cascade. Financial, receipt, enrollment, attendance, lesson, and payroll rows are blockers, never cleanup targets. Teacher course and availability rows are the only permitted configuration cleanup.
 
 The schedule register uses additive composite indexes for date/time and season/status plus date. Prisma and Supabase migration copies are kept in parity.
+
+## Reset integrity additions
+
+The reviewed additive reset migrations introduce `expenses.payroll_id`, missing
+registration-attempt unique indexes, and protected reset/identifier infrastructure.
+No historical migration is rewritten. The two migration trees are not a complete
+production baseline; see [reset database verification](PRODUCTION_RESET_DATABASE.md).

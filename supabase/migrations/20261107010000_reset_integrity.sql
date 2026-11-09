@@ -1,0 +1,287 @@
+BEGIN;
+
+-- Owner-only infrastructure. No runtime role has yet been independently verified;
+-- never infer a backend entitlement from service_role/BYPASSRLS or creator defaults.
+-- A client that can assume the owner cannot be constrained by object ACL revokes.
+DO $$
+DECLARE client record; owner_oid oid := current_user::regrole::oid;
+BEGIN
+  IF (SELECT count(*) FROM pg_catalog.pg_roles WHERE rolname IN ('anon','authenticated','service_role')) <> 3 THEN
+    RAISE EXCEPTION 'Required Supabase client roles are missing; review reset infrastructure ownership';
+  END IF;
+  FOR client IN SELECT oid, rolname, rolsuper FROM pg_catalog.pg_roles
+    WHERE rolname IN ('anon','authenticated','service_role') LOOP
+    IF client.rolsuper OR pg_catalog.pg_has_role(client.oid, owner_oid, 'MEMBER') THEN
+      RAISE EXCEPTION 'Client role can assume reset infrastructure owner: %; reconcile role membership', client.rolname;
+    END IF;
+  END LOOP;
+END $$;
+
+-- Additive correction. Duplicates deliberately fail migration for manual review.
+CREATE UNIQUE INDEX IF NOT EXISTS registration_attempts_enrollment_id_key ON public.registration_attempts(enrollment_id);
+CREATE UNIQUE INDEX IF NOT EXISTS registration_attempts_payment_id_key ON public.registration_attempts(payment_id);
+
+-- IF NOT EXISTS supports deployments where Prisma already created these indexes,
+-- but a same-named partial/non-unique/wrong-column index must not mask drift.
+DO $$ DECLARE column_name text; BEGIN
+  FOREACH column_name IN ARRAY ARRAY['enrollment_id','payment_id'] LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_catalog.pg_index i
+      JOIN pg_catalog.pg_class idx ON idx.oid=i.indexrelid
+      JOIN pg_catalog.pg_attribute a ON a.attrelid=i.indrelid AND a.attnum=i.indkey[0]
+      WHERE i.indrelid='public.registration_attempts'::regclass
+        AND idx.relname='registration_attempts_' || column_name || '_key'
+        AND i.indisunique AND i.indisvalid AND i.indnatts=1
+        AND i.indpred IS NULL AND i.indexprs IS NULL AND a.attname=column_name
+    ) THEN RAISE EXCEPTION 'Registration uniqueness index does not match column %', column_name; END IF;
+  END LOOP;
+END $$;
+
+ALTER TABLE public.expenses ADD COLUMN payroll_id uuid;
+CREATE UNIQUE INDEX expenses_payroll_id_key ON public.expenses(payroll_id);
+ALTER TABLE public.expenses ADD CONSTRAINT expenses_payroll_id_fkey
+  FOREIGN KEY (payroll_id) REFERENCES public.teacher_payrolls(id) ON DELETE RESTRICT ON UPDATE CASCADE;
+-- Orphaned audit history remains immutable. Existing financial records,
+-- however, must agree before an audit link becomes a durable relationship.
+DO $$
+BEGIN
+  IF EXISTS (
+    WITH links AS (
+      SELECT entity_id AS payroll_id,
+        CASE WHEN metadata->>'expenseId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          THEN (metadata->>'expenseId')::uuid END AS expense_id
+      FROM public.audit_logs
+      WHERE entity='TeacherPayroll' AND action IN ('mark_paid','payroll_shift_reconciled')
+    )
+    SELECT 1 FROM links l
+    JOIN public.teacher_payrolls p ON p.id=l.payroll_id
+    JOIN public.expenses e ON e.id=l.expense_id
+    WHERE p.status<>'PAID' OR p.gross_amount_cents IS DISTINCT FROM e.amount_cents
+      OR lower(e.category) IS DISTINCT FROM 'teacher payroll' OR e.archived_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'Payroll audit links reference inconsistent live postings; reconcile before migration';
+  END IF;
+END $$;
+
+-- Only backfill unambiguous, existing audit links. Legacy ambiguous postings remain
+-- visible and prevent non-financial reset; never guess from a person's name.
+WITH links AS (
+  SELECT entity_id AS payroll_id,
+    CASE WHEN metadata->>'expenseId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      THEN (metadata->>'expenseId')::uuid END AS expense_id
+  FROM public.audit_logs
+  WHERE entity = 'TeacherPayroll' AND action IN ('mark_paid', 'payroll_shift_reconciled')
+    AND metadata->>'expenseId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+), unique_links AS (
+  SELECT DISTINCT l.* FROM links l
+  WHERE (SELECT count(DISTINCT x.expense_id) FROM links x WHERE x.payroll_id = l.payroll_id) = 1
+    AND (SELECT count(DISTINCT x.payroll_id) FROM links x WHERE x.expense_id = l.expense_id) = 1
+)
+UPDATE public.expenses e SET payroll_id = l.payroll_id
+FROM unique_links l JOIN public.teacher_payrolls p ON p.id = l.payroll_id
+WHERE e.id = l.expense_id;
+
+CREATE TABLE public.production_reset_requests (
+  id uuid PRIMARY KEY, actor_id uuid NOT NULL, selection jsonb NOT NULL,
+  fingerprint text NOT NULL, preview jsonb NOT NULL, expires_at timestamp(3) NOT NULL,
+  consumed_at timestamp(3), result jsonb, created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX production_reset_requests_actor_id_created_at_idx ON public.production_reset_requests(actor_id, created_at);
+CREATE TABLE public.production_reset_state (
+  id text PRIMARY KEY CONSTRAINT production_reset_state_singleton CHECK (id = 'school'),
+  changed_at timestamptz(6) NOT NULL CONSTRAINT production_reset_state_timestamp CHECK (changed_at <> 'infinity'::timestamptz)
+);
+INSERT INTO public.production_reset_state VALUES ('school', '-infinity');
+CREATE TABLE public.reset_registration_submissions (id uuid PRIMARY KEY, reset_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE public.business_identifier_counters (key text PRIMARY KEY, value integer NOT NULL CHECK (value >= 0));
+CREATE TABLE public.issued_business_identifiers (kind text NOT NULL, value text NOT NULL, owner_id uuid, PRIMARY KEY(kind, value));
+
+-- Do not silently assign a number to one owner if existing payment/receipt
+-- records disagree about ownership. Reconciliation must precede deployment.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM public.receipts r JOIN public.payments p
+             ON p.receipt_number = r.receipt_number WHERE p.id <> r.payment_id) THEN
+    RAISE EXCEPTION 'Receipt identifier has conflicting payment owners; reconcile before migration';
+  END IF;
+END $$;
+
+INSERT INTO public.issued_business_identifiers SELECT 'FAM', family_code, id FROM public.families;
+INSERT INTO public.issued_business_identifiers SELECT 'STU', student_code, id FROM public.students;
+INSERT INTO public.issued_business_identifiers SELECT 'RCPT', receipt_number, id FROM public.payments WHERE receipt_number IS NOT NULL;
+INSERT INTO public.issued_business_identifiers SELECT 'RCPT', receipt_number, payment_id FROM public.receipts ON CONFLICT DO NOTHING;
+-- Reserve recoverable historical identifiers even when the original row is gone.
+INSERT INTO public.issued_business_identifiers(kind, value)
+SELECT DISTINCT split_part(m[1], '-', 1), m[1]
+FROM public.audit_logs a CROSS JOIN LATERAL regexp_matches(a.metadata::text, '((?:FAM|STU|RCPT)-[0-9]{4}-[0-9]+)', 'g') AS m
+ON CONFLICT DO NOTHING;
+INSERT INTO public.business_identifier_counters
+SELECT split_part(value, '-', 1) || '-' || split_part(value, '-', 2), max(split_part(value, '-', 3)::integer)
+FROM public.issued_business_identifiers WHERE value ~ '^(FAM|STU|RCPT)-[0-9]{4}-[0-9]+$'
+GROUP BY 1;
+
+CREATE FUNCTION public.allocate_business_identifier(identifier_kind text, identifier_year integer) RETURNS text
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+DECLARE next_value integer; counter_key text;
+BEGIN
+  IF identifier_kind NOT IN ('FAM', 'STU', 'RCPT') OR identifier_year NOT BETWEEN 2000 AND 9999 THEN
+    RAISE EXCEPTION 'Invalid business identifier kind or year';
+  END IF;
+  counter_key := identifier_kind || '-' || identifier_year;
+  INSERT INTO public.business_identifier_counters(key, value) VALUES(counter_key, 1)
+  ON CONFLICT(key) DO UPDATE SET value = public.business_identifier_counters.value + 1
+  RETURNING value INTO next_value;
+  RETURN counter_key || '-' || lpad(next_value::text, greatest(6, length(next_value::text)), '0');
+END $$;
+
+CREATE FUNCTION public.retain_business_identifier() RETURNS trigger
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+DECLARE identifier text; previous_identifier text; record_owner uuid; existing_owner uuid; sequence_value integer;
+BEGIN
+  identifier := to_jsonb(NEW)->>TG_ARGV[1];
+  record_owner := CASE WHEN TG_TABLE_NAME = 'receipts' THEN (to_jsonb(NEW)->>'payment_id')::uuid ELSE NEW.id END;
+  IF TG_OP = 'UPDATE' THEN
+    previous_identifier := to_jsonb(OLD)->>TG_ARGV[1];
+    IF previous_identifier IS NOT NULL AND previous_identifier IS DISTINCT FROM identifier THEN
+      RAISE EXCEPTION 'Issued business identifiers are immutable';
+    END IF;
+  END IF;
+  IF identifier IS NULL THEN RETURN NEW; END IF;
+  INSERT INTO public.issued_business_identifiers(kind, value, owner_id)
+  VALUES(TG_ARGV[0], identifier, record_owner) ON CONFLICT DO NOTHING;
+  SELECT owner_id INTO existing_owner FROM public.issued_business_identifiers
+    WHERE kind = TG_ARGV[0] AND value = identifier;
+  IF existing_owner IS DISTINCT FROM record_owner THEN RAISE EXCEPTION 'Business identifier was already issued'; END IF;
+  IF identifier ~ '^(FAM|STU|RCPT)-[0-9]{4}-[0-9]+$' THEN
+    sequence_value := split_part(identifier, '-', 3)::integer;
+    INSERT INTO public.business_identifier_counters(key, value)
+    VALUES(split_part(identifier, '-', 1) || '-' || split_part(identifier, '-', 2), sequence_value)
+    ON CONFLICT(key) DO UPDATE SET value = greatest(public.business_identifier_counters.value, EXCLUDED.value);
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER retain_family_identifier BEFORE INSERT OR UPDATE OF family_code ON public.families FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('FAM', 'family_code');
+CREATE TRIGGER retain_student_identifier BEFORE INSERT OR UPDATE OF student_code ON public.students FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('STU', 'student_code');
+CREATE TRIGGER retain_payment_identifier BEFORE INSERT OR UPDATE OF receipt_number ON public.payments FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('RCPT', 'receipt_number');
+CREATE TRIGGER retain_receipt_identifier BEFORE INSERT OR UPDATE OF receipt_number, payment_id ON public.receipts FOR EACH ROW EXECUTE FUNCTION public.retain_business_identifier('RCPT', 'receipt_number');
+
+-- A writer that started before the reset must retry, rather than apply decisions
+-- based on the old database after the reset releases its table locks.
+CREATE FUNCTION public.guard_reset_generation() RETURNS trigger
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' SET row_security = off AS $$
+DECLARE state_id text; reset_time timestamptz;
+BEGIN
+  -- row_security=off does NOT bypass RLS: a policy-filtered read raises instead.
+  -- Read every row, not just id='school', so even inconsistent state fails closed.
+  -- STRICT rejects missing/multiple rows; FOR SHARE serializes generation changes
+  -- and PostgreSQL rejects a stale locked row at REPEATABLE READ/SERIALIZABLE.
+  SELECT id, changed_at INTO STRICT state_id, reset_time
+    FROM public.production_reset_state FOR SHARE;
+  IF state_id IS DISTINCT FROM 'school' OR reset_time IS NULL THEN
+    RAISE EXCEPTION 'Production reset state is invalid; writes are blocked' USING ERRCODE = '55000';
+  END IF;
+  IF reset_time >= pg_catalog.transaction_timestamp() THEN
+    RAISE EXCEPTION 'Data changed during production reset; reload and retry' USING ERRCODE = '40001';
+  END IF;
+  RETURN NULL;
+EXCEPTION WHEN no_data_found OR too_many_rows THEN
+  RAISE EXCEPTION 'Production reset state is missing or inconsistent; writes are blocked' USING ERRCODE = '55000';
+END $$;
+DO $$ DECLARE table_name text; BEGIN
+  FOREACH table_name IN ARRAY ARRAY['families','students','seasons','teachers','courses','course_levels','course_pricings','teacher_courses','teacher_availability','enrollments','registration_attempts','schedule_sessions','schedule_patterns','school_closures','rooms','operational_settings','payments','payment_items','receipts','expenses','cashier_shifts','teacher_payrolls','teacher_payroll_items','business_identifier_counters','issued_business_identifiers'] LOOP
+    EXECUTE format('CREATE TRIGGER reset_generation_guard BEFORE INSERT OR UPDATE OR DELETE ON public.%I FOR EACH STATEMENT EXECUTE FUNCTION public.guard_reset_generation()', table_name);
+  END LOOP;
+END $$;
+
+CREATE FUNCTION public.guard_reset_registration_submission() RETURNS trigger
+LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+DECLARE submission uuid;
+BEGIN
+  submission := CASE WHEN TG_TABLE_NAME = 'enrollments' THEN (to_jsonb(NEW)->>'registration_submission_id')::uuid ELSE NEW.id END;
+  IF EXISTS (SELECT 1 FROM public.reset_registration_submissions WHERE id = submission) THEN
+    RAISE EXCEPTION 'This registration was reset; start a new registration';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER reset_submission_guard BEFORE INSERT OR UPDATE OF registration_submission_id ON public.enrollments FOR EACH ROW EXECUTE FUNCTION public.guard_reset_registration_submission();
+CREATE TRIGGER reset_submission_guard BEFORE INSERT ON public.registration_attempts FOR EACH ROW EXECUTE FUNCTION public.guard_reset_registration_submission();
+
+ALTER TABLE public.production_reset_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.production_reset_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reset_registration_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.business_identifier_counters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.issued_business_identifiers ENABLE ROW LEVEL SECURITY;
+-- Remove all inherited creator-default ACL grants on these NEW objects only.
+-- ALL includes PostgreSQL 17 MAINTAIN. Dynamic grantees cover custom intermediary
+-- roles, not just the three Supabase names; PUBLIC is not a pg_roles entry.
+REVOKE ALL PRIVILEGES ON TABLE public.production_reset_requests,
+  public.production_reset_state, public.reset_registration_submissions,
+  public.business_identifier_counters, public.issued_business_identifiers
+  FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL PRIVILEGES ON FUNCTION public.allocate_business_identifier(text, integer),
+  public.retain_business_identifier(), public.guard_reset_generation(),
+  public.guard_reset_registration_submission() FROM PUBLIC, anon, authenticated, service_role;
+
+DO $$
+DECLARE target record; recipient record; client record; access_role record; privilege text;
+  table_privileges text[] := ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'];
+BEGIN
+  IF current_setting('server_version_num')::integer >= 170000 THEN
+    table_privileges := array_append(table_privileges, 'MAINTAIN');
+  END IF;
+  FOR target IN SELECT c.oid, c.relname, c.relowner, c.relacl
+    FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname IN ('production_reset_requests','production_reset_state',
+      'reset_registration_submissions','business_identifier_counters','issued_business_identifiers') LOOP
+    IF target.relowner <> current_user::regrole::oid THEN
+      RAISE EXCEPTION 'Unexpected reset infrastructure owner';
+    END IF;
+    FOR recipient IN SELECT DISTINCT a.grantee FROM pg_catalog.aclexplode(
+      coalesce(target.relacl, pg_catalog.acldefault('r', target.relowner))) a
+      WHERE a.grantee <> target.relowner LOOP
+      EXECUTE format('REVOKE ALL PRIVILEGES ON TABLE public.%I FROM %s CASCADE', target.relname,
+        CASE WHEN recipient.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_catalog.pg_get_userbyid(recipient.grantee)) END);
+    END LOOP;
+    -- Check both immediately inherited grants and NOINHERIT memberships that
+    -- permit SET ROLE. Never change global memberships to force this check through.
+    FOR client IN SELECT oid, rolname FROM pg_catalog.pg_roles
+      WHERE rolname IN ('anon','authenticated','service_role') LOOP
+      FOR access_role IN SELECT oid, rolname FROM pg_catalog.pg_roles
+        WHERE oid=client.oid OR pg_catalog.pg_has_role(client.oid, oid, 'MEMBER') LOOP
+        FOREACH privilege IN ARRAY table_privileges LOOP
+          IF pg_catalog.has_table_privilege(access_role.oid, target.oid, privilege)
+            OR (CASE WHEN privilege IN ('SELECT','INSERT','UPDATE','REFERENCES')
+                THEN pg_catalog.has_any_column_privilege(access_role.oid, target.oid, privilege) ELSE false END) THEN
+            RAISE EXCEPTION 'Client retains effective reset table privilege via %: %.% (%); reconcile before migration',
+              access_role.rolname, 'public', target.relname, privilege;
+          END IF;
+        END LOOP;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+  FOR target IN SELECT p.oid, p.proowner, p.proacl, names.signature
+    FROM (VALUES ('public.allocate_business_identifier(text,integer)'),
+      ('public.retain_business_identifier()'),('public.guard_reset_generation()'),
+      ('public.guard_reset_registration_submission()')) names(signature)
+    JOIN pg_catalog.pg_proc p ON p.oid=names.signature::regprocedure LOOP
+    IF target.proowner <> current_user::regrole::oid THEN
+      RAISE EXCEPTION 'Unexpected reset function owner';
+    END IF;
+    FOR recipient IN SELECT DISTINCT a.grantee FROM pg_catalog.aclexplode(
+      coalesce(target.proacl, pg_catalog.acldefault('f', target.proowner))) a
+      WHERE a.grantee <> target.proowner LOOP
+      EXECUTE format('REVOKE ALL PRIVILEGES ON FUNCTION %s FROM %s CASCADE', target.signature,
+        CASE WHEN recipient.grantee=0 THEN 'PUBLIC' ELSE quote_ident(pg_catalog.pg_get_userbyid(recipient.grantee)) END);
+    END LOOP;
+    FOR client IN SELECT oid FROM pg_catalog.pg_roles
+      WHERE rolname IN ('anon','authenticated','service_role') LOOP
+      FOR access_role IN SELECT oid, rolname FROM pg_catalog.pg_roles
+        WHERE oid=client.oid OR pg_catalog.pg_has_role(client.oid, oid, 'MEMBER') LOOP
+        IF pg_catalog.has_function_privilege(access_role.oid, target.oid, 'EXECUTE') THEN
+          RAISE EXCEPTION 'Client retains effective reset function execution via %: %', access_role.rolname, target.signature;
+        END IF;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+END $$;
+
+COMMIT;

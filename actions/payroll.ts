@@ -273,8 +273,11 @@ export async function markTeacherPayrollPaid(formData: FormData) {
         throw new Error("Only an approved payroll can be marked paid.");
       }
 
+      const currentShift = await tx.cashierShift.findUnique({ where: { id: shift.id } });
+      if (!currentShift || !["OPEN", "REOPENED"].includes(currentShift.status)) throw new Error("The shift is no longer open. Reload and retry.");
       const expense = await tx.expense.create({
         data: {
+          payrollId: parsedId,
           createdById: admin.userId,
           category: "Teacher Payroll",
           description: `${row.teacher.fullName} payroll ${row.periodStart.toISOString().slice(0, 7)}`,

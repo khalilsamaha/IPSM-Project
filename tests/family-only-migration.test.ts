@@ -44,6 +44,6 @@ describe("family-connected student creation", () => {
 
   it("keeps student codes application-generated", () => {
     expect(students).toContain('Omit<Prisma.StudentCreateInput, "studentCode">');
-    expect(students).toContain("const createData: Prisma.StudentCreateInput = { ...data, studentCode }");
+    expect(students).toContain("const createData: Prisma.StudentCreateInput = { ...data, id, studentCode }");
   });
 });

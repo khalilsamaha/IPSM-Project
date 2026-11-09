@@ -1,0 +1,128 @@
+{
+  "recorded_at": "2026-11-08T16:08:25.129841+00:00",
+  "baseline": "5f6b8f1e12850bf74de436e9d3b72c2b6b261e84",
+  "project_ref": "rakzehtbpzseetldbohm",
+  "production_accessed": false,
+  "history_repaired": false,
+  "canonical_workspace_scope": "Existing independently reconstructed schema only; incomplete bootstrap provenance acknowledged, no historical execution inferred",
+  "cli": {
+    "version": "2.78.1",
+    "installed_binary_sha256": "e6d4ee4b5715975a9ade02b979c05b364792807d1ca3f9f78a2c93f4dc883845",
+    "source_review": "tag v2.78.1: fetch/fetch.go, migration/apply.go, migration/list/list.go, db/push/push.go",
+    "actual_cli_used": true
+  },
+  "manifest": {
+    "format": 1,
+    "status": "EXISTING_DATABASE_ONLY_RELEASE_BLOCKED",
+    "cliVersion": "2.78.1",
+    "projectRef": "rakzehtbpzseetldbohm",
+    "bootstrapComplete": false,
+    "emptyRecordMeaning": "Exact empty transcript; original purpose and bootstrap execution remain unknown",
+    "history": [
+      {
+        "version": "20260731171613",
+        "name": null,
+        "nameEvidence": "not supplied; descriptive filename only",
+        "filename": "20260731171613_recorded_history.sql",
+        "statementCount": 0,
+        "statementsMd5": "d41d8cd98f00b204e9800998ecf8427e",
+        "sha256": "d8a957038679125d4840554fc43375697e662283121561afdefc2c3fbecaf729"
+      },
+      {
+        "version": "20260801163840",
+        "name": null,
+        "nameEvidence": "not supplied; descriptive filename only",
+        "filename": "20260801163840_recorded_history.sql",
+        "statementCount": 1,
+        "statementsMd5": "d34257683e5172ad7b1ede576a4b2591",
+        "sha256": "d763f0ba830f661f2693ec9e4f48776697737f97997d551648ab76c6505e796a"
+      },
+      {
+        "version": "20260801165129",
+        "name": null,
+        "nameEvidence": "not supplied; descriptive filename only",
+        "filename": "20260801165129_recorded_history.sql",
+        "statementCount": 1,
+        "statementsMd5": "6c4135265819300dd72a0fbc476f80c2",
+        "sha256": "6b12ba95de9befca258fad569741b193afca003decc1ffda881c84bcf24da7f7"
+      }
+    ],
+    "future": [
+      {
+        "filename": "20261107000000_teacher_guard_parity.sql",
+        "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+      },
+      {
+        "filename": "20261107010000_reset_integrity.sql",
+        "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+      },
+      {
+        "filename": "20261108000000_ipsm_identifiers.sql",
+        "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+      }
+    ],
+    "configSha256": "0ac64dc25c65f418015f8c364cd0dd256b48b28b9d464545a49f4cbcbb87876f",
+    "requiredRemotePrefix": [
+      "20260731171613",
+      "20260801163840",
+      "20260801165129"
+    ],
+    "gates": [
+      "fresh target history/checksum/schema verification",
+      "accept incomplete bootstrap provenance for existing-database-only release",
+      "all remaining production release gates"
+    ]
+  },
+  "validation": {
+    "postgresql": "17.6",
+    "unit_passed": 436,
+    "database_tests_gated": 207,
+    "dashboard_before_and_after": 40,
+    "reset": 18,
+    "security": 33,
+    "teacher_parity": 70,
+    "foundation_release_recovery": 8,
+    "identifier": 31,
+    "real_cli": 7,
+    "prisma_generation": "passed 5.22.0",
+    "typescript": "passed",
+    "production_build": "passed; existing nonfatal ESLint compatibility warning; unavailable-loopback DB/Auth settings",
+    "fixture_issues_resolved": [
+      "Synthetic cloned database ownership aligned with migration owner",
+      "Explicit PGSSLMODE=disable only for owned loopback fixture; CLI reconstructs the URL",
+      "Allow only inert .temp/cli-latest cache; linked metadata still rejected"
+    ]
+  },
+  "verified_cli_behaviors": [
+    "SELECT-only read-only role fetch reproduces actual empty-array export and both reviewed statement bytes",
+    "Three matching historical versions; exact three pending deltas in order",
+    "Missing/extra historical versions rejected without repair",
+    "Checksums catch content drift that native version matching does not detect",
+    "Only future deltas apply under non-superuser owner; original records and guard catalog fingerprints unchanged",
+    "Second push applies nothing and all recorded rows remain unchanged",
+    "Lost future ledger entry causes duplicate-DDL failure, no automatic ledger repair"
+  ],
+  "logs": {
+    "ipsm-canonical-generate.log": {
+      "sha256": "e5c63c7b53bcd282425c4d02475bd8dc84ee6605535d91be3807c1c2c9bda5f0"
+    },
+    "ipsm-canonical-type.log": {
+      "sha256": "deaf364843166054098babdec791230b0b2900708615f211b174032e5c8a34e0"
+    },
+    "ipsm-canonical-unit.log": {
+      "sha256": "98ea7ef5f018ac0085ef9a913e43a12ef99a1fb8590e666bc9325260c2de06bf"
+    },
+    "ipsm-canonical-pg17-final.log": {
+      "sha256": "fc4766b8b81b328866008c05987e3790bdc2da8e80390e91a7cb1bebd4e63141"
+    },
+    "ipsm-canonical-build.log": {
+      "sha256": "ee76e7a74a8e152f0d89b4fcc3844aeb6b21edaf0ac37e1fd52680f25a5b442e"
+    }
+  },
+  "remaining": [
+    "Fresh authorized production target history/content and pending-list verification",
+    "Release-owner acceptance of existing-database-only scope, or original bootstrap evidence if complete lineage is required",
+    "Independent runtime identity, Preview/Auth isolation, identifier activation certification, payroll acknowledgement and release authorization remain unchanged"
+  ],
+  "hosted_ci": "Recorded separately on draft PR for the final published commit; real CLI rehearsal is explicit local opt-in, not claimed as hosted."
+}

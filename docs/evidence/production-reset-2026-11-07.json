@@ -1,0 +1,771 @@
+{
+  "project": "rakzehtbpzseetldbohm",
+  "source": "Administrator-provided metadata excerpt; no direct connector verification",
+  "source_file": "IPSM_PR90_Codex_FKs_and_TeacherGuards.txt",
+  "source_sha256": "994d7dc5ba4cb093712ded9fe7d86d21cbbd314549184bb6559c85fcb39c328c",
+  "schema_observed_at": "2026-11-07T22:02:24.628833+00:00",
+  "guards_observed_at": "2026-11-07T22:02:52.844139+00:00",
+  "foreign_keys": [
+    {
+      "child": "public.audit_logs",
+      "child_columns": [
+        "created_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "audit_logs_created_by_id_fkey",
+      "definition_md5": "8b0b7a4ba200103021fcb2bb877b7c7e",
+      "signature": "public.audit_logs.created_by_id->public.users.id:na"
+    },
+    {
+      "child": "public.cashier_shifts",
+      "child_columns": [
+        "closed_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "cashier_shifts_closed_by_id_fkey",
+      "definition_md5": "87a3a6bb1c28512450eb714056abd3fb",
+      "signature": "public.cashier_shifts.closed_by_id->public.users.id:nc"
+    },
+    {
+      "child": "public.cashier_shifts",
+      "child_columns": [
+        "reopened_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "cashier_shifts_reopened_by_id_fkey",
+      "definition_md5": "ea4e39f539d4abaa69afcbcb91560766",
+      "signature": "public.cashier_shifts.reopened_by_id->public.users.id:nc"
+    },
+    {
+      "child": "public.cashier_shifts",
+      "child_columns": [
+        "user_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "cashier_shifts_user_id_fkey",
+      "definition_md5": "0b6e725cca28fb1b286c61458a3f1a12",
+      "signature": "public.cashier_shifts.user_id->public.users.id:rc"
+    },
+    {
+      "child": "public.course_pricings",
+      "child_columns": [
+        "course_id"
+      ],
+      "parent": "public.courses",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "course_pricings_course_id_fkey",
+      "definition_md5": "3a6a17699e07bc9a8cb1b5eb4c83e712",
+      "signature": "public.course_pricings.course_id->public.courses.id:cc"
+    },
+    {
+      "child": "public.course_pricings",
+      "child_columns": [
+        "level_id"
+      ],
+      "parent": "public.course_levels",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "course_pricings_level_id_fkey",
+      "definition_md5": "aad9f00222f691114486204d6da002c5",
+      "signature": "public.course_pricings.level_id->public.course_levels.id:cc"
+    },
+    {
+      "child": "public.course_pricings",
+      "child_columns": [
+        "season_id"
+      ],
+      "parent": "public.seasons",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "course_pricings_season_id_fkey",
+      "definition_md5": "59f5780c19e9bf049bde62081d3bfde0",
+      "signature": "public.course_pricings.season_id->public.seasons.id:nc"
+    },
+    {
+      "child": "public.enrollments",
+      "child_columns": [
+        "course_id"
+      ],
+      "parent": "public.courses",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "enrollments_course_id_fkey",
+      "definition_md5": "63047545504c30e41fee3c7046d8b573",
+      "signature": "public.enrollments.course_id->public.courses.id:nc"
+    },
+    {
+      "child": "public.enrollments",
+      "child_columns": [
+        "level_id"
+      ],
+      "parent": "public.course_levels",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "enrollments_level_id_fkey",
+      "definition_md5": "07dba23c5fe4a0d3165a49b0bb547cc1",
+      "signature": "public.enrollments.level_id->public.course_levels.id:nc"
+    },
+    {
+      "child": "public.enrollments",
+      "child_columns": [
+        "season_id"
+      ],
+      "parent": "public.seasons",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "enrollments_season_id_fkey",
+      "definition_md5": "8c36b1bb1e9fbfada5c2830d35d09c12",
+      "signature": "public.enrollments.season_id->public.seasons.id:ra"
+    },
+    {
+      "child": "public.enrollments",
+      "child_columns": [
+        "student_id"
+      ],
+      "parent": "public.students",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "enrollments_student_id_fkey",
+      "definition_md5": "497b853de1cf063a4c7679d837ae3c37",
+      "signature": "public.enrollments.student_id->public.students.id:ca"
+    },
+    {
+      "child": "public.enrollments",
+      "child_columns": [
+        "teacher_id"
+      ],
+      "parent": "public.teachers",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "enrollments_teacher_id_fkey",
+      "definition_md5": "1dd4c68ccdf5b77d2f9d2f583531a446",
+      "signature": "public.enrollments.teacher_id->public.teachers.id:na"
+    },
+    {
+      "child": "public.expenses",
+      "child_columns": [
+        "created_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "expenses_created_by_id_fkey",
+      "definition_md5": "8b0b7a4ba200103021fcb2bb877b7c7e",
+      "signature": "public.expenses.created_by_id->public.users.id:na"
+    },
+    {
+      "child": "public.expenses",
+      "child_columns": [
+        "shift_id"
+      ],
+      "parent": "public.cashier_shifts",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "expenses_shift_id_fkey",
+      "definition_md5": "72055ef809531aa44eb10237c4024225",
+      "signature": "public.expenses.shift_id->public.cashier_shifts.id:nc"
+    },
+    {
+      "child": "public.payment_items",
+      "child_columns": [
+        "enrollment_id"
+      ],
+      "parent": "public.enrollments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "payment_items_enrollment_id_fkey",
+      "definition_md5": "410e702bb0fb0785cb2132c2df9fd239",
+      "signature": "public.payment_items.enrollment_id->public.enrollments.id:ra"
+    },
+    {
+      "child": "public.payment_items",
+      "child_columns": [
+        "payment_id"
+      ],
+      "parent": "public.payments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "payment_items_payment_id_fkey",
+      "definition_md5": "d3628de7a90852d9c2d11ad78a0e867c",
+      "signature": "public.payment_items.payment_id->public.payments.id:ca"
+    },
+    {
+      "child": "public.payments",
+      "child_columns": [
+        "created_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "payments_created_by_id_fkey",
+      "definition_md5": "8b0b7a4ba200103021fcb2bb877b7c7e",
+      "signature": "public.payments.created_by_id->public.users.id:na"
+    },
+    {
+      "child": "public.payments",
+      "child_columns": [
+        "family_id"
+      ],
+      "parent": "public.families",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "payments_family_id_fkey",
+      "definition_md5": "266df6cdee3d693ab0a6a6a262c722d6",
+      "signature": "public.payments.family_id->public.families.id:ra"
+    },
+    {
+      "child": "public.payments",
+      "child_columns": [
+        "shift_id"
+      ],
+      "parent": "public.cashier_shifts",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "payments_shift_id_fkey",
+      "definition_md5": "72055ef809531aa44eb10237c4024225",
+      "signature": "public.payments.shift_id->public.cashier_shifts.id:nc"
+    },
+    {
+      "child": "public.receipts",
+      "child_columns": [
+        "payment_id"
+      ],
+      "parent": "public.payments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "receipts_payment_id_fkey",
+      "definition_md5": "d3628de7a90852d9c2d11ad78a0e867c",
+      "signature": "public.receipts.payment_id->public.payments.id:ca"
+    },
+    {
+      "child": "public.registration_attempts",
+      "child_columns": [
+        "created_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "registration_attempts_created_by_id_fkey",
+      "definition_md5": "9a569740cd807c04647c118f040e0858",
+      "signature": "public.registration_attempts.created_by_id->public.users.id:nc"
+    },
+    {
+      "child": "public.registration_attempts",
+      "child_columns": [
+        "enrollment_id"
+      ],
+      "parent": "public.enrollments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "registration_attempts_enrollment_id_fkey",
+      "definition_md5": "9efc16b02b071c968871f920fa46ca5f",
+      "signature": "public.registration_attempts.enrollment_id->public.enrollments.id:nc"
+    },
+    {
+      "child": "public.registration_attempts",
+      "child_columns": [
+        "family_id"
+      ],
+      "parent": "public.families",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "registration_attempts_family_id_fkey",
+      "definition_md5": "180fcae3ededff0cc67082115ee15086",
+      "signature": "public.registration_attempts.family_id->public.families.id:rc"
+    },
+    {
+      "child": "public.registration_attempts",
+      "child_columns": [
+        "payment_id"
+      ],
+      "parent": "public.payments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "registration_attempts_payment_id_fkey",
+      "definition_md5": "7f95c29a59ffe7ca593a6180bbfd4c27",
+      "signature": "public.registration_attempts.payment_id->public.payments.id:nc"
+    },
+    {
+      "child": "public.registration_attempts",
+      "child_columns": [
+        "primary_student_id"
+      ],
+      "parent": "public.students",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "registration_attempts_primary_student_id_fkey",
+      "definition_md5": "f15100c687e6d00e403b9f41852e63c0",
+      "signature": "public.registration_attempts.primary_student_id->public.students.id:rc"
+    },
+    {
+      "child": "public.schedule_patterns",
+      "child_columns": [
+        "enrollment_id"
+      ],
+      "parent": "public.enrollments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_patterns_enrollment_id_fkey",
+      "definition_md5": "410e702bb0fb0785cb2132c2df9fd239",
+      "signature": "public.schedule_patterns.enrollment_id->public.enrollments.id:ra"
+    },
+    {
+      "child": "public.schedule_patterns",
+      "child_columns": [
+        "room_id"
+      ],
+      "parent": "public.rooms",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_patterns_room_id_fkey",
+      "definition_md5": "13817a279b0ccf791cf6fd061ad17b3c",
+      "signature": "public.schedule_patterns.room_id->public.rooms.id:na"
+    },
+    {
+      "child": "public.schedule_patterns",
+      "child_columns": [
+        "teacher_id"
+      ],
+      "parent": "public.teachers",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_patterns_teacher_id_fkey",
+      "definition_md5": "dcced25d05bedb80a43c3e3e2c143869",
+      "signature": "public.schedule_patterns.teacher_id->public.teachers.id:ra"
+    },
+    {
+      "child": "public.schedule_sessions",
+      "child_columns": [
+        "enrollment_id"
+      ],
+      "parent": "public.enrollments",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_sessions_enrollment_id_fkey",
+      "definition_md5": "dd6c45fc8416581f9d5c1dfc5fbd7933",
+      "signature": "public.schedule_sessions.enrollment_id->public.enrollments.id:na"
+    },
+    {
+      "child": "public.schedule_sessions",
+      "child_columns": [
+        "room_id"
+      ],
+      "parent": "public.rooms",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_sessions_room_id_fkey",
+      "definition_md5": "13817a279b0ccf791cf6fd061ad17b3c",
+      "signature": "public.schedule_sessions.room_id->public.rooms.id:na"
+    },
+    {
+      "child": "public.schedule_sessions",
+      "child_columns": [
+        "schedule_pattern_id"
+      ],
+      "parent": "public.schedule_patterns",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_sessions_schedule_pattern_id_fkey",
+      "definition_md5": "3c41dff92418c8f1c96a3a8799d94e56",
+      "signature": "public.schedule_sessions.schedule_pattern_id->public.schedule_patterns.id:na"
+    },
+    {
+      "child": "public.schedule_sessions",
+      "child_columns": [
+        "season_id"
+      ],
+      "parent": "public.seasons",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_sessions_season_id_fkey",
+      "definition_md5": "2f3f4b7d46be908e17fcc8bed098653a",
+      "signature": "public.schedule_sessions.season_id->public.seasons.id:na"
+    },
+    {
+      "child": "public.schedule_sessions",
+      "child_columns": [
+        "student_id"
+      ],
+      "parent": "public.students",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_sessions_student_id_fkey",
+      "definition_md5": "850a24171bb50c4b5470ed01d93f88dd",
+      "signature": "public.schedule_sessions.student_id->public.students.id:ra"
+    },
+    {
+      "child": "public.schedule_sessions",
+      "child_columns": [
+        "teacher_id"
+      ],
+      "parent": "public.teachers",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "schedule_sessions_teacher_id_fkey",
+      "definition_md5": "dcced25d05bedb80a43c3e3e2c143869",
+      "signature": "public.schedule_sessions.teacher_id->public.teachers.id:ra"
+    },
+    {
+      "child": "public.students",
+      "child_columns": [
+        "family_id"
+      ],
+      "parent": "public.families",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "students_family_id_fkey",
+      "definition_md5": "266df6cdee3d693ab0a6a6a262c722d6",
+      "signature": "public.students.family_id->public.families.id:ra"
+    },
+    {
+      "child": "public.teacher_availability",
+      "child_columns": [
+        "course_id"
+      ],
+      "parent": "public.courses",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_availability_course_id_fkey",
+      "definition_md5": "b23e7b4402ee6fd4b8589e7dcfa55f9d",
+      "signature": "public.teacher_availability.course_id->public.courses.id:rc"
+    },
+    {
+      "child": "public.teacher_availability",
+      "child_columns": [
+        "season_id"
+      ],
+      "parent": "public.seasons",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "teacher_availability_season_id_fkey",
+      "definition_md5": "2f3f4b7d46be908e17fcc8bed098653a",
+      "signature": "public.teacher_availability.season_id->public.seasons.id:na"
+    },
+    {
+      "child": "public.teacher_availability",
+      "child_columns": [
+        "teacher_id"
+      ],
+      "parent": "public.teachers",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "validated": true,
+      "constraint_name": "teacher_availability_teacher_id_fkey",
+      "definition_md5": "d3ca38722a24695a3f9e368594aee5bf",
+      "signature": "public.teacher_availability.teacher_id->public.teachers.id:ca"
+    },
+    {
+      "child": "public.teacher_courses",
+      "child_columns": [
+        "course_id"
+      ],
+      "parent": "public.courses",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_courses_course_id_fkey",
+      "definition_md5": "b23e7b4402ee6fd4b8589e7dcfa55f9d",
+      "signature": "public.teacher_courses.course_id->public.courses.id:rc"
+    },
+    {
+      "child": "public.teacher_courses",
+      "child_columns": [
+        "level_id"
+      ],
+      "parent": "public.course_levels",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_courses_level_id_fkey",
+      "definition_md5": "07dba23c5fe4a0d3165a49b0bb547cc1",
+      "signature": "public.teacher_courses.level_id->public.course_levels.id:nc"
+    },
+    {
+      "child": "public.teacher_courses",
+      "child_columns": [
+        "teacher_id"
+      ],
+      "parent": "public.teachers",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_courses_teacher_id_fkey",
+      "definition_md5": "25e4a78998d8489138acf355e47c20e9",
+      "signature": "public.teacher_courses.teacher_id->public.teachers.id:cc"
+    },
+    {
+      "child": "public.teacher_payroll_items",
+      "child_columns": [
+        "payroll_id"
+      ],
+      "parent": "public.teacher_payrolls",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "c",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_payroll_items_payroll_id_fkey",
+      "definition_md5": "9175786147ec9d9747c116fe3d650551",
+      "signature": "public.teacher_payroll_items.payroll_id->public.teacher_payrolls.id:cc"
+    },
+    {
+      "child": "public.teacher_payroll_items",
+      "child_columns": [
+        "schedule_session_id"
+      ],
+      "parent": "public.schedule_sessions",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_payroll_items_schedule_session_id_fkey",
+      "definition_md5": "851d40a8e1b71316fcab9c0e1fcced3a",
+      "signature": "public.teacher_payroll_items.schedule_session_id->public.schedule_sessions.id:rc"
+    },
+    {
+      "child": "public.teacher_payrolls",
+      "child_columns": [
+        "approved_by_id"
+      ],
+      "parent": "public.users",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "n",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_payrolls_approved_by_id_fkey",
+      "definition_md5": "7642481875e7922d1a063120095930d3",
+      "signature": "public.teacher_payrolls.approved_by_id->public.users.id:nc"
+    },
+    {
+      "child": "public.teacher_payrolls",
+      "child_columns": [
+        "teacher_id"
+      ],
+      "parent": "public.teachers",
+      "parent_columns": [
+        "id"
+      ],
+      "delete_action": "r",
+      "update_action": "c",
+      "validated": true,
+      "constraint_name": "teacher_payrolls_teacher_id_fkey",
+      "definition_md5": "db4b77c0d31da807f3babd7194f1a29a",
+      "signature": "public.teacher_payrolls.teacher_id->public.teachers.id:rc"
+    }
+  ],
+  "teacher_guards": [
+    {
+      "name": "validate_enrollment_teacher_availability",
+      "function_body_md5": "2e995c04ca6865d8160d798ee9e5099f",
+      "function_configuration_md5": "af3be9c3d4c2d891da1a7618c49685d3",
+      "trigger": "enrollment_teacher_availability_guard",
+      "table": "public.enrollments",
+      "trigger_definition_md5": "1eacafd0b375ce97cdb4d781178993d3",
+      "enabled": "O",
+      "owner": "postgres",
+      "type_bits": "23",
+      "argument_count": "0",
+      "security_definer": "false"
+    },
+    {
+      "name": "validate_schedule_teacher_availability",
+      "function_body_md5": "8bf0ff83d02322ec49fb6500f794a74e",
+      "function_configuration_md5": "af3be9c3d4c2d891da1a7618c49685d3",
+      "trigger": "schedule_teacher_availability_guard",
+      "table": "public.schedule_sessions",
+      "trigger_definition_md5": "b0d939e89c626d3b0d1c6b3a519688f6",
+      "enabled": "O",
+      "owner": "postgres",
+      "type_bits": "23",
+      "argument_count": "0",
+      "security_definer": "false"
+    },
+    {
+      "name": "validate_teacher_availability_scope",
+      "function_body_md5": "ce495851f4dce1da05f507f4af587a61",
+      "function_configuration_md5": "af3be9c3d4c2d891da1a7618c49685d3",
+      "trigger": "teacher_availability_scope_guard",
+      "table": "public.teacher_availability",
+      "trigger_definition_md5": "80ee1f388eee210321317f711742c746",
+      "enabled": "O",
+      "owner": "postgres",
+      "type_bits": "23",
+      "argument_count": "0",
+      "security_definer": "false"
+    }
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "recorded_at": "2026-11-09T16:47:40.937056+00:00",
+  "status": "PAUSED_BEFORE_MIGRATION_EXECUTION_KEEP_MAINTENANCE",
+  "project_ref": "rakzehtbpzseetldbohm",
+  "authorization": {
+    "source": "Owner APPROVED \u2014 IPSM Coordinated Production Release in this conversation on 2026-11-09",
+    "coordinated_release": true,
+    "financial_history_limitation_accepted": true,
+    "scoped_recovery_limitations_accepted": true,
+    "signatures_invented": false
+  },
+  "completed_controls": {
+    "vercel_firewall_enabled": true,
+    "active_custom_deny_rules": 2,
+    "custom_bypass_rules": 0,
+    "unpublished_changes": 0,
+    "public_host_harmless_probes": "403",
+    "current_legacy_host_authenticated_probe": "Owner reported Forbidden / 403 after Vercel authentication",
+    "other_legacy_hosts": "Unauthenticated SSO redirects; covered by project maintenance rule and exact-host deny; not independently authenticated by agent",
+    "postgres_in_postgres_default_transaction_read_only": "on",
+    "prior_role_database_override": null,
+    "other_active_postgres_writers": 0,
+    "terminated_sessions": 0,
+    "auto_assign_custom_domains": false,
+    "prior_auto_assign_custom_domains": true
+  },
+  "writer_hold_verification": {
+    "verified_at": "2026-11-09T16:43:39.224Z",
+    "results": [
+      {
+        "profile": "IPSM_PRODUCTION_DATABASE_URL",
+        "role": "postgres",
+        "database": "postgres",
+        "default_read_only": "on",
+        "transaction_read_only": "on",
+        "other_active_writers": 0
+      },
+      {
+        "profile": "IPSM_PRODUCTION_DIRECT_URL",
+        "role": "postgres",
+        "database": "postgres",
+        "default_read_only": "on",
+        "transaction_read_only": "on",
+        "other_active_writers": 0
+      }
+    ]
+  },
+  "backup_interval_comparison": {
+    "observed_at": "2026-11-09T16:36:56.902Z",
+    "backup_sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+    "checked_tables": 63,
+    "unchanged_tables": 63,
+    "changed_tables": [],
+    "schema_matches_backup": true,
+    "source_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "current_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "read_only": true,
+    "no_raw_records_persisted": true
+  },
+  "migration_state": {
+    "cli_version": "2.78.1",
+    "exact_historical_statement_arrays_match": true,
+    "pending_files": [
+      "20261107000000_teacher_guard_parity.sql",
+      "20261107010000_reset_integrity.sql",
+      "20261108000000_ipsm_identifiers.sql"
+    ],
+    "reviewed_sql": [
+      {
+        "filename": "20261107000000_teacher_guard_parity.sql",
+        "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+      },
+      {
+        "filename": "20261107010000_reset_integrity.sql",
+        "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+      },
+      {
+        "filename": "20261108000000_ipsm_identifiers.sql",
+        "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+      }
+    ],
+    "db_push_started": false,
+    "migrations_applied": false,
+    "reason": "Pre-execution release-connection assertion rejected read_only=on; execution record was never created."
+  },
+  "post_stop_database_observations": [
+    {
+      "profile": "IPSM_PRODUCTION_DATABASE_URL",
+      "project_ref_verified": true,
+      "counts": {
+        "users": 3,
+        "audits": 505,
+        "families": 0,
+        "payments": 0,
+        "payrolls": 0,
+        "receipts": 0,
+        "students": 0,
+        "auth_users": 3,
+        "payroll_expenses": 0
+      },
+      "history": [
+        {
+          "version": "20260731171613",
+          "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+          "statement_count": 0
+        },
+        {
+          "version": "20260801163840",
+          "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+          "statement_count": 1
+        },
+        {
+          "version": "20260801165129",
+          "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+          "statement_count": 1
+        }
+      ],
+      "database": "postgres",
+      "read_only": "on",
+      "login_role": "postgres",
+      "role_model": [
+        {
+          "role": "anon",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "authenticated",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "postgres",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": true
+        },
+        {
+          "role": "service_role",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": false
+        }
+      ],
+      "observed_at": "2026-11-09T16:46:32.404658+00:00",
+      "database_oid": 5,
+      "effective_role": "postgres",
+      "future_objects": {
+        "production_reset_state": false,
+        "production_reset_requests": false,
+        "business_identifier_imports": false,
+        "issued_business_identifiers": false,
+        "business_identifier_counters": false,
+        "reset_registration_submissions": false,
+        "business_identifier_activations": false,
+        "business_identifier_allocations": false
+      },
+      "server_version": "17.6",
+      "server_started_at": "2026-11-04T04:55:23.827296+00:00",
+      "ipsm_namespace_counts": {
+        "families": 0,
+        "payments": 0,
+        "receipts": 0,
+        "students": 0,
+        "audit_any_ipsm_text": 0,
+        "audit_prefix_matches": 0
+      },
+      "prisma_history_exists": false,
+      "payroll_fk_column_exists": false,
+      "active_other_client_transactions": 0
+    },
+    {
+      "profile": "IPSM_PRODUCTION_DIRECT_URL",
+      "project_ref_verified": true,
+      "counts": {
+        "users": 3,
+        "audits": 505,
+        "families": 0,
+        "payments": 0,
+        "payrolls": 0,
+        "receipts": 0,
+        "students": 0,
+        "auth_users": 3,
+        "payroll_expenses": 0
+      },
+      "history": [
+        {
+          "version": "20260731171613",
+          "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+          "statement_count": 0
+        },
+        {
+          "version": "20260801163840",
+          "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+          "statement_count": 1
+        },
+        {
+          "version": "20260801165129",
+          "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+          "statement_count": 1
+        }
+      ],
+      "database": "postgres",
+      "read_only": "on",
+      "login_role": "postgres",
+      "role_model": [
+        {
+          "role": "anon",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "authenticated",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "postgres",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": true
+        },
+        {
+          "role": "service_role",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": false
+        }
+      ],
+      "observed_at": "2026-11-09T16:46:33.317843+00:00",
+      "database_oid": 5,
+      "effective_role": "postgres",
+      "future_objects": {
+        "production_reset_state": false,
+        "production_reset_requests": false,
+        "business_identifier_imports": false,
+        "issued_business_identifiers": false,
+        "business_identifier_counters": false,
+        "reset_registration_submissions": false,
+        "business_identifier_activations": false,
+        "business_identifier_allocations": false
+      },
+      "server_version": "17.6",
+      "server_started_at": "2026-11-04T04:55:23.827296+00:00",
+      "ipsm_namespace_counts": {
+        "families": 0,
+        "payments": 0,
+        "receipts": 0,
+        "students": 0,
+        "audit_any_ipsm_text": 0,
+        "audit_prefix_matches": 0
+      },
+      "prisma_history_exists": false,
+      "payroll_fk_column_exists": false,
+      "active_other_client_transactions": 0
+    }
+  ],
+  "blocker": {
+    "both_existing_profiles_use_supavisor": true,
+    "session_pooler_startup_option_requested": "default_transaction_read_only=off",
+    "effective_default_read_only": "on",
+    "effective_transaction_read_only": "on",
+    "direct_host_ipv4_dns": false,
+    "direct_host_ipv6_dns": true,
+    "direct_host_connection_error": "Network is unreachable",
+    "interpretation": "No verified writable CLI release connection exists while preserving the ordinary postgres writer hold.",
+    "external_reference": "https://github.com/supabase/supavisor/issues/1272"
+  },
+  "not_performed": [
+    "migration SQL execution",
+    "migration history repair",
+    "identifier attestation or activation",
+    "Production environment secret changes",
+    "PR merges",
+    "application deployment",
+    "Production Reset",
+    "reopening"
+  ],
+  "required_next_step": "Restore IPv6 reachability to the exact IPSM direct endpoint from an authorized execution environment. Verify role, target and effective release-session settings, recheck unchanged state/checksums, then resume the same reviewed CLI sequence. Do not lift the ordinary writer hold merely to run the CLI.",
+  "limitations": [
+    "Role-level read-only default is an ordinary-writer hold, not a security boundary against an owner explicitly overriding it. Manual/import writer freeze remains required.",
+    "Startup options requested through Supavisor are not proof of effective settings; check actual session settings.",
+    "No validation URL is available until the migration, activation and compatible candidate deployment stages complete."
+  ]
+}

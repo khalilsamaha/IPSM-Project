@@ -71,18 +71,21 @@ export async function reconcilePaidPayrollToShift(formData: FormData) {
 
       const duplicateExpense = await tx.expense.findFirst({
         where: {
-          shiftId: shift.id,
-          category: "Teacher Payroll",
-          description: { contains: input.id },
-          archivedAt: null,
+          OR: [
+            { payrollId: input.id },
+            { shiftId: shift.id, category: "Teacher Payroll", description: { contains: input.id }, archivedAt: null },
+          ],
         },
       });
       if (duplicateExpense) {
         throw new Error("A shift expense already exists for this payroll.");
       }
 
+      const currentShift = await tx.cashierShift.findUnique({ where: { id: shift.id } });
+      if (!currentShift || !["OPEN", "REOPENED"].includes(currentShift.status)) throw new Error("The shift is no longer open. Reload and retry.");
       const expense = await tx.expense.create({
         data: {
+          payrollId: input.id,
           createdById: user.id,
           category: "Teacher Payroll",
           description: `${payroll.teacher.fullName} payroll ${payroll.payrollMonth ?? payroll.periodStart.toISOString().slice(0, 7)} [${payroll.id}]`,

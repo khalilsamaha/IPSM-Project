@@ -285,3 +285,57 @@ Reports now show only filters relevant to the selected report type. Use Reset Fi
 - [ ] An unused archived record deletes and redirects to its archived list without a deleted-record 404.
 - [ ] Teacher configuration-only rows are disclosed and removed transactionally.
 - [ ] Lessons Table is the default; combined filters, inclusive dates, sort, pagination, archive state, payroll state, and specialized tabs work.
+
+## Production Reset (disposable fixtures only)
+
+- [ ] Active SUPER_ADMIN only; direct preview/execution calls reject other roles and inactive users.
+- [ ] All 64 preset combinations have valid plans or explicit blockers; no implicit financial selection.
+- [ ] Preview counts, direct/dependent effects, updates, protected records and financial amounts are accurate.
+- [ ] Wrong phrase, missing review/financial acknowledgement, unknown keys, cross-user, expired and stale previews are rejected.
+- [ ] Partial/full/voided payments reset balances without changing original fees or discounts.
+- [ ] Closed/auto-closed/reopened shift history is preserved or explicitly deleted together, never rewritten.
+- [ ] Paid payroll and legacy postings block academic-only resets; unique expense links prevent duplicate posting.
+- [ ] Meaningful teacher/enrollment/schedule relationships are preserved or explicitly included, never silently detached.
+- [ ] Seasonal configuration is deleted before seasons; global configuration and standalone unscoped lessons survive.
+- [ ] Business codes remain reserved; reset registration submissions cannot be replayed.
+- [ ] Failure during deletion or audit insertion rolls back every change and preview consumption.
+- [ ] Competing resets and concurrent registration/payment/payroll/job writers are tested in disposable PostgreSQL.
+- [ ] Unknown live incoming FKs, changed referential actions and pattern-only lesson dependencies are checked; protected users/audits/schema/Auth/Storage remain untouched.
+- [ ] Run all five validation commands; review additive migrations and rehearse recovery before any authorized rollout.
+- [ ] PR 1 approved and validated before implementing the eight PR 2 categories.
+
+### PR 90 follow-up gates
+
+- [ ] Preview allows a concurrent financial writer but retains one MVCC snapshot; execution rejects the stale preview.
+- [ ] Vercel Preview/development and missing Vercel environment identity cannot call preview or execution, including direct server calls.
+- [ ] Authorized IPSM administrator has reviewed all results from `docs/sql/production-reset-preflight.sql`.
+- [ ] Preview/staging database and Auth isolation is verified before mutation testing; shared project variables are not treated as isolation.
+- [ ] Migration ownership/RLS/EXECUTE privileges and one canonical migration path are approved.
+- [ ] Hosted CI passes on the reviewed commit; inspect actual job logs and keep the workflow unchanged.
+
+### PR 90 consolidated release acceptance
+
+Use [the current gate ledger](PRODUCTION_RESET_REMAINING_GATES.md) rather than
+repeating completed administrator Queries18/19. The [release runbook](PRODUCTION_RESET_RELEASE_RUNBOOK.md)
+distinguishes synthetic test coverage from pending live-role and human acceptance.
+
+- [ ] Verify the offline future-delta package hashes, mirror equality and order; include no fabricated history.
+- [ ] Run the isolated release suite: owner-only migration, injected rollback, duplicate rejection, all six scopes, lock/load and pre/post backup restore.
+- [ ] Confirm restore retains counters, reservations, registration tombstones, protected rows and effective ACLs.
+- [ ] Obtain actual runtime/migration identity and authentic history evidence; certify only reviewed pending changes.
+- [ ] Approve and implement the identifier policy before issuance; test post-backup issued-code recovery.
+- [ ] Obtain financial-owner acknowledgement and separate Preview database/Auth isolation.
+- [ ] Verify platform/roles/Auth/storage recovery and representative staging load before separate release approval.
+
+### Approved IPSM identifiers (inactive production)
+
+- [ ] Third migration mirrors match; older two pairs and historical files are unchanged.
+- [ ] No migration/seed creates an activation; unknown/held/stale activation blocks issuance.
+- [ ] FAM/STU/RCPT owner-bound BIGINT allocations and creation commit together; no old-max fallback.
+- [ ] Concurrent/replayed payment requests do not duplicate postings; changed payloads reject.
+- [ ] Legacy repair/display, maximum-length PDF/CSV and numeric receipt ordering preserve exact values.
+- [ ] Manual insert, counter rewind, ledger mutation and unreviewed restoration reject.
+- [ ] Exact-owner manifest restoration/recovery, all six reset scopes and client ACLs pass on PG17.
+- [ ] Fresh restore/server restart rejects the old activation; reconcile independent post-backup issuance before reactivation.
+- [ ] Query20 runs read-only only after the final schema; missing objects are positively tested as blockers.
+- [ ] Non-use certification, actual role identity, authentic history, isolated Preview/Auth and financial acknowledgement remain external release gates.

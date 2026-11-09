@@ -1,17 +1,14 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { Prisma as PrismaNamespace } from "@prisma/client";
-import { nextReceiptNumberFromExisting } from "@/lib/payments/receipt-number";
+import { allocateBusinessIdentifier, isRetryableTransactionError, type IdentifierStore } from "@/lib/business-identifiers";
 import { receiptPdfPath } from "@/lib/payments/receipt-service";
-
-type PaymentStore = { payment: { findMany: (args: { where: { receiptNumber: { not: null } }; select: { receiptNumber: true } }) => Promise<{ receiptNumber: string | null }[]> } };
 
 export function isUniqueReceiptConflict(error: unknown) {
   return error instanceof PrismaNamespace.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
-export async function generateUniqueReceiptNumber(store: PaymentStore, date = new Date()) {
-  const existing = await store.payment.findMany({ where: { receiptNumber: { not: null } }, select: { receiptNumber: true } });
-  return nextReceiptNumberFromExisting(existing.map((payment) => payment.receiptNumber), date);
+export async function generateUniqueReceiptNumber(store: IdentifierStore, paymentId: string, date = new Date()) {
+  return allocateBusinessIdentifier(store, "RCPT", paymentId, date);
 }
 
 export async function ensurePaymentReceipt(tx: Prisma.TransactionClient, paymentId: string, date = new Date()) {
@@ -22,7 +19,9 @@ export async function ensurePaymentReceipt(tx: Prisma.TransactionClient, payment
     else if (payment.receipt.receiptNumber !== payment.receiptNumber || payment.receipt.deletedAt) await tx.receipt.update({ where: { paymentId }, data: { receiptNumber: payment.receiptNumber, deletedAt: null, pdfPath: payment.receipt.pdfPath ?? receiptPdfPath(paymentId) } });
     return payment.receiptNumber;
   }
-  const receiptNumber = await generateUniqueReceiptNumber(tx, date);
+  // A surviving receipt already owns its issued number. Repair the missing
+  // payment link without assigning a second number to that historical receipt.
+  const receiptNumber = payment.receipt?.receiptNumber ?? await generateUniqueReceiptNumber(tx, paymentId, date);
   await tx.payment.update({ where: { id: paymentId }, data: { receiptNumber } });
   if (payment.receipt) await tx.receipt.update({ where: { paymentId }, data: { receiptNumber, deletedAt: null, pdfPath: payment.receipt.pdfPath ?? receiptPdfPath(paymentId) } });
   else await tx.receipt.create({ data: { paymentId, receiptNumber, pdfPath: receiptPdfPath(paymentId) } });
@@ -32,7 +31,7 @@ export async function ensurePaymentReceipt(tx: Prisma.TransactionClient, payment
 export async function ensurePaymentReceiptWithRetry(prisma: PrismaClient, paymentId: string, attempts = 5) {
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try { return await prisma.$transaction((tx) => ensurePaymentReceipt(tx, paymentId)); }
-    catch (error) { if (!isUniqueReceiptConflict(error) || attempt === attempts) throw error; }
+    catch (error) { if ((!isUniqueReceiptConflict(error) && !isRetryableTransactionError(error)) || attempt === attempts) throw error; }
   }
   throw new Error("Unable to generate a unique receipt number after retries.");
 }

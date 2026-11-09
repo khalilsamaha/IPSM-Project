@@ -1,0 +1,298 @@
+{
+  "purpose": "Read-only production evidence selected from administrator-provided IPSM Query 02, to compare with draft PR #90 teacher_guard_parity migration. No certification of complete schema/ACL/role parity.",
+  "project_reference": "rakzehtbpzseetldbohm (operator-confirmed; query itself cannot authenticate project)",
+  "query_id": "02",
+  "observed_at": "2026-11-07T22:02:24.628833+00:00",
+  "source_sha256": "ffca529d1d219385e53f5c63cb8cc322fe0722eacecbdcd2d113a02dbbf10b26",
+  "source_item_count": 545,
+  "selected_item_count": 16,
+  "limitations": [
+    "Column default hashes are md5 of existing pg_get_expr outputs; type names in the report are display strings.",
+    "Constraint definition hashes use pg_get_constraintdef(..., true) in original Query 02, which may differ textually from migration's pg_get_constraintdef(..., false).",
+    "Index hash values can be independently compared to migration's pg_get_indexdef() expected strings.",
+    "No raw CREATE FUNCTION bodies, ACL, owner, or active runtime identity included.",
+    "Reconfirm live metadata immediately before authorized release; data may change."
+  ],
+  "items": [
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "compensation_basis_snapshot",
+        "type": "\"TeacherCompensationBasis\"",
+        "table": "teacher_payroll_items",
+        "identity": "",
+        "not_null": false,
+        "position": 12,
+        "generated": "",
+        "default_md5": null,
+        "has_default": false
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "compensation_basis_snapshot",
+        "type": "\"TeacherCompensationBasis\"",
+        "table": "teacher_payrolls",
+        "identity": "",
+        "not_null": false,
+        "position": 18,
+        "generated": "",
+        "default_md5": null,
+        "has_default": false
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "compensation_basis",
+        "type": "\"TeacherCompensationBasis\"",
+        "table": "teachers",
+        "identity": "",
+        "not_null": true,
+        "position": 11,
+        "generated": "",
+        "default_md5": "4072a85438a965800c208255b63b0765",
+        "has_default": true
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "course_id",
+        "type": "uuid",
+        "table": "teacher_availability",
+        "identity": "",
+        "not_null": false,
+        "position": 14,
+        "generated": "",
+        "default_md5": null,
+        "has_default": false
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "hourly_rate_cents",
+        "type": "integer",
+        "table": "teachers",
+        "identity": "",
+        "not_null": true,
+        "position": 5,
+        "generated": "",
+        "default_md5": "cfcd208495d565ef66e7dff9f98764da",
+        "has_default": true
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "rate_unit_minutes_snapshot",
+        "type": "integer",
+        "table": "teacher_payroll_items",
+        "identity": "",
+        "not_null": false,
+        "position": 13,
+        "generated": "",
+        "default_md5": null,
+        "has_default": false
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "rate_unit_minutes_snapshot",
+        "type": "integer",
+        "table": "teacher_payrolls",
+        "identity": "",
+        "not_null": false,
+        "position": 19,
+        "generated": "",
+        "default_md5": null,
+        "has_default": false
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "session_rate_cents",
+        "type": "integer",
+        "table": "teachers",
+        "identity": "",
+        "not_null": false,
+        "position": 12,
+        "generated": "",
+        "default_md5": null,
+        "has_default": false
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "session_unit_minutes",
+        "type": "integer",
+        "table": "teachers",
+        "identity": "",
+        "not_null": true,
+        "position": 13,
+        "generated": "",
+        "default_md5": "34173cb38f07f89ddbebc2ac9128303f",
+        "has_default": true
+      },
+      "section": "column"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "teacher_availability_course_id_fkey",
+        "type": "f",
+        "table": "teacher_availability",
+        "schema": "public",
+        "columns": [
+          "course_id"
+        ],
+        "validated": true,
+        "deferrable": false,
+        "match_type": "s",
+        "parent_table": "courses",
+        "delete_action": "r",
+        "parent_schema": "public",
+        "update_action": "c",
+        "definition_md5": "b23e7b4402ee6fd4b8589e7dcfa55f9d",
+        "parent_columns": [
+          "id"
+        ],
+        "initially_deferred": false
+      },
+      "section": "constraint"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "teachers_rates_nonnegative",
+        "type": "c",
+        "table": "teachers",
+        "schema": "public",
+        "columns": [
+          "hourly_rate_cents",
+          "session_rate_cents"
+        ],
+        "validated": true,
+        "deferrable": false,
+        "match_type": " ",
+        "parent_table": null,
+        "delete_action": " ",
+        "parent_schema": null,
+        "update_action": " ",
+        "definition_md5": "a0ba59ce816f85d082988fd91153f0a7",
+        "parent_columns": null,
+        "initially_deferred": false
+      },
+      "section": "constraint"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "teachers_session_unit_positive",
+        "type": "c",
+        "table": "teachers",
+        "schema": "public",
+        "columns": [
+          "session_unit_minutes"
+        ],
+        "validated": true,
+        "deferrable": false,
+        "match_type": " ",
+        "parent_table": null,
+        "delete_action": " ",
+        "parent_schema": null,
+        "update_action": " ",
+        "definition_md5": "3f0aca81ae46654c337e560e3b89a54d",
+        "parent_columns": null,
+        "initially_deferred": false
+      },
+      "section": "constraint"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "type": "TeacherCompensationBasis",
+        "label": "HOURLY",
+        "order": 1
+      },
+      "section": "enum"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "type": "TeacherCompensationBasis",
+        "label": "SESSION_UNIT",
+        "order": 2
+      },
+      "section": "enum"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "teacher_availability_course_id_idx",
+        "ready": true,
+        "table": "teacher_availability",
+        "valid": true,
+        "unique": false,
+        "columns": [
+          "course_id"
+        ],
+        "primary": false,
+        "key_count": 1,
+        "has_predicate": false,
+        "predicate_md5": null,
+        "definition_md5": "bde579a15fd2cbf558e89191b0090b8d",
+        "expression_md5": null,
+        "has_expression": false,
+        "attribute_count": 1
+      },
+      "section": "index"
+    },
+    {
+      "status": "REVIEW_REQUIRED",
+      "details": {
+        "name": "teacher_courses_teacher_course_all_levels_key",
+        "ready": true,
+        "table": "teacher_courses",
+        "valid": true,
+        "unique": true,
+        "columns": [
+          "teacher_id",
+          "course_id"
+        ],
+        "primary": false,
+        "key_count": 2,
+        "has_predicate": true,
+        "predicate_md5": "764c3b415de9e86ab0c18cd8f418fb57",
+        "definition_md5": "417f86dfd1230f1a8b54525da8cc2921",
+        "expression_md5": null,
+        "has_expression": false,
+        "attribute_count": 2
+      },
+      "section": "index"
+    }
+  ],
+  "verification": {
+    "full_report_filename": "IPSM_PR90_02_schema_full_report.json",
+    "full_report_completed": true,
+    "full_report_read_only": "on",
+    "full_report_isolation": "repeatable read",
+    "full_report_item_count_verified": 545,
+    "all_selected_items_equal_original_items": true,
+    "extract_sha256": "2116e041127c186e53ac761a23b5e0c9173384984e719ba291d7a2afeb27f1c4",
+    "scope": "Administrator-provided historical snapshot; not independently queried production"
+  }
+}

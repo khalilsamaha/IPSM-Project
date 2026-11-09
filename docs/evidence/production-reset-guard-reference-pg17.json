@@ -1,0 +1,35 @@
+{
+  "source": "Reviewed repository migrations on disposable PostgreSQL 17.6, not production",
+  "guards": [
+    {
+      "function_name": "validate_teacher_availability_scope",
+      "body_md5": "ce495851f4dce1da05f507f4af587a61",
+      "trigger_definition_md5": "80ee1f388eee210321317f711742c746",
+      "configuration_md5": "af3be9c3d4c2d891da1a7618c49685d3",
+      "provolatile": "v",
+      "prosecdef": false,
+      "tgtype": 23,
+      "tgnargs": 0
+    },
+    {
+      "function_name": "validate_enrollment_teacher_availability",
+      "body_md5": "e85ba87b42cfa5e5b60c2d3aaa0ccfc1",
+      "trigger_definition_md5": "1eacafd0b375ce97cdb4d781178993d3",
+      "configuration_md5": "af3be9c3d4c2d891da1a7618c49685d3",
+      "provolatile": "v",
+      "prosecdef": false,
+      "tgtype": 23,
+      "tgnargs": 0
+    },
+    {
+      "function_name": "validate_schedule_teacher_availability",
+      "body_md5": "e9d829cecb69aedc692d7b1a5fdaaf07",
+      "trigger_definition_md5": "b0d939e89c626d3b0d1c6b3a519688f6",
+      "configuration_md5": "af3be9c3d4c2d891da1a7618c49685d3",
+      "provolatile": "v",
+      "prosecdef": false,
+      "tgtype": 23,
+      "tgnargs": 0
+    }
+  ]
+}

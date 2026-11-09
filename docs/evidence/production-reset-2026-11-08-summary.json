@@ -1,0 +1,35 @@
+{
+  "project_ref": "rakzehtbpzseetldbohm",
+  "source": "Administrator findings supplied in the task conversation on 2026-11-08; raw JSON reports and execution timestamps not supplied",
+  "independently_repeated": false,
+  "query_10": {
+    "completed_items": 42,
+    "expected_items": 42,
+    "explicit_blockers": 0,
+    "supplied_app_role": "postgres",
+    "supplied_migration_role": "postgres",
+    "roles_exist": true,
+    "core_tables_with_required_dml": 25,
+    "required_schema_access": true,
+    "bypass_rls": true,
+    "teacher_functions_executable": true,
+    "actual_vercel_runtime_identity_verified": false,
+    "broad_client_default_acls_reported": true,
+    "exact_default_acl_entries_supplied": false
+  },
+  "queries_12_to_16": {
+    "reviewed_foreign_keys": 45,
+    "accepted_update_variants": 22,
+    "availability_guard_body_matches": true,
+    "schedule_and_enrollment_guard_bodies_differ": true,
+    "historical_payroll_events_referencing_absent_records": 3,
+    "current_payroll_rows": 0,
+    "current_teacher_payroll_expense_rows": 0,
+    "empty_identifier_source_tables": ["families", "students", "payments", "receipts"],
+    "recoverable_2026_maxima": { "RCPT": 14, "STU": 5, "FAM": null },
+    "supabase_versions": ["20260731171613", "20260801163840", "20260801165129"],
+    "reported_statement_counts_in_report_order": [0, 1, 1],
+    "version_to_statement_count_mapping_independently_verified": false,
+    "prisma_history_present": false
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "project_ref": "rakzehtbpzseetldbohm",
+  "research_baseline": "4f39913c94d565704dad3061a1de6139c0997c60",
+  "reachable_commits_examined": 298,
+  "recorded_versions": [
+    {
+      "version": "20260731171613",
+      "statement_count": 0,
+      "statements_hash": null,
+      "trusted_original_sql": null,
+      "attributable_objects": [],
+      "evidence_quality": "Administrator supplied actual SQL Editor history with zero stored statements; does not establish past schema creation",
+      "unresolved": "Original recording/bootstrap purpose remains unknown. The owner has accepted preserving the exact empty transcript for an existing-database-only delta, without asserting historical bootstrap execution. Fresh target verification remains required.",
+      "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "mentions_availability_guard": false,
+      "mentions_schedule_guard": false,
+      "mentions_enrollment_guard": false,
+      "stored_sql_supplied": true,
+      "stored_sql_is_empty_array": true,
+      "source_match": null
+    },
+    {
+      "version": "20260801163840",
+      "statement_count": 1,
+      "statements_hash": null,
+      "trusted_original_sql": null,
+      "attributable_objects": [],
+      "evidence_quality": "Administrator supplied stored SQL + MD5; repo SQL transforms (comments and trailing LF only) reproduce the stored fingerprint",
+      "unresolved": "Original deployment mechanism is not inferred. Stored SQL packaging is supported by reviewed fingerprint reconstruction; fresh target history and release approval remain required.",
+      "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+      "mentions_availability_guard": true,
+      "mentions_schedule_guard": true,
+      "mentions_enrollment_guard": false,
+      "stored_sql_supplied": true,
+      "stored_sql_is_empty_array": false,
+      "repository_source_fingerprint_reconstruction": {
+        "file": "supabase/migrations/20260801101500_teacher_consistency.sql",
+        "source_chars": 6165,
+        "stored_chars": 5923,
+        "removed_comments": [
+          132,
+          109
+        ],
+        "removed_terminal_LF": true,
+        "match_md5": "d34257683e5172ad7b1ede576a4b2591",
+        "method": "From repository source, remove the two existing explanatory comment blocks (132 and 109 ASCII bytes) and final LF. MD5 of result equals single-statement Supabase history fingerprint."
+      },
+      "source_candidate_match_supported": true
+    },
+    {
+      "version": "20260801165129",
+      "statement_count": 1,
+      "statements_hash": null,
+      "trusted_original_sql": null,
+      "attributable_objects": [],
+      "evidence_quality": "Administrator supplied stored SQL + MD5; repo SQL transforms (comments and trailing LF only) reproduce the stored fingerprint",
+      "unresolved": "Original deployment mechanism is not inferred. Stored SQL packaging is supported by reviewed fingerprint reconstruction; fresh target history and release approval remain required.",
+      "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+      "mentions_availability_guard": false,
+      "mentions_schedule_guard": false,
+      "mentions_enrollment_guard": true,
+      "stored_sql_supplied": true,
+      "stored_sql_is_empty_array": false,
+      "repository_source_fingerprint_reconstruction": {
+        "file": "supabase/migrations/20260801190000_enrollment_teacher_availability.sql",
+        "source_chars": 2831,
+        "stored_chars": 2830,
+        "removed_comments": [],
+        "removed_terminal_LF": true,
+        "match_md5": "6c4135265819300dd72a0fbc476f80c2",
+        "method": "From repository source, remove final LF only. MD5 of result equals single-statement Supabase history fingerprint."
+      },
+      "source_candidate_match_supported": true
+    }
+  ],
+  "recorded_versions_found_in_migration_paths": false,
+  "repository_candidates_not_proven_applications": [
+    {
+      "path": "supabase/migrations/20260730000000_registration_attempts_shift_integrity.sql",
+      "current_sha256": "3f5987bd4c3c98f32c0fa246d4410bcad811d68b18098b27546671966a9a8b53",
+      "production_version_mapping": "unproven; not assigned by date or matching object bodies",
+      "followed_lineage_origin_commit": "9e56a6062da84a93039eb31a4965096b0893520e"
+    },
+    {
+      "path": "supabase/migrations/20260801101500_teacher_consistency.sql",
+      "current_sha256": "b8f224f064ee58dbf1947eef5f2750b136dd2ff9134ded44da5e3a43b29d8107",
+      "production_version_mapping": "unproven; not assigned by date or matching object bodies",
+      "followed_lineage_origin_commit": "2e4410478108e3bc50259f476cba31541f78651a"
+    },
+    {
+      "path": "supabase/migrations/20260801190000_enrollment_teacher_availability.sql",
+      "current_sha256": "a1c7afcdac7bd787a2cc46e438892dd2019eea8b018a50ee41b970baf0c2d98f",
+      "production_version_mapping": "unproven; not assigned by date or matching object bodies",
+      "followed_lineage_origin_commit": "630408b14530e915d6c4656637636064d5c46551"
+    }
+  ],
+  "known_private_history_snippet_bytes": 1,
+  "supabase_read_only_history_probe": "denied by connector; no substitute project accessed",
+  "canonical_future_mechanism": "Supabase",
+  "prisma_use": "schema/client generation and reviewed mirror verification",
+  "package_status": "Canonical existing-database workspace prepared; production release blocked pending fresh target verification and explicit acceptance of incomplete bootstrap provenance",
+  "identifier_followup": {
+    "checked_at": "2026-11-08T11:55:26.324462+00:00",
+    "baseline": "40f11670ea5b40d9fcafc3e01fefbbacbd613809",
+    "targeted_history_and_migration_list": "denied by IPSM connector",
+    "original_query16_available": true,
+    "future_versions": [
+      "20261107000000_teacher_guard_parity",
+      "20261107010000_reset_integrity",
+      "20261108000000_ipsm_identifiers"
+    ],
+    "historical_records_changed": false,
+    "original_query16_metadata_supplied_at": "2026-11-08T15:44:55.544114+00:00",
+    "original_query16_sql_not_supplied": false,
+    "original_query16_nonempty_sql_supplied": true,
+    "empty_july31_history_unresolved": true
+  },
+  "query16_observation": {
+    "project_ref": "rakzehtbpzseetldbohm",
+    "query_id": "16",
+    "observed_at": "2026-11-08T15:44:55.544114+00:00",
+    "completed": true,
+    "read_only": true,
+    "isolation": "repeatable read",
+    "item_count": 4,
+    "reported_status": "REVIEW_REQUIRED",
+    "prisma_migration_history_present": false,
+    "source": "administrator-provided SQL Editor report",
+    "sql_bodies_present": true,
+    "meaning": "Mapped counts/MD5 and original stored text supplied for the two nonempty statements; both fingerprints reproducible from repository sources with only documented comment/terminal-LF differences. Empty July 31 history and complete release package provenance remain unresolved."
+  },
+  "stored_sql_observation": {
+    "source": "administrator-supplied read-only Supabase SQL Editor SELECT of schema_migrations.statements; full text reviewed in conversation, not committed",
+    "reported_versions": [
+      "20260731171613",
+      "20260801163840",
+      "20260801165129"
+    ],
+    "statement_text_received_for": [
+      "20260801163840",
+      "20260801165129"
+    ],
+    "empty_statement_array_for": [
+      "20260731171613"
+    ],
+    "reconstruction_note": "ASCII SQL, canonical repository body transformed only by documented non-executable comments and final LF. MD5 reproduction is a strong fingerprint match, not an attestation of full original deployment history.",
+    "requires_final_release_review": true
+  },
+  "canonical_workspace": {
+    "cli_version": "2.78.1",
+    "builder": "tools/production-reset/canonical-workspace.ts",
+    "documentation": "docs/PRODUCTION_RESET_CANONICAL_WORKSPACE.md",
+    "empty_export_hex": "3b0a",
+    "empty_export_source": "https://github.com/supabase/cli/blob/v2.78.1/internal/migration/fetch/fetch.go",
+    "original_empty_entry_purpose": "unknown; not inferred from an empty array",
+    "bootstrap_complete": false,
+    "historical_names": "not supplied; descriptive local suffixes do not assert original names",
+    "historical_execution_claimed": false,
+    "history_repair_performed": false,
+    "production_verified": false,
+    "isolated_verification": "Passed: real CLI2.78.1 on PostgreSQL17.6; exact fetch, pending order, three-delta application, repeat no-op and missing-ledger rejection",
+    "evidence": "docs/evidence/production-reset-canonical-workspace.json"
+  },
+  "release_scope_acceptance": {
+    "date": "2026-11-08",
+    "source": "Project owner expanded operational authorization in this task",
+    "accepted_scope": "Existing IPSM database only; preserve actual three history records and apply only three reviewed future deltas after all mandatory safeguards pass.",
+    "does_not_certify": [
+      "unknown original bootstrap purpose",
+      "current production identity/history",
+      "backup recovery",
+      "identifier non-use"
+    ],
+    "production_migration_performed": false
+  }
+}
