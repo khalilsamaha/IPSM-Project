@@ -1,0 +1,464 @@
+{
+  "recorded_at": "2026-11-09T17:53:57.319147+00:00",
+  "status": "PRODUCTION_RELEASE_COMPLETE",
+  "project_ref": "rakzehtbpzseetldbohm",
+  "public_url": "https://ipsm-project-gamma.vercel.app",
+  "deployed_commit": "c5de2a062db5f38e15f09aeb51cc1b5d9af2075d",
+  "deployment": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+  "authority": "Owner approved coordinated Production release and reaffirmed resumption after IPv6 restoration; financial and scoped recovery acknowledgements recorded without invented signatures.",
+  "direct_release_connection": {
+    "verified_at": "2026-11-09T17:29:31.648Z",
+    "endpoint": "db.rakzehtbpzseetldbohm.supabase.co:5432",
+    "via_pooler": false,
+    "db": "postgres",
+    "ssl": true,
+    "ipv6": true,
+    "role": "postgres",
+    "read_only": "off",
+    "login_role": "postgres",
+    "database_oid": "5",
+    "lock_timeout": "5s",
+    "server_version": "17.6",
+    "default_read_only": "off",
+    "server_started_at": "2026-11-04T04:55:23.827296+00:00",
+    "statement_timeout": "1min",
+    "server_version_num": "170006",
+    "other_active_postgres": 0
+  },
+  "migration_execution": {
+    "started_at": "2026-11-09T17:30:30.768Z",
+    "project_ref": "rakzehtbpzseetldbohm",
+    "approved_sql": [
+      {
+        "filename": "20261107000000_teacher_guard_parity.sql",
+        "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+      },
+      {
+        "filename": "20261107010000_reset_integrity.sql",
+        "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+      },
+      {
+        "filename": "20261108000000_ipsm_identifiers.sql",
+        "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+      }
+    ],
+    "release_connection": {
+      "db": "postgres",
+      "role": "postgres",
+      "read_only": "off",
+      "default_read_only": "off",
+      "other_active_postgres": 0
+    },
+    "status": "CLI_COMPLETE_REQUIRES_POSTCHECKS",
+    "mechanism": "Supabase CLI 2.78.1 canonical workspace; db push; three reviewed files only",
+    "completed_at": "2026-11-09T17:30:31.673Z",
+    "exit_code": 0,
+    "output_sha256": "f5d0b8f3cdfdb3b769796562456eabf9521da6c8734a866a79d55b40c507451e",
+    "observed_migration_files": [
+      "20261107000000_teacher_guard_parity.sql",
+      "20261107010000_reset_integrity.sql",
+      "20261108000000_ipsm_identifiers.sql"
+    ]
+  },
+  "migration_postchecks": {
+    "verified_at": "2026-11-09T17:32:01.355Z",
+    "status": "PASS",
+    "historical_arrays_unchanged": true,
+    "transcripts": [
+      {
+        "version": "20261107000000",
+        "statement_count": 15,
+        "stored_array_sha256": "5c4014599cceac9a92501aaf735d74565d2a28b7f4f7ffba9b28a6da4f06e1e9",
+        "reviewed_sql_sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6",
+        "exact_statement_bytes_in_reviewed_order": true
+      },
+      {
+        "version": "20261107010000",
+        "statement_count": 44,
+        "stored_array_sha256": "f78115196d4dfe4360dfb0bcd6830dbc1196c65af8024fea37327197a9315aa6",
+        "reviewed_sql_sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2",
+        "exact_statement_bytes_in_reviewed_order": true
+      },
+      {
+        "version": "20261108000000",
+        "statement_count": 31,
+        "stored_array_sha256": "f55868ccff4555eece07d0d8b52a785dcc97160a282f558398ae34c843de0430",
+        "reviewed_sql_sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549",
+        "exact_statement_bytes_in_reviewed_order": true
+      }
+    ],
+    "infra": [
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_activations",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_allocations",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_counters",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_imports",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "issued_business_identifiers",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "production_reset_requests",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "production_reset_state",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "reset_registration_submissions",
+        "policies": 0
+      }
+    ],
+    "users": 3,
+    "audits": 505,
+    "imports": 0,
+    "auth_users": 3,
+    "payroll_fk": "FOREIGN KEY (payroll_id) REFERENCES teacher_payrolls(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+    "activations": 0,
+    "allocations": 0,
+    "state_valid": true,
+    "counter_type": "bigint",
+    "reservations": 16,
+    "reset_requests": 0,
+    "teacher_bodies": {
+      "validate_teacher_availability_scope": "ce495851f4dce1da05f507f4af587a61",
+      "validate_schedule_teacher_availability": "8bf0ff83d02322ec49fb6500f794a74e",
+      "validate_enrollment_teacher_availability": "2e995c04ca6865d8160d798ee9e5099f"
+    },
+    "invalid_indexes": 0,
+    "public_fk_count": 46,
+    "generation_guards": 25,
+    "client_table_grants": 0,
+    "invalid_constraints": 0,
+    "bad_function_security": 0,
+    "client_function_grants": 0,
+    "registration_unique_indexes": 2,
+    "reservation_backfill_complete": true
+  },
+  "pre_activation_data_preservation": {
+    "checked_at": "2026-11-09T17:32:30.421Z",
+    "checked_tables": 62,
+    "unchanged_tables": 62,
+    "changed_tables": [],
+    "excluded": "migration ledger intentionally appended",
+    "read_only": true
+  },
+  "identifier_activation": {
+    "started_at": "2026-11-09T17:33:15.116Z",
+    "id": "8f1a4200-9439-4b46-8006-3683e9ad011d",
+    "evidence_files": [
+      "production-reset-namespace-certification-20261109.json",
+      "production-reset-activation-recovery-20261109.json"
+    ],
+    "evidence_sha256": [
+      "831a9c40f6039c533c61f177e8e02c790acdcc84625436eb71c97d388bc4098e",
+      "dca7d47dff579fa3e3593962e5e909b486f440e48b6acb68b977f7d421f0a3e9"
+    ],
+    "sql_sha256": "a5c09461d9079f6b410a5ac27d474c1eae88883595f9c27b3d21bff00c7f45c8",
+    "status": "PASS",
+    "committed_at": "2026-11-09T17:33:15.676Z",
+    "postcheck": {
+      "report": "20_identifier_activation",
+      "status": "REVIEW_REQUIRED",
+      "completed": true,
+      "read_only": "on",
+      "counter_type": "bigint",
+      "import_count": 0,
+      "latest_enabled": true,
+      "activation_count": 1,
+      "allocation_count": 0,
+      "latest_binding_matches": true,
+      "runtime_identity_verified": false,
+      "unreconciled_ipsm_history": 0,
+      "historical_ipsm_audit_events": 0,
+      "effective_client_table_grants": 0,
+      "effective_client_function_grants": 0,
+      "historical_non_use_certified_by_this_query": false
+    },
+    "exact": {
+      "audits": 506,
+      "evidence_matches": true,
+      "activation_audits": 1,
+      "selected_id_matches": true
+    }
+  },
+  "vercel_activation": {
+    "verified_at": "2026-11-09T17:33:56.002725+00:00",
+    "status": "PASS",
+    "project_id": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+    "activation_id_matches": true,
+    "target": [
+      "production"
+    ],
+    "type": "encrypted",
+    "existing_variables_unchanged": 5,
+    "preview_activation_absent": true
+  },
+  "merges": {
+    "pr90_merge": "639055c988c2a252fa24a74b37f4fa0d4977f2c4",
+    "pr92_head": "d66e7c0a92571dd2648568a603ac19c2856caef6",
+    "pr92_base": "main",
+    "feature_diff_unchanged": true,
+    "feature_diff_sha256": "c1da0e9aa50e7fe3807a549719b0da28a9a9c581d7e6581716a2d254a6e9efc7",
+    "pr92_merge": "c5de2a062db5f38e15f09aeb51cc1b5d9af2075d",
+    "both_merged": true
+  },
+  "validation": {
+    "verified_at": "2026-11-09T17:45:02.926586+00:00",
+    "main_commit": "c5de2a062db5f38e15f09aeb51cc1b5d9af2075d",
+    "ci_run": 42666828264,
+    "ci_conclusion": "success",
+    "ci_actual_log_summary": [
+      "verify\tRun npx prisma generate\t2026-11-09T17:40:55.8053907Z \u2714 Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 235ms",
+      "verify\tRun npm run build\t2026-11-09T17:41:47.2067767Z \u2714 Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 251ms",
+      "verify\tRun npm run build\t2026-11-09T17:41:59.0914118Z  \u2713 Compiled successfully in 9.5s"
+    ],
+    "production_deployment": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+    "build_log_summary": [
+      "2026-11-09T17:41:05.816Z  \u2713 Compiled successfully in 13.0s",
+      "2026-11-09T17:41:48.042Z  \u251c \u0192 /settings/production-reset           1.59 kB         110 kB",
+      "2026-11-09T17:41:48.967Z  Build Completed in /vercel/output [1m]",
+      "2026-11-09T17:41:57.054Z  Deployment completed"
+    ],
+    "no_business_records_created": true,
+    "test_summary_lines": [
+      "verify\tRun npm test\t2026-11-09T17:41:10.9149493Z  Test Files  54 passed | 8 skipped (62)",
+      "verify\tRun npm test\t2026-11-09T17:41:10.9150630Z       Tests  454 passed | 240 skipped (694)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:14.7763269Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:14.7763971Z       Tests  40 passed (40)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:16.9478201Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:16.9478995Z       Tests  40 passed (40)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:18.9846738Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:18.9847292Z       Tests  18 passed (18)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:21.1726891Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:21.1727744Z       Tests  32 passed (32)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:22.5756273Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:22.5756902Z       Tests  33 passed (33)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:25.1190414Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:25.1191143Z       Tests  70 passed (70)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:35.9927218Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:35.9927831Z       Tests  9 passed (9)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:46.2443369Z  Test Files  1 passed (1)",
+      "verify\tRun npm run test:migration\t2026-11-09T17:41:46.2444119Z       Tests  31 passed (31)"
+    ],
+    "unit_tests_passed": 454,
+    "postgres_test_executions_passed": 273,
+    "distinct_postgres_cases": 233,
+    "postgres_count_note": "40 Dashboard cases run before and after migration; seven optional real-CLI cases are not claimed for hosted CI"
+  },
+  "operator_acceptance": {
+    "recorded_at": "2026-11-09T17:48:03.984740+00:00",
+    "source": "Owner SUPER_ADMIN browser confirmation in this conversation",
+    "owner_response": "All 3 tests confirmed",
+    "candidate": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+    "commit": "c5de2a062db5f38e15f09aeb51cc1b5d9af2075d",
+    "confirmed": [
+      "All fourteen reset categories visible",
+      "Operational Settings preview displays before/restored values without error",
+      "Registration and payment pages load"
+    ],
+    "scope_limit": "No reset execution or fabricated registration, receipt or financial posting; no claim of a completed live financial transaction",
+    "database_followup": {
+      "checked_at": "2026-11-09T17:48:53.331939+00:00",
+      "observed_selected_categories": [
+        "rooms",
+        "courseLevels",
+        "schoolClosures"
+      ],
+      "operational_settings_selected": false,
+      "dependency_blocker": "13 retained pricing records reference course levels",
+      "reset_executed": false,
+      "settings_validation_status": "PENDING corrected operator preview"
+    },
+    "corrected_settings_confirmation": {
+      "source": "Owner replied confirmed to precise settings-only check",
+      "verified_at": "2026-11-09T17:50:12.566997+00:00",
+      "database_preview": {
+        "settings": {
+          "after": {
+            "allowPayableMissedLessons": false,
+            "attendanceAutoFinalizeEnabled": true,
+            "attendanceFinalizeGraceMinutes": 15
+          },
+          "before": {
+            "allowPayableMissedLessons": false,
+            "attendanceAutoFinalizeEnabled": true,
+            "attendanceFinalizeGraceMinutes": 15
+          }
+        },
+        "created_at": "2026-11-09T17:49:13.991",
+        "blocked_count": 0,
+        "policy_version": 2,
+        "selection_keys": 14,
+        "settings_selected": true
+      },
+      "status": "PASS"
+    },
+    "status": "PASS"
+  },
+  "promotion": {
+    "checked_at": "2026-11-09T17:50:35.656353+00:00",
+    "alias_project": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+    "alias_deployment": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+    "project_production_target": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+    "auto_assign_domains": false,
+    "crons_metadata": {
+      "deploymentId": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+      "definitions": [
+        {
+          "host": "ipsm-project-2trxkrse4-khalil-samahas-projects.vercel.app",
+          "path": "/api/cron/close-stale-shifts",
+          "schedule": "0 21 * * *"
+        },
+        {
+          "host": "ipsm-project-2trxkrse4-khalil-samahas-projects.vercel.app",
+          "path": "/api/cron/close-stale-shifts-late",
+          "schedule": "0 22 * * *"
+        },
+        {
+          "host": "ipsm-project-2trxkrse4-khalil-samahas-projects.vercel.app",
+          "path": "/api/cron/finalize-attendance",
+          "schedule": "15 23 * * *"
+        }
+      ]
+    }
+  },
+  "database_default_restoration": {
+    "restored_at": "2026-11-09T17:43:49.732Z",
+    "scope": "postgres in postgres database only",
+    "original_override_restored": "absent",
+    "all_drained": true,
+    "idle_connections_drained": 0,
+    "public_and_cron_firewall_hold_retained": true,
+    "manual_external_freeze_retained": true
+  },
+  "fresh_connection_defaults": {
+    "verified_at": "2026-11-09T17:51:55.605Z",
+    "results": [
+      {
+        "profile": "IPSM_PRODUCTION_DATABASE_URL",
+        "role": "postgres",
+        "database": "postgres",
+        "default_read_only": "off",
+        "transaction_read_only": "off",
+        "other_active_writers": 0
+      },
+      {
+        "profile": "IPSM_PRODUCTION_DIRECT_URL",
+        "role": "postgres",
+        "database": "postgres",
+        "default_read_only": "off",
+        "transaction_read_only": "off",
+        "other_active_writers": 0
+      }
+    ]
+  },
+  "reopening": {
+    "verified_at": "2026-11-09T17:51:54.216566+00:00",
+    "status": "PASS",
+    "public_domain": "https://ipsm-project-gamma.vercel.app",
+    "deployment": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh",
+    "public_checks": [
+      {
+        "path": "/login",
+        "status": 200,
+        "redirects_to_login": false,
+        "ipsm_page": true
+      },
+      {
+        "path": "/settings/production-reset",
+        "status": 307,
+        "redirects_to_login": true,
+        "ipsm_page": false
+      }
+    ],
+    "auto_assign_domains_restored": true,
+    "temporary_maintenance_removed": true,
+    "obsolete_deployment_hosts_denied": 5,
+    "pending_firewall_changes": 0,
+    "cron_deployment": "dpl_A8DF84GqQ9m49EGP2xkLgrnLvbvh"
+  },
+  "final_database_counts": {
+    "users": 3,
+    "audits": 506,
+    "families": 0,
+    "payments": 0,
+    "previews": 2,
+    "receipts": 0,
+    "students": 0,
+    "auth_users": 3,
+    "checked_at": "2026-11-09T17:51:56.077519+00:00",
+    "allocations": 0,
+    "latest_preview": {
+      "settings": {
+        "after": {
+          "allowPayableMissedLessons": false,
+          "attendanceAutoFinalizeEnabled": true,
+          "attendanceFinalizeGraceMinutes": 15
+        },
+        "before": {
+          "allowPayableMissedLessons": false,
+          "attendanceAutoFinalizeEnabled": true,
+          "attendanceFinalizeGraceMinutes": 15
+        }
+      },
+      "created_at": "2026-11-09T17:49:13.991",
+      "blocked_count": 0,
+      "policy_version": 2,
+      "selection_keys": 14,
+      "settings_selected": true
+    },
+    "activation_valid": true,
+    "consumed_previews": 0
+  },
+  "protected_audit_verification": {
+    "verified_at": "2026-11-09T17:53:03.829Z",
+    "original_audit_rows": 505,
+    "original_audit_hash_matches_backup": true,
+    "authorized_activation_audit_excluded": 1,
+    "historical_payroll_audits_preserved": true
+  },
+  "verification_limits": [
+    "The owner verified SUPER_ADMIN access, all fourteen categories, a settings-only preview and registration/payment page loading. No claim is made of a completed live registration or payment transaction.",
+    "No Production Reset was executed; two unconsumed operator previews remain and expire after ten minutes.",
+    "No identifier was allocated and no fabricated registration, receipt or financial posting was created.",
+    "The recovery guarantee remains scoped to the verified four-schema database export while retaining Supabase-managed services.",
+    "Deployment environment agreement uses the verified Production-only configuration, candidate creation after configuration, exact Production target/source, and successful authenticated application preview; no diagnostic endpoint or secret disclosure was used.",
+    "A server restart/restore invalidates identifier binding; the existing fail-closed recovery/reattest procedure remains applicable."
+  ],
+  "retained_protection": {
+    "firewall_enabled": true,
+    "obsolete_and_intermediate_hosts_denied": 5,
+    "identifier_history_immutable": true,
+    "reset_requires_active_super_admin": true
+  },
+  "release_blockers": []
+}
