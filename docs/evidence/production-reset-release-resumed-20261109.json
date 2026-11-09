@@ -1,0 +1,240 @@
+{
+  "recorded_at": "2026-11-09T17:34:21.247665+00:00",
+  "status": "DATABASE_AND_ACTIVATION_VERIFIED_APPLICATION_RELEASE_PENDING",
+  "owner_approval": "APPROVED \u2014 IPSM Coordinated Production Release; resumed after IPv6 restoration",
+  "project_ref": "rakzehtbpzseetldbohm",
+  "direct_session": {
+    "verified_at": "2026-11-09T17:29:31.648Z",
+    "endpoint": "db.rakzehtbpzseetldbohm.supabase.co:5432",
+    "via_pooler": false,
+    "db": "postgres",
+    "ssl": true,
+    "ipv6": true,
+    "role": "postgres",
+    "read_only": "off",
+    "login_role": "postgres",
+    "database_oid": "5",
+    "lock_timeout": "5s",
+    "server_version": "17.6",
+    "default_read_only": "off",
+    "server_started_at": "2026-11-04T04:55:23.827296+00:00",
+    "statement_timeout": "1min",
+    "server_version_num": "170006",
+    "other_active_postgres": 0
+  },
+  "backup_interval": {
+    "observed_at": "2026-11-09T17:29:42.295Z",
+    "backup_sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+    "checked_tables": 63,
+    "unchanged_tables": 63,
+    "changed_tables": [],
+    "schema_matches_backup": true,
+    "source_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "current_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "read_only": true,
+    "no_raw_records_persisted": true
+  },
+  "migrations": {
+    "started_at": "2026-11-09T17:30:30.768Z",
+    "project_ref": "rakzehtbpzseetldbohm",
+    "approved_sql": [
+      {
+        "filename": "20261107000000_teacher_guard_parity.sql",
+        "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+      },
+      {
+        "filename": "20261107010000_reset_integrity.sql",
+        "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+      },
+      {
+        "filename": "20261108000000_ipsm_identifiers.sql",
+        "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+      }
+    ],
+    "release_connection": {
+      "db": "postgres",
+      "role": "postgres",
+      "read_only": "off",
+      "default_read_only": "off",
+      "other_active_postgres": 0
+    },
+    "status": "CLI_COMPLETE_REQUIRES_POSTCHECKS",
+    "mechanism": "Supabase CLI 2.78.1 canonical workspace; db push; three reviewed files only",
+    "completed_at": "2026-11-09T17:30:31.673Z",
+    "exit_code": 0,
+    "output_sha256": "f5d0b8f3cdfdb3b769796562456eabf9521da6c8734a866a79d55b40c507451e",
+    "observed_migration_files": [
+      "20261107000000_teacher_guard_parity.sql",
+      "20261107010000_reset_integrity.sql",
+      "20261108000000_ipsm_identifiers.sql"
+    ]
+  },
+  "postchecks": {
+    "verified_at": "2026-11-09T17:32:01.355Z",
+    "status": "PASS",
+    "historical_arrays_unchanged": true,
+    "transcripts": [
+      {
+        "version": "20261107000000",
+        "statement_count": 15,
+        "stored_array_sha256": "5c4014599cceac9a92501aaf735d74565d2a28b7f4f7ffba9b28a6da4f06e1e9",
+        "reviewed_sql_sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6",
+        "exact_statement_bytes_in_reviewed_order": true
+      },
+      {
+        "version": "20261107010000",
+        "statement_count": 44,
+        "stored_array_sha256": "f78115196d4dfe4360dfb0bcd6830dbc1196c65af8024fea37327197a9315aa6",
+        "reviewed_sql_sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2",
+        "exact_statement_bytes_in_reviewed_order": true
+      },
+      {
+        "version": "20261108000000",
+        "statement_count": 31,
+        "stored_array_sha256": "f55868ccff4555eece07d0d8b52a785dcc97160a282f558398ae34c843de0430",
+        "reviewed_sql_sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549",
+        "exact_statement_bytes_in_reviewed_order": true
+      }
+    ],
+    "infra": [
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_activations",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_allocations",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_counters",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "business_identifier_imports",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "issued_business_identifiers",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "production_reset_requests",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "production_reset_state",
+        "policies": 0
+      },
+      {
+        "rls": true,
+        "owner": "postgres",
+        "table": "reset_registration_submissions",
+        "policies": 0
+      }
+    ],
+    "users": 3,
+    "audits": 505,
+    "imports": 0,
+    "auth_users": 3,
+    "payroll_fk": "FOREIGN KEY (payroll_id) REFERENCES teacher_payrolls(id) ON UPDATE CASCADE ON DELETE RESTRICT",
+    "activations": 0,
+    "allocations": 0,
+    "state_valid": true,
+    "counter_type": "bigint",
+    "reservations": 16,
+    "reset_requests": 0,
+    "teacher_bodies": {
+      "validate_teacher_availability_scope": "ce495851f4dce1da05f507f4af587a61",
+      "validate_schedule_teacher_availability": "8bf0ff83d02322ec49fb6500f794a74e",
+      "validate_enrollment_teacher_availability": "2e995c04ca6865d8160d798ee9e5099f"
+    },
+    "invalid_indexes": 0,
+    "public_fk_count": 46,
+    "generation_guards": 25,
+    "client_table_grants": 0,
+    "invalid_constraints": 0,
+    "bad_function_security": 0,
+    "client_function_grants": 0,
+    "registration_unique_indexes": 2,
+    "reservation_backfill_complete": true
+  },
+  "protected_data": {
+    "checked_at": "2026-11-09T17:32:30.421Z",
+    "checked_tables": 62,
+    "unchanged_tables": 62,
+    "changed_tables": [],
+    "excluded": "migration ledger intentionally appended",
+    "read_only": true
+  },
+  "activation": {
+    "started_at": "2026-11-09T17:33:15.116Z",
+    "id": "8f1a4200-9439-4b46-8006-3683e9ad011d",
+    "evidence_files": [
+      "production-reset-namespace-certification-20261109.json",
+      "production-reset-activation-recovery-20261109.json"
+    ],
+    "evidence_sha256": [
+      "831a9c40f6039c533c61f177e8e02c790acdcc84625436eb71c97d388bc4098e",
+      "dca7d47dff579fa3e3593962e5e909b486f440e48b6acb68b977f7d421f0a3e9"
+    ],
+    "sql_sha256": "a5c09461d9079f6b410a5ac27d474c1eae88883595f9c27b3d21bff00c7f45c8",
+    "status": "PASS",
+    "committed_at": "2026-11-09T17:33:15.676Z",
+    "postcheck": {
+      "report": "20_identifier_activation",
+      "status": "REVIEW_REQUIRED",
+      "completed": true,
+      "read_only": "on",
+      "counter_type": "bigint",
+      "import_count": 0,
+      "latest_enabled": true,
+      "activation_count": 1,
+      "allocation_count": 0,
+      "latest_binding_matches": true,
+      "runtime_identity_verified": false,
+      "unreconciled_ipsm_history": 0,
+      "historical_ipsm_audit_events": 0,
+      "effective_client_table_grants": 0,
+      "effective_client_function_grants": 0,
+      "historical_non_use_certified_by_this_query": false
+    },
+    "exact": {
+      "audits": 506,
+      "evidence_matches": true,
+      "activation_audits": 1,
+      "selected_id_matches": true
+    }
+  },
+  "vercel_activation": {
+    "verified_at": "2026-11-09T17:33:56.002725+00:00",
+    "status": "PASS",
+    "project_id": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+    "activation_id_matches": true,
+    "target": [
+      "production"
+    ],
+    "type": "encrypted",
+    "existing_variables_unchanged": 5,
+    "preview_activation_absent": true
+  },
+  "remaining_steps": [
+    "Merge PR90 then PR92",
+    "Build and verify combined Production candidate",
+    "Owner SUPER_ADMIN validation without fabricated records or reset",
+    "Coordinated promotion and removal of temporary holds"
+  ]
+}

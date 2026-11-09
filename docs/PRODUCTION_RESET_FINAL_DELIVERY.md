@@ -1,11 +1,34 @@
-# Final coordinated delivery — approved; paused before migrations
+# Final coordinated delivery — database and activation verified; application pending
 
 **Objective: all fourteen groups live, with normal registration and numbered
 payments operational.** The owner approved the complete coordinated sequence,
 financial-history acknowledgement and scoped recovery limitations on 2026-11-09.
 No new business approval is required for that sequence.
 
-## Current execution state — 2026-11-09
+## Resumed execution — 2026-11-09 17:34Z
+
+IPv6 direct TLS connectivity is verified. All three approved migrations applied
+successfully using CLI 2.78.1; stored statement bytes reproduce the reviewed files
+in order and original history is unchanged. All 62 original data tables remain
+unchanged, teacher guards are preserved, 46 FKs are valid, and all eight reset
+infrastructure tables deny client-role privileges. Sixteen legacy identifiers are
+reserved. The owner-approved IPSM activation is enabled and bound to this database
+and server lifetime, with matching Production-only Vercel configuration. One
+activation audit was added (506 total); no identifier was allocated.
+
+[Resumed execution evidence](evidence/production-reset-release-resumed-20261109.json)
+links the exact migration/evidence hashes and postchecks. The owner namespace
+[certification](evidence/production-reset-namespace-certification-20261109.json) and
+[accepted recovery evidence](evidence/production-reset-activation-recovery-20261109.json)
+are the bytes referenced by the activation. They accurately distinguish the
+owner's declaration from retained-database corroboration.
+
+**Maintenance remains active.** The next operation is the approved PR90 then PR92
+merge, followed by a verified combined candidate and owner SUPER_ADMIN validation.
+No reset, fake registration, receipt or financial transaction is permitted. Restore
+normal connection defaults and public traffic only in the controlled final sequence.
+
+## Historical paused checkpoint — superseded by resumed execution
 
 **NO-GO to continue migrations until a controlled direct connection is reachable.**
 [Sanitized execution evidence](evidence/production-reset-release-execution-20261109.json)
@@ -151,9 +174,8 @@ required. No fallback may reactivate a writable legacy application.
 
 ## Remaining release gate
 
-The required owner decisions have been received. The current technical blocker is
-reachable, verified direct connectivity for the release connection while the writer
-hold remains active. Once resolved, continue from migration preflight; do not repeat
-completed recovery or feature testing. Authenticated operator validation remains
-later in the approved sequence; the owner has offered their SUPER_ADMIN session.
-No validation URL is ready while this migration prerequisite remains blocked.
+The connectivity blocker is resolved. The approved compatible application merge,
+deployment and authenticated operator verification remain before reopening. The
+owner has offered their existing SUPER_ADMIN session. Keep the firewall and writer
+holds in place until the controlled validation step; never serve the old writer
+application against the activated identifier schema.
