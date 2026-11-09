@@ -1,4 +1,4 @@
-# Production Reset — integrity release (PR 1)
+# Production Reset — fourteen groups (stacked feature release)
 
 Production Reset at `/settings/production-reset` requires an active, non-archived
 SUPER_ADMIN. Preview and execution each verify the profile in PostgreSQL; the
@@ -15,7 +15,7 @@ against the connected PostgreSQL server. The allowance belongs only to that
 verified client; test flags cannot authorize the ordinary application client or
 server actions. Active SUPER_ADMIN checks still apply inside both transactions.
 
-This release keeps six categories. Every selected category includes all dates
+This feature extends the six-category PR #90 foundation to fourteen categories. Every selected category includes all dates
 and statuses, including archived, cancelled, voided and historical records.
 There is no automatic demo-data detection.
 
@@ -26,7 +26,34 @@ There is no automatic demo-data detection.
 | Schedule Data | Lessons/attendance and patterns | Retained enrollment dependencies block; explicitly include enrollments. Payroll/postings block unless Financial Data is selected. |
 | Students / Families | Students, families and dependent enrollments, registrations, lessons and patterns | Family payments and enrollment allocations require Financial Data. |
 | Teachers | Teachers, assignments, all availability, lessons and patterns | Retained teacher-linked enrollments block, including archived records. Payroll/postings require Financial Data. No implicit teacher unassignment. |
-| Seasons | Seasons, enrollments, registrations, recurring patterns, season-, enrollment- or pattern-linked lessons, seasonal pricing and availability | Global prices/availability and standalone lessons without a season, enrollment or pattern survive. Financial dependencies require Financial Data. |
+| Seasons | Seasons, enrollments, registrations, recurring patterns, season-, enrollment- or pattern-linked lessons, seasonal pricing and availability | Global prices/availability and standalone lessons without a season, enrollment or pattern survive unless independently selected; retained dependencies still block. Financial dependencies require Financial Data. |
+| Courses / Instruments | All course definitions, including archived | Retained pricing, assignments, availability and enrollments block. No automatic cascade or enrollment detachment. |
+| Course Levels | All levels and ordering, including archived | Retained prices, assignments and enrollments block. |
+| Global Course Pricing | Only prices with `season_id IS NULL`, including archived | Seasonal pricing survives unless Seasons is also selected. Retained enrollment `pricing_source_id` references block; historical snapshots are not rewritten. |
+| Rooms | All rooms, including archived | Retained lessons/patterns referencing rooms block instead of silently clearing room assignments. |
+| School Closures | All closures, including archived | Existing lessons, attendance and recurring patterns are unchanged. Removing a closure does not regenerate previously skipped lessons. |
+| Operational Settings | **No deletions**; restore `school-default` values | Auto-finalization enabled, grace 15 minutes, payable missed lessons disabled. Preview/audit include previous/restored values; changed rows only count as updates. Missing row already means defaults (zero updates). Other settings IDs are preserved. |
+| Teacher Availability | All global and seasonal availability, including archived | Retained teacher-linked enrollments or lessons that may rely on it block. Teachers and assignments survive. |
+| Teacher Course Assignments | All teacher-course/level mappings, including archived | Retained availability, enrollments or lessons that may rely on eligibility block. Teachers survive. |
+
+Every group is selectable independently. The preflight may block a selection;
+it never adds unrelated academic or financial deletion just to make it work.
+Eligibility checks intentionally preserve historical dependencies too, so a later
+edit cannot unexpectedly fail a teacher guard. Standalone lessons have no course
+relation; their teacher eligibility is preserved conservatively.
+
+Selections that overlap are merged into one deletion per table: Teachers plus
+Teacher Availability never deletes availability twice; Seasons plus Global Course
+Pricing produces one all-pricing operation. The planner orders children before
+parents. Incoming reviewed FKs are also checked for **retained referencing rows**,
+including CASCADE and SET NULL relationships. Unknown FKs still fail closed.
+
+For example, deleting a course with global and seasonal prices requires both
+Global Course Pricing and Seasons (which includes enrollments and seasonal
+prices). Any retained teacher assignment/availability also needs its own explicit
+selection. If that broader scope is not wanted, preserve the course instead.
+Removing rooms with lessons requires the appropriate explicit schedule/enrollment
+scope, and financial history remains separately protected.
 
 ## Financial history
 
@@ -128,20 +155,20 @@ historical issuance or historical non-use of the approved IPSM namespace.
 - Issued identifiers, counters, registration tombstones and reset history.
 - Database schema/migrations, roles/permissions, RLS, functions/triggers/indexes.
 - Supabase configuration/secrets, Storage objects and production backups.
-- In PR 1: courses, levels, global pricing, rooms, closures and operational settings.
 
-Operational defaults remain attendance auto-finalization enabled, a 15-minute
-grace period and payable missed lessons disabled. PR 1 does not change settings.
+## Feature delivery boundary
 
-## Staged expansion (PR 2 — not available in this release)
+The eight additional groups are implemented on `agent/production-reset-eight-scopes`,
+stacked on `agent/production-reset-integrity` (PR #90). The integrity branch remains
+unchanged. No new migration is needed: all eight categories use existing tables.
+The feature neither activates identifier issuance nor changes any infrastructure
+ACL, RLS, teacher guard or migration history. Release authorization remains separate.
 
-PR 2 is gated on PR 1 review and validation. Its eight intended independent
-controls are Courses / Instruments, Course Levels, Global Course Pricing, Rooms,
-School Closures, Operational Settings (restore defaults), Teacher Availability,
-and Teacher Course Assignments. None is accepted by PR 1 server validation.
-Configuration resets must preserve historical enrollments or block. Removing
-closures must not claim to regenerate skipped lessons. Settings restoration must
-audit previous/restored values. No user/account or audit-log deletion is planned.
+The UI groups selections under Operational Records, Financial Records, Academic
+Records, Academic Configuration, Scheduling Configuration and System Settings.
+Preview shows exact retained table counts as well as direct/dependent deletions,
+settings values, financial consequences and blockers. Existing six-category
+previews cannot authorize the expanded policy; generate a fresh preview.
 
 ## Migration, validation and recovery
 

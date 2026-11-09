@@ -11,7 +11,7 @@ import { createFamilyWithCode } from "@/lib/families";
 import { createStudentWithCode } from "@/lib/students";
 import { createPaymentWithAllocations } from "@/lib/payments/payment-service";
 import { ensurePaymentReceipt } from "@/lib/payments/receipt-repair";
-import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION } from "@/lib/production-reset";
+import { previewProductionReset, executeProductionReset, emptyProductionResetSelection, productionResetScopes, RESET_CONFIRMATION } from "@/lib/production-reset";
 import { buildReleasePackage, verifyReleasePackage } from "../tools/production-reset/release-package";
 
 const url=process.env.RESET_TEST_DATABASE_URL;
@@ -205,7 +205,7 @@ describe.skipIf(!url)("approved IPSM identifiers on final schema",()=>{
     vi.stubEnv("IPSM_IDENTIFIER_ACTIVATION_ID",fresh);
     await expect(db.$queryRaw`SELECT public.allocate_ipsm_identifier('FAM',2026,${randomUUID()}::uuid,${activation}::uuid)`).rejects.toThrow("certification");
   });
-  it("preserves all identifier ledgers across all six scopes and stales previews when reservations change",async()=>{
+  it("preserves all identifier ledgers across all fourteen scopes and stales previews when reservations change",async()=>{
     const auth=(await db.userProfile.findFirstOrThrow({where:{role:"SUPER_ADMIN"}})).authId;
     const preview=await previewProductionReset(db,auth,{...emptyProductionResetSelection,financialData:true});
     await db.$transaction(tx=>allocateBusinessIdentifier(tx,"FAM",randomUUID()));
@@ -215,6 +215,10 @@ describe.skipIf(!url)("approved IPSM identifiers on final schema",()=>{
       const p=await previewProductionReset(db,auth,{...emptyProductionResetSelection,[key]:true});expect(p.preview.blocked).toEqual([]);
       await executeProductionReset(db,{actorId:auth,requestId:p.id,confirmation:RESET_CONFIRMATION,reviewed:true,financialAcknowledged:true});
     }
+    const all = Object.fromEntries(productionResetScopes.map(key => [key, true])) as typeof emptyProductionResetSelection;
+    const combined = await previewProductionReset(db, auth, all);
+    expect(combined.preview.blocked).toEqual([]);
+    await executeProductionReset(db, { actorId: auth, requestId: combined.id, confirmation: RESET_CONFIRMATION, reviewed: true, financialAcknowledged: true });
     expect(await ledgerSnapshot()).toBe(before);
     expect(ok("SELECT md5(string_agg(to_jsonb(a)::text,',' ORDER BY id)) FROM public.audit_logs a WHERE entity='TeacherPayroll'; SELECT md5(string_agg(to_jsonb(u)::text,',' ORDER BY id)) FROM public.users u; SELECT count(*) FROM auth.users; SELECT count(*) FROM auth.sessions")).toBe(protectedAudit);
   });

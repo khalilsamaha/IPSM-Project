@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 import { createDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
-import { executeProductionReset, previewProductionReset, emptyProductionResetSelection, RESET_CONFIRMATION } from "@/lib/production-reset";
+import { executeProductionReset, previewProductionReset, emptyProductionResetSelection, productionResetScopes, RESET_CONFIRMATION } from "@/lib/production-reset";
 import { allocateBusinessIdentifier } from "./helpers/legacy-identifiers";
 import { buildReleasePackage, verifyReleasePackage, releaseVersions } from "../tools/production-reset/release-package";
 import { guardInstallSql } from "./helpers/teacher-guard-bodies";
@@ -193,6 +193,18 @@ describe.skipIf(!originalUrl)("synthetic current-schema release and recovery reh
     expect(await db.resetRegistrationSubmission.count()).toBe(1);
     await expect(db.family.create({data:{familyCode:'FAM-2098-000001',name:'Unrelated replacement'}})).rejects.toThrow();
   },60_000);
+  it("protects synthetic Auth and historical audits with all fourteen groups selected", async () => {
+    await db.course.create({ data: { name: 'All-scope course', archivedAt: new Date() } });
+    await db.operationalSettings.create({ data: { id: 'school-default', attendanceFinalizeGraceMinutes: 0 } });
+    const selection = Object.fromEntries(productionResetScopes.map(key => [key, true])) as typeof emptyProductionResetSelection;
+    const p = await previewProductionReset(db, authId, selection);
+    expect(p.preview.blocked).toEqual([]);
+    const result = await executeProductionReset(db, { actorId: authId, requestId: p.id, confirmation: RESET_CONFIRMATION, reviewed: true, financialAcknowledged: true });
+    expect(result.deleted.course).toBe(1);
+    expect(result.updated.operationalSettings).toBe(1);
+    expect(protectedRecords()).toBe(protectedBefore);
+    expect(await db.auditLog.count({ where: { entity: 'TeacherPayroll' } })).toBe(3);
+  });
   it("measures a 2000-row preview, detects changes and rolls back when a writer holds the reset lock",async()=>{
     await db.family.createMany({data:Array.from({length:2000},(_,i)=>({familyCode:`FAM-2099-${String(i+1).padStart(6,'0')}`,name:'Synthetic load'}))});
     const start=Date.now(); const stale=await previewProductionReset(db,authId,{...emptyProductionResetSelection,studentsFamilies:true});

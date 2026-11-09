@@ -3,20 +3,31 @@ import { productionResetForeignKeys } from "@/lib/production-reset-foreign-keys"
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { isDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
 
-export const productionResetScopes = ["operationalData", "financialData", "scheduleData", "studentsFamilies", "teachers", "seasons"] as const;
-export type ProductionResetScope = (typeof productionResetScopes)[number];
+export const resetOptions = [
+  { key: "operationalData", group: "Operational Records", label: "Operational Data", description: "All enrollments, registration attempts, lessons and recurring patterns. Financial records require a separate Financial Data selection." },
+  { key: "financialData", group: "Financial Records", label: "Financial Data", description: "All payments, receipts, allocations, expenses, shifts and payroll. Surviving enrollment balances are restored to their original outstanding charges." },
+  { key: "scheduleData", group: "Operational Records", label: "Schedule Data", description: "All lessons, attendance and patterns. Blocked when retained enrollments depend on them, or payroll is retained." },
+  { key: "studentsFamilies", group: "Academic Records", label: "Students / Families", description: "All students, families and dependent enrollment, registration and schedule records. Linked payments require Financial Data." },
+  { key: "teachers", group: "Academic Records", label: "Teachers", description: "All teachers, assignments, availability and schedules. Retained teacher-linked enrollments or payroll block deletion." },
+  { key: "seasons", group: "Academic Records", label: "Seasons", description: "All seasons, enrollments, registrations, schedules, seasonal availability and seasonal prices. Global pricing is preserved unless independently selected." },
+  { key: "courses", group: "Academic Configuration", label: "Courses / Instruments", description: "All course definitions, including archived courses. Retained enrollments, pricing, assignments or availability block deletion." },
+  { key: "courseLevels", group: "Academic Configuration", label: "Course Levels", description: "All levels and ordering. Retained enrollments, pricing or assignments block deletion." },
+  { key: "globalCoursePricing", group: "Academic Configuration", label: "Global Course Pricing", description: "Prices without a season only. Seasonal prices and enrollment charges are preserved; retained pricing references block deletion." },
+  { key: "rooms", group: "Scheduling Configuration", label: "Rooms", description: "All rooms, including archived rooms. Retained lessons or patterns block deletion; room assignments are never silently cleared." },
+  { key: "schoolClosures", group: "Scheduling Configuration", label: "School Closures", description: "All holidays and closures, including archived records. Previously skipped lessons are not regenerated." },
+  { key: "operationalSettings", group: "System Settings", label: "Operational Settings", description: "Restore attendance auto-finalization enabled, 15-minute grace and payable missed lessons disabled. Preserve the settings row and audit previous/restored values." },
+  { key: "teacherAvailability", group: "Scheduling Configuration", label: "Teacher Availability", description: "All global and seasonal availability. Retained teacher-linked enrollments or lessons that may depend on it block deletion." },
+  { key: "teacherCourseAssignments", group: "Academic Configuration", label: "Teacher Course Assignments", description: "All teacher-course/level assignments. Retained availability, enrollments or lessons that may depend on eligibility block deletion." },
+] as const;
+export type ProductionResetScope = (typeof resetOptions)[number]["key"];
+export const productionResetScopes = resetOptions.map(option => option.key);
+export const resetOptionGroups = [...new Set(resetOptions.map(option => option.group))];
 export type ProductionResetSelection = Record<ProductionResetScope, boolean>;
-export const emptyProductionResetSelection: ProductionResetSelection = { operationalData: false, financialData: false, scheduleData: false, studentsFamilies: false, teachers: false, seasons: false };
+export const emptyProductionResetSelection = Object.fromEntries(productionResetScopes.map(key => [key, false])) as ProductionResetSelection;
 export const RESET_CONFIRMATION = "RESET IPSM DATA";
-export const resetOptions: ReadonlyArray<{ key: ProductionResetScope; label: string; description: string }> = [
-  { key: "operationalData", label: "Operational Data", description: "All enrollments, registration attempts, lessons and recurring patterns. Financial records require a separate Financial Data selection." },
-  { key: "financialData", label: "Financial Data", description: "All payments, receipts, allocations, expenses, shifts and payroll. Surviving enrollment balances are restored to their original outstanding charges." },
-  { key: "scheduleData", label: "Schedule Data", description: "All lessons, attendance and patterns. Blocked when retained enrollments depend on them, or payroll is retained." },
-  { key: "studentsFamilies", label: "Students / Families", description: "All students, families and dependent enrollment, registration and schedule records. Linked payments require Financial Data." },
-  { key: "teachers", label: "Teachers", description: "All teachers, assignments, availability and schedules. Retained teacher-linked enrollments or payroll block deletion." },
-  { key: "seasons", label: "Seasons", description: "All seasons, enrollments, registrations, schedules, seasonal availability and seasonal prices. Global pricing is preserved." },
-];
-export const resetProtected = ["Application users, identities, roles and statuses", "Supabase Auth users and sessions", "All existing audit history", "Global prices, courses, levels, rooms, closures and operational settings", "Issued business identifiers and reset submission tombstones", "Database schema, migrations, roles, permissions, RLS, triggers and indexes", "Supabase Storage, secrets, configuration and backups"];
+export const resetOperationalDefaults = { attendanceAutoFinalizeEnabled: true, attendanceFinalizeGraceMinutes: 15, allowPayableMissedLessons: false } as const;
+type OperationalValues = { [K in keyof typeof resetOperationalDefaults]: (typeof resetOperationalDefaults)[K] extends boolean ? boolean : number };
+export const resetProtected = ["Application users, identities, roles and statuses", "Supabase Auth users and sessions", "All existing audit history", "Issued business identifiers and reset submission tombstones", "Database schema, migrations, roles, permissions, RLS, triggers and indexes", "Supabase Storage, secrets, configuration and backups"];
 export type ResetErrorCode = "selection" | "not-authorized" | "environment" | "confirmation" | "acknowledgement" | "blocked" | "stale" | "failed";
 export class ProductionResetError extends Error {
   constructor(public code: ResetErrorCode, message: string) { super(message); this.name = "ProductionResetError"; }
@@ -58,15 +69,16 @@ export const resetTables = {
   teacherPayrollItem: "teacher_payroll_items", teacherPayroll: "teacher_payrolls", scheduleSession: "schedule_sessions", schedulePattern: "schedule_patterns",
   registrationAttempt: "registration_attempts", enrollment: "enrollments", teacherAvailability: "teacher_availability", teacherCourse: "teacher_courses",
   teacher: "teachers", student: "students", family: "families", coursePricing: "course_pricings", season: "seasons",
+  course: "courses", courseLevel: "course_levels", room: "rooms", schoolClosure: "school_closures",
 } as const;
 export type ResetModel = keyof typeof resetTables;
-export type ProductionResetOperation = ResetModel | "teacherAvailabilitySeasonScoped" | "coursePricingSeasonScoped";
-export type ResetOperation = { operation: ProductionResetOperation; model: ResetModel; filter: "all" | "seasonal" | "seasonalSessions"; reason: string; effect: "direct" | "dependent" };
+export type ProductionResetOperation = ResetModel | "teacherAvailabilitySeasonScoped" | "coursePricingSeasonScoped" | "coursePricingGlobalScoped";
+export type ResetOperation = { operation: ProductionResetOperation; model: ResetModel; filter: "all" | "seasonal" | "global" | "seasonalSessions"; reason: string; effect: "direct" | "dependent" };
 export function getProductionResetPlan(selection: ProductionResetSelection): ResetOperation[] {
   validateProductionResetSelection(selection);
   const result: ResetOperation[] = [];
-  const add = (model: ResetModel, reason: string, effect: "direct" | "dependent" = "dependent", filter: "all" | "seasonal" = "all") => {
-    const operation = filter === "seasonal" ? `${model}SeasonScoped` as ProductionResetOperation : model;
+  const add = (model: ResetModel, reason: string, effect: "direct" | "dependent" = "dependent", filter: "all" | "seasonal" | "global" = "all") => {
+    const operation = filter === "global" ? "coursePricingGlobalScoped" : filter === "seasonal" ? `${model}SeasonScoped` as ProductionResetOperation : model;
     result.push({ operation, model, filter, reason, effect });
   };
   if (selection.financialData) {
@@ -86,22 +98,31 @@ export function getProductionResetPlan(selection: ProductionResetSelection): Res
     add("registrationAttempt", "Registration state for removed enrollments; submission IDs remain reserved");
     add("enrollment", "Enrollment deletion explicitly included by Operational Data, Students / Families or Seasons", "direct");
   }
-  if (selection.teachers) {
-    add("teacherAvailability", "Availability belonging to deleted teachers");
-    add("teacherCourse", "Assignments belonging to deleted teachers");
-    add("teacher", "Explicit Teachers selection", "direct");
-  } else if (selection.seasons) add("teacherAvailability", "Delete seasonal availability before seasons; preserve global availability", "dependent", "seasonal");
+  if (selection.teachers || selection.teacherAvailability) add("teacherAvailability", "All global and seasonal availability", selection.teacherAvailability ? "direct" : "dependent");
+  else if (selection.seasons) add("teacherAvailability", "Delete seasonal availability before seasons; preserve global availability", "dependent", "seasonal");
+  if (selection.teachers || selection.teacherCourseAssignments) add("teacherCourse", "Teacher-course/level assignments", selection.teacherCourseAssignments ? "direct" : "dependent");
+  if (selection.teachers) add("teacher", "Explicit Teachers selection", "direct");
   if (selection.studentsFamilies) { add("student", "Explicit Students / Families selection", "direct"); add("family", "Explicit Students / Families selection", "direct"); }
-  if (selection.seasons) { add("coursePricing", "Delete seasonal prices before seasons; preserve global pricing", "dependent", "seasonal"); add("season", "Explicit Seasons selection", "direct"); }
+  if (selection.seasons || selection.globalCoursePricing) {
+    const filter = selection.seasons && selection.globalCoursePricing ? "all" : selection.seasons ? "seasonal" : "global";
+    add("coursePricing", filter === "all" ? "Explicit global pricing and season-specific pricing selections" : filter === "seasonal" ? "Delete seasonal prices before seasons; preserve global pricing" : "Explicit global pricing selection; seasonal prices are preserved", selection.globalCoursePricing ? "direct" : "dependent", filter);
+  }
+  if (selection.seasons) add("season", "Explicit Seasons selection", "direct");
+  if (selection.courses) add("course", "Explicit Courses / Instruments selection, including archived records", "direct");
+  if (selection.courseLevels) add("courseLevel", "Explicit Course Levels selection, including archived records", "direct");
+  if (selection.rooms) add("room", "Explicit Rooms selection, including archived records", "direct");
+  if (selection.schoolClosures) add("schoolClosure", "Explicit School Closures selection, including archived records", "direct");
   return result;
 }
 
 const observedTables = [...new Set([...Object.values(resetTables), "courses", "course_levels", "rooms", "school_closures", "operational_settings", "business_identifier_counters", "issued_business_identifiers", "reset_registration_submissions", "production_reset_state"])].sort();
 type Tx = Prisma.TransactionClient;
 export type ResetPreview = {
-  version: 1; selection: ProductionResetSelection; fingerprint: string;
+  version: 2; selection: ProductionResetSelection; fingerprint: string;
   operations: Array<ResetOperation & { count: number }>;
   updates: Array<{ operation: string; count: number; reason: string }>;
+  settings: { before: OperationalValues | null; after: OperationalValues } | null;
+  retained: Array<{ table: string; count: number }>;
   blocked: string[]; preserved: string[]; consequences: string[];
   totals: { deleted: number; updated: number; affected: number };
   financial: { cashPaymentsCents: number; whishPaymentsCents: number; otherPaymentsCents: number; cashExpensesCents: number; whishExpensesCents: number; otherExpensesCents: number; payrollCents: number; closedShifts: number };
@@ -135,7 +156,7 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
   const { counts, fingerprint } = await snapshot(tx);
   const deletes = new Set(plan.map(row => row.model));
   const blocked: string[] = [];
-  const dependencies = await tx.$queryRaw<Array<{ child: string; parent: string; signature: string; validated: boolean }>>`
+  const dependencies = plan.length ? await tx.$queryRaw<Array<{ child: string; parent: string; signature: string; validated: boolean }>>`
     SELECT child_ns.nspname || '.' || child.relname AS child, parent.relname AS parent,
       c.convalidated AS validated,
       child_ns.nspname || '.' || child.relname || '.' ||
@@ -150,7 +171,8 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
     JOIN pg_catalog.pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
     WHERE c.contype = 'f' AND parent_ns.nspname = 'public'
       AND parent.relname IN (${Prisma.join(plan.map(row => resetTables[row.model]))})
-  `;
+    ORDER BY signature
+  ` : [];
   for (const dependency of dependencies.filter(row => !row.validated || !productionResetForeignKeys.has(row.signature))) blocked.push(`Unmodeled database dependency: ${dependency.child} references ${dependency.parent}. Review the live schema before deleting either table.`);
   if (!selection.financialData) {
     if ((deletes.has("enrollment") && counts.payment_items) || (deletes.has("family") && counts.payments)) blocked.push("Retained payments reference the selected academic records. Select Financial Data explicitly, or preserve these records.");
@@ -164,7 +186,15 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
     const linked = await tx.scheduleSession.count({ where: { enrollmentId: { not: null } } });
     if (linked || counts.schedule_patterns) blocked.push("Retained enrollments depend on these lessons or patterns. Explicitly include their enrollments; charges and planned lesson counts will not be silently rewritten.");
   }
+  blocked.push(...await retainedDependencyBlockers(tx, plan, dependencies, selection));
+  blocked.push(...await eligibilityBlockers(tx, plan));
   const updates: ResetPreview["updates"] = [];
+  let settings: ResetPreview["settings"] = null;
+  if (selection.operationalSettings) {
+    const row = await tx.operationalSettings.findUnique({ where: { id: "school-default" }, select: { attendanceAutoFinalizeEnabled: true, attendanceFinalizeGraceMinutes: true, allowPayableMissedLessons: true } });
+    settings = { before: row, after: { ...resetOperationalDefaults } };
+    updates.push({ operation: "operationalSettings", count: row && canonical(row) !== canonical(resetOperationalDefaults) ? 1 : 0, reason: "Restore school defaults without deleting the settings row. A missing row already uses these defaults; unrelated settings IDs are preserved." });
+  }
   if (selection.financialData && !deletes.has("enrollment")) {
     const [row] = await tx.$queryRaw<Array<{ invalid: number; changed: number }>>`SELECT count(*) FILTER (WHERE fee_cents < 0 OR discount_cents < 0 OR final_fee_cents <> greatest(0, fee_cents - discount_cents))::integer AS invalid, count(*) FILTER (WHERE paid_cents <> 0 OR remaining_cents <> final_fee_cents)::integer AS changed FROM public.enrollments`;
     if (row.invalid) blocked.push(`${row.invalid} retained enrollments have inconsistent original charges. Resolve these charges before resetting payments.`);
@@ -190,10 +220,13 @@ export async function inspectProductionReset(tx: Tx, selection: ProductionResetS
   const deleted = operations.reduce((sum, row) => sum + row.count, 0);
   const updated = updates.reduce((sum, row) => sum + row.count, 0);
   return {
-    version: 1, selection, fingerprint, operations, updates, blocked, preserved: [...resetProtected],
+    version: 2, selection, fingerprint, operations, updates, settings, blocked, preserved: [...resetProtected],
+    retained: Object.values(resetTables).map(table => ({ table, count: counts[table] - operations.filter(row => resetTables[row.model] === table).reduce((sum, row) => sum + row.count, 0) })),
     consequences: [
       "All dates and statuses are included, including archived and cancelled records. There is no demo-data filter.",
       selection.financialData ? "Financial history, including closed shifts, their snapshots, voids and paid payroll expenses, will be deleted together. Existing audit history is retained." : "Payments, expenses, payroll and shift reconciliation history are preserved.",
+      ...(selection.schoolClosures ? ["Removing closures does not regenerate previously skipped lessons or change existing recurring patterns."] : []),
+      ...(selection.operationalSettings ? ["Only future operations use restored settings; existing attendance, payroll and financial records are unchanged."] : []),
       "Previously issued receipt, student and family identifiers remain reserved.",
       "Removed registrations retain a permanent submission tombstone. Start a new registration instead of replaying an old submission.",
     ],
@@ -255,6 +288,11 @@ export async function executeProductionReset(prisma: PrismaClient, input: { acto
     if (selection.financialData && !removesEnrollments) {
       updated.enrollmentBalances = await tx.$executeRaw`UPDATE public.enrollments SET paid_cents = 0, remaining_cents = final_fee_cents, updated_at = CURRENT_TIMESTAMP WHERE paid_cents <> 0 OR remaining_cents <> final_fee_cents`;
     }
+    if (preview.settings) {
+      const change = preview.updates.find(row => row.operation === "operationalSettings")!;
+      updated.operationalSettings = change.count ? (await tx.operationalSettings.updateMany({ where: { id: "school-default" }, data: { ...resetOperationalDefaults, updatedById: user.id } })).count : 0;
+      if (updated.operationalSettings !== change.count) throw new ProductionResetError("stale", "Settings changed during execution.");
+    }
     const result = { deleted, updated, totals: { deleted: Object.values(deleted).reduce((a,b) => a+b,0), updated: Object.values(updated).reduce((a,b) => a+b,0) } };
     await tx.auditLog.create({ data: { actorId: input.actorId, createdById: user.id, action: "production_reset", entity: "System", metadata: { requestId: request.id, preview: preview as unknown as Prisma.InputJsonValue, result } } });
     await tx.productionResetRequest.update({ where: { id: request.id }, data: { consumedAt: new Date(), result } });
@@ -271,7 +309,63 @@ export function canonical(value: unknown): string {
 }
 
 function resetPredicate(filter: ResetOperation["filter"]) {
+  if (filter === "global") return " WHERE season_id IS NULL";
   if (filter === "seasonal") return " WHERE season_id IS NOT NULL";
   if (filter === "seasonalSessions") return " WHERE season_id IS NOT NULL OR enrollment_id IS NOT NULL OR schedule_pattern_id IS NOT NULL";
   return "";
+}
+
+// Only reviewed signatures reach this query builder. Schema/column identifiers
+// come from the constant allowlist, never from the request or an unknown FK.
+async function retainedDependencyBlockers(tx: Tx, plan: ResetOperation[], dependencies: Array<{ signature: string; validated: boolean }>, selection: ProductionResetSelection) {
+  const blocked: string[] = [];
+  for (const dependency of dependencies) {
+    if (!dependency.validated || !productionResetForeignKeys.has(dependency.signature)) continue;
+    const [reference] = dependency.signature.split(":");
+    const [child, parent] = reference.split("->").map(side => side.split("."));
+    const childOperation = plan.find(row => resetTables[row.model] === child[1]);
+    const parentOperation = plan.find(row => resetTables[row.model] === parent[1])!;
+    if (childOperation?.filter === "all") continue;
+    // This is the existing, explicit financial reset update shown in preview.
+    if (selection.financialData && child[1] === "registration_attempts" && child[2] === "payment_id") continue;
+    const columns = child[2].split(",");
+    const parentColumns = parent[2].split(",");
+    const join = columns.map((column, i) => `c."${column}" = p."${parentColumns[i]}"`).join(" AND ");
+    const [row] = await tx.$queryRawUnsafe<Array<{ count: number }>>(`SELECT count(*)::integer AS count FROM public."${child[1]}" c JOIN public."${parent[1]}" p ON ${join} WHERE (${deletionCondition(parentOperation, "p")}) AND NOT (${deletionCondition(childOperation, "c")})`);
+    if (row.count) blocked.push(`${row.count} retained ${child[1]} records reference selected ${parent[1]}. Explicitly include their reset category or preserve ${parent[1]}; references will not be cascaded or cleared.`);
+  }
+  return blocked;
+}
+
+function deletionCondition(operation: ResetOperation | undefined, alias: string): string {
+  if (!operation) return "FALSE";
+  if (operation.filter === "global") return `${alias}.season_id IS NULL`;
+  if (operation.filter === "seasonal") return `${alias}.season_id IS NOT NULL`;
+  if (operation.filter === "seasonalSessions") return `${alias}.season_id IS NOT NULL OR ${alias}.enrollment_id IS NOT NULL OR ${alias}.schedule_pattern_id IS NOT NULL`;
+  return "TRUE";
+}
+
+// Eligibility and pricing snapshots have logical dependencies without FKs.
+// Keep historical records intact as well as active ones: deleting eligibility
+// can make a later edit fail its teacher guard. Do not guess a replacement.
+async function eligibilityBlockers(tx: Tx, plan: ResetOperation[]) {
+  const blocked: string[] = [];
+  const operation = (model: ResetModel) => plan.find(row => row.model === model);
+  const check = async (model: ResetModel, target: ResetModel, join: string, message: string) => {
+    const removed = operation(model);
+    if (!removed || operation(target)?.filter === "all") return;
+    const [row] = await tx.$queryRawUnsafe<Array<{ count: number }>>(`SELECT count(DISTINCT r.id)::integer AS count FROM public."${resetTables[target]}" r JOIN public."${resetTables[model]}" d ON ${join} WHERE (${deletionCondition(removed, "d")}) AND NOT (${deletionCondition(operation(target), "r")})`);
+    if (row.count) blocked.push(`${row.count} retained ${resetTables[target]} records ${message}. Include their category explicitly or preserve the supporting configuration.`);
+  };
+  await check("coursePricing", "enrollment", "r.pricing_source_id = d.id", "retain the selected pricing source and historical pricing snapshot");
+  await check("teacherAvailability", "enrollment", "r.teacher_id = d.teacher_id AND (d.course_id IS NULL OR r.course_id = d.course_id OR r.course_id IS NULL) AND (d.season_id IS NULL OR r.season_id = d.season_id)", "may depend on the selected teacher availability");
+  await check("teacherAvailability", "scheduleSession", "r.teacher_id = d.teacher_id AND (d.season_id IS NULL OR r.season_id = d.season_id OR EXISTS (SELECT 1 FROM public.enrollments e WHERE e.id = r.enrollment_id AND e.season_id = d.season_id))", "may depend on the selected teacher availability");
+  await check("teacherAvailability", "schedulePattern", "r.teacher_id = d.teacher_id", "may generate lessons using the selected teacher availability");
+  await check("teacherCourse", "teacherAvailability", "r.teacher_id = d.teacher_id AND (r.course_id IS NULL OR r.course_id = d.course_id)", "may depend on the selected teacher-course assignments");
+  await check("teacherCourse", "enrollment", "r.teacher_id = d.teacher_id AND (r.course_id IS NULL OR r.course_id = d.course_id)", "may depend on the selected teacher-course assignments");
+  await check("teacherCourse", "schedulePattern", "r.teacher_id = d.teacher_id", "may generate lessons using the selected teacher-course assignments");
+  // Standalone/imported lessons have no enrollment/course relation. Preserve
+  // their teacher eligibility conservatively rather than infer it from labels.
+  await check("teacherCourse", "scheduleSession", "r.teacher_id = d.teacher_id", "may depend on the selected teacher-course assignments");
+  return blocked;
 }

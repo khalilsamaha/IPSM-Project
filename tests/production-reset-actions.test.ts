@@ -9,6 +9,7 @@ vi.mock("@/lib/production-reset", async importOriginal => {
   const actual = await importOriginal<typeof import("@/lib/production-reset")>();
   return { ...actual, previewProductionReset: mocks.preview, executeProductionReset: mocks.execute };
 });
+import { productionResetScopes, emptyProductionResetSelection } from "@/lib/production-reset";
 import { previewReset, runProductionReset } from "@/actions/production-reset";
 const id = "00000000-0000-4000-8000-000000000001";
 describe("Production Reset action boundary", () => {
@@ -37,6 +38,11 @@ describe("Production Reset action boundary", () => {
     await expect(runProductionReset(new FormData())).rejects.toThrow("error=environment");
     expect(mocks.session).not.toHaveBeenCalled();
     expect(mocks.preview).not.toHaveBeenCalled(); expect(mocks.execute).not.toHaveBeenCalled();
+  });
+  it.each(productionResetScopes.slice(6))("accepts the new %s scope through the authorized server action", async scope => {
+    const form = new FormData(); form.set(scope, "on"); mocks.preview.mockResolvedValue({ id });
+    await expect(previewReset(form)).rejects.toThrow(`preview=${id}`);
+    expect(mocks.preview).toHaveBeenCalledWith({}, id, { ...emptyProductionResetSelection, [scope]: true });
   });
   it("takes actor identity from the session, not from form fields", async () => {
     const form = new FormData(); form.set("financialData","on"); mocks.preview.mockResolvedValue({ id });

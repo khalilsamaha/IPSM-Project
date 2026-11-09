@@ -1,6 +1,8 @@
 // Reviewed Prisma relationships plus the additive payroll-expense relationship.
 // Match columns and referential actions, not constraint names or just table names.
 // Any new or changed incoming FK must be reviewed before reset can act on it.
+// Acceptance describes schema compatibility, not permission to cascade: the
+// executor preflight separately blocks retained references for every selected parent.
 export const productionResetForeignKeys: ReadonlySet<string> = new Set([
   "public.audit_logs.created_by_id->public.users.id:nc",
   "public.students.family_id->public.families.id:rc",

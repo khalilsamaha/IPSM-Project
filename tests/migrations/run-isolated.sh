@@ -105,6 +105,7 @@ assert_redacted "$TEST_ROOT/preflight-after.log"
 echo "Read-only administrator preflight passed before and after the proposed migrations."
 ./node_modules/.bin/vitest run tests/production-reset-dashboard.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 ./node_modules/.bin/vitest run tests/production-reset.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+./node_modules/.bin/vitest run tests/production-reset-scopes.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 ./node_modules/.bin/vitest run tests/production-reset-review.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 
 ./node_modules/.bin/vitest run tests/teacher-guard-parity.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
