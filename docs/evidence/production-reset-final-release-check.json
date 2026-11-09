@@ -1,0 +1,67 @@
+{
+  "observed_at": "2026-11-09T06:27:44.983284+00:00",
+  "production_project": "rakzehtbpzseetldbohm",
+  "integrity_code_sha": "f265a8339bc136e44da83faa186db7eeaef6ef59",
+  "pr92": {
+    "code_sha": "d66e7c0a92571dd2648568a603ac19c2856caef6",
+    "code_accepted": true,
+    "authority": "Owner instruction following final review; 118 focused tests passed, no defects",
+    "merged": false
+  },
+  "hosted_staging_required": false,
+  "hosted_staging_waiver": "Explicit owner instruction; use Production read-only and an isolated local restore target",
+  "production_sql": {
+    "connector_project_metadata": "permission denied",
+    "read_only_identity_and_history_query": "permission denied",
+    "runtime_context_connection_available": false,
+    "migration_context_connection_available": false,
+    "roles_verified": false,
+    "fresh_history_verified": false
+  },
+  "production_backup_metadata": {
+    "backups": [],
+    "physical_backup_data": {},
+    "pitr_enabled": false,
+    "region": "eu-west-2",
+    "walg_enabled": true
+  },
+  "production_backup_recovery_point_verified": false,
+  "production_backup_restored_locally": false,
+  "vercel_metadata": {
+    "project_id": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+    "team_id": "team_evfbYf1gRSSV7wJj7ZELLDzL",
+    "production_db_auth_key_names_present": true,
+    "preview_db_auth_key_names_present": false,
+    "production_project_activation_key_present": false,
+    "secret_values_retrieved": false,
+    "deployed_runtime_identity_proven": false,
+    "database_attestation_state_verified": false
+  },
+  "canonical_workspace": "Offline verification passed; not a fresh live pending-state certificate",
+  "future_delta": [
+    {
+      "filename": "20261107000000_teacher_guard_parity.sql",
+      "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+    },
+    {
+      "filename": "20261107010000_reset_integrity.sql",
+      "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+    },
+    {
+      "filename": "20261108000000_ipsm_identifiers.sql",
+      "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+    }
+  ],
+  "identifier_policy": {
+    "format": "FAM/STU/RCPT-IPSM-YYYY-serial",
+    "migration_seeds_activation": false,
+    "historical_non_use_certified": false,
+    "recovery_certified": false,
+    "hold_must_remain": true,
+    "legacy_allocator_after_third_delta": "ordinary new legacy issuance rejected; coordinate maintenance and compatible application state"
+  },
+  "financial_owner_acknowledgement": "pending; preserve three historical audit events",
+  "production_mutations": false,
+  "merge_deploy_activate_reset": false,
+  "decision": "NO-GO"
+}

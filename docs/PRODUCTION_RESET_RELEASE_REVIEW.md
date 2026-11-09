@@ -1,5 +1,13 @@
 # PR90 — security remediation and release decision
 
+> **2026-11-09 decision: Production NO-GO.** PR #92 is code-accepted at
+> `d66e7c0a92571dd2648568a603ac19c2856caef6` and remains unmerged. Hosted staging
+> is waived; use Production read-only and an isolated local recovery target.
+> Current actionable gates, exact next operation and refreshed metadata are in
+> [the release checklist](PRODUCTION_RESET_REMAINING_GATES.md#current-release-checklist--2026-11-09).
+> These instructions supersede older hosted-staging prerequisites below.
+> No merge, deployment, identifier activation, reset or Production migration is authorized by this check.
+
 > External-gate refresh: exact-IPSM SQL access remains denied; CLI returns no branch
 > records and no verified backup. Preview metadata remains empty. No completed local
 > tests or cleanup were repeated. Use the [administrator handoff](PRODUCTION_RESET_EXTERNAL_HANDOFF.md)
