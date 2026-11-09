@@ -1,5 +1,12 @@
 # PR90 — final consolidated gates
 
+> **Latest final-delivery evidence:** [coordinated fourteen-group release](PRODUCTION_RESET_FINAL_DELIVERY.md).
+> Both actual Production connection profiles, exact remote history/three-delta
+> dry-run, unchanged backup fingerprints and zero retained IPSM namespace matches
+> are verified read-only. The owner's business declaration is recorded. Recovery
+> stays CLOSED; financial acknowledgement and final coordinated approval remain.
+> Earlier maintenance-only admission is no longer the requested outcome.
+
 > **Final admission package:** [scope, decision table and coordinated release order](PRODUCTION_RESET_RELEASE_ADMISSION.md).
 > Exported-database recovery is CLOSED; no repeat restoration is requested. The
 > remaining recovery decision is acceptance of a scoped pre-activation in-place

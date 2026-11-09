@@ -1,0 +1,25 @@
+{
+  "recorded_at": "2026-11-09T15:33:50.014868+00:00",
+  "backup_sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+  "verified_recovery_commit": "65d1bcb7284d42756c8ae391f7b36da9bd29a8a3",
+  "exported_database_recovery_gate": "CLOSED",
+  "current_comparison": {
+    "observed_at": "2026-11-09T15:26:16.307Z",
+    "backup_sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+    "checked_tables": 63,
+    "unchanged_tables": 63,
+    "changed_tables": [],
+    "schema_matches_backup": true,
+    "source_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "current_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "read_only": true,
+    "no_raw_records_persisted": true
+  },
+  "scope": "Existing IPSM project retaining Supabase-managed platform services; scoped recovery as described in release admission",
+  "scope_owner_acceptance": "PENDING coordinated release approval",
+  "post_comparison_interval": "Not yet frozen; require all writers stopped and no unaccounted changes before activation",
+  "historical_audits_preserved": 505,
+  "historical_payroll_exceptions_preserved": 3,
+  "full_platform_backup_claimed": false,
+  "new_identifier_infrastructure_currently_installed": false
+}

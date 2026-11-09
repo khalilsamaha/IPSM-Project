@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-11-09T15:33:50.014868+00:00",
+  "source": "IPSM owner user message in this conversation, 2026-11-09",
+  "declaration": "The IPSM owner confirms that the IPSM namespace has NEVER been used historically for family identifiers, student identifiers, receipts, imports, manually assigned values or external business documents.",
+  "evidence_type": "Owner business-history declaration; not an independently signed external document",
+  "separate_signature_created": false,
+  "approved_format": [
+    "FAM-IPSM-YYYY-serial",
+    "STU-IPSM-YYYY-serial",
+    "RCPT-IPSM-YYYY-serial"
+  ],
+  "available_database_corroboration": {
+    "observed_at": "2026-11-09T15:24:32.112768+00:00",
+    "project_ref": "rakzehtbpzseetldbohm",
+    "namespace_counts": {
+      "families": 0,
+      "payments": 0,
+      "receipts": 0,
+      "students": 0,
+      "audit_any_ipsm_text": 0,
+      "audit_prefix_matches": 0
+    },
+    "source_populations": {
+      "users": 3,
+      "audits": 505,
+      "families": 0,
+      "payments": 0,
+      "payrolls": 0,
+      "receipts": 0,
+      "students": 0,
+      "auth_users": 3,
+      "payroll_expenses": 0
+    },
+    "backup_comparison": {
+      "observed_at": "2026-11-09T15:26:16.307Z",
+      "backup_sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+      "checked_tables": 63,
+      "unchanged_tables": 63,
+      "changed_tables": [],
+      "schema_matches_backup": true,
+      "source_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+      "current_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+      "read_only": true,
+      "no_raw_records_persisted": true
+    }
+  },
+  "assessment": "Owner-declared historical non-use is corroborated by no conflicting retained database/audit evidence. Deleted/external history is covered by the owner declaration, not an invented independent search or certification.",
+  "activation_authorization": "PENDING; declaration does not execute an activation",
+  "interval_condition": "Recheck after writer drain; any new IPSM overlap or unaccounted external issuance stops release."
+}

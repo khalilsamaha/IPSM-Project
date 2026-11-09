@@ -1,6 +1,12 @@
 # PR90 — private certification and financial acknowledgement forms
 
-**Templates only. All decisions are PENDING / UNSIGNED.** Fill and retain the
+**The owner's namespace business declaration has now been received in this
+conversation and corroborated against available Production evidence.** See the
+[accurate declaration record](evidence/production-reset-owner-namespace-declaration.json).
+No separate signature is invented; this does not itself authorize activation.
+Financial acknowledgement, recovery-scope acceptance and final coordinated release
+approval remain pending. The blanks below are private record templates, not a
+request to repeat the already supplied business-history declaration. Fill and retain the
 completed records in the administrator's private evidence store. Commit only an
 approved status/reference/hash, never personal records, financial audit payloads,
 credentials or signatures. These forms do not create database attestations or

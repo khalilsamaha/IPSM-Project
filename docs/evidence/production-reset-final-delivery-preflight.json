@@ -1,0 +1,290 @@
+{
+  "prepared_at": "2026-11-09T15:33:50.014868+00:00",
+  "status": "READY_FOR_CONDITIONAL_RELEASE_APPROVAL_NOT_EXECUTED",
+  "github": {
+    "pr90_head": "fe177454bbcb1d1f0e6067f79c55ecfcd31854f9",
+    "pr90_ci": "https://github.com/khalilsamaha/IPSM-Project/actions/runs/42642120541",
+    "pr92_head": "d66e7c0a92571dd2648568a603ac19c2856caef6",
+    "pr92_ci": "https://github.com/khalilsamaha/IPSM-Project/actions/runs/42570638562",
+    "both_draft": true,
+    "both_mergeable": true,
+    "local_combined_tree": "e75b782aaf99dad6743cf1ca188f4dc2f78180e9",
+    "application_code_changed": false
+  },
+  "production_profiles": [
+    {
+      "profile": "IPSM_PRODUCTION_DATABASE_URL",
+      "project_ref_verified": true,
+      "counts": {
+        "users": 3,
+        "audits": 505,
+        "families": 0,
+        "payments": 0,
+        "payrolls": 0,
+        "receipts": 0,
+        "students": 0,
+        "auth_users": 3,
+        "payroll_expenses": 0
+      },
+      "history": [
+        {
+          "version": "20260731171613",
+          "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+          "statement_count": 0
+        },
+        {
+          "version": "20260801163840",
+          "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+          "statement_count": 1
+        },
+        {
+          "version": "20260801165129",
+          "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+          "statement_count": 1
+        }
+      ],
+      "database": "postgres",
+      "read_only": "on",
+      "login_role": "postgres",
+      "role_model": [
+        {
+          "role": "anon",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "authenticated",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "postgres",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": true
+        },
+        {
+          "role": "service_role",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": false
+        }
+      ],
+      "observed_at": "2026-11-09T15:24:31.184778+00:00",
+      "database_oid": 5,
+      "effective_role": "postgres",
+      "future_objects": {
+        "production_reset_state": false,
+        "production_reset_requests": false,
+        "business_identifier_imports": false,
+        "issued_business_identifiers": false,
+        "business_identifier_counters": false,
+        "reset_registration_submissions": false,
+        "business_identifier_activations": false,
+        "business_identifier_allocations": false
+      },
+      "server_version": "17.6",
+      "server_started_at": "2026-11-04T04:55:23.827296+00:00",
+      "ipsm_namespace_counts": {
+        "families": 0,
+        "payments": 0,
+        "receipts": 0,
+        "students": 0,
+        "audit_any_ipsm_text": 0,
+        "audit_prefix_matches": 0
+      },
+      "prisma_history_exists": false,
+      "payroll_fk_column_exists": false,
+      "active_other_client_transactions": 0
+    },
+    {
+      "profile": "IPSM_PRODUCTION_DIRECT_URL",
+      "project_ref_verified": true,
+      "counts": {
+        "users": 3,
+        "audits": 505,
+        "families": 0,
+        "payments": 0,
+        "payrolls": 0,
+        "receipts": 0,
+        "students": 0,
+        "auth_users": 3,
+        "payroll_expenses": 0
+      },
+      "history": [
+        {
+          "version": "20260731171613",
+          "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+          "statement_count": 0
+        },
+        {
+          "version": "20260801163840",
+          "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+          "statement_count": 1
+        },
+        {
+          "version": "20260801165129",
+          "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+          "statement_count": 1
+        }
+      ],
+      "database": "postgres",
+      "read_only": "on",
+      "login_role": "postgres",
+      "role_model": [
+        {
+          "role": "anon",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "authenticated",
+          "bypassrls": false,
+          "superuser": false,
+          "can_assume_postgres": false
+        },
+        {
+          "role": "postgres",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": true
+        },
+        {
+          "role": "service_role",
+          "bypassrls": true,
+          "superuser": false,
+          "can_assume_postgres": false
+        }
+      ],
+      "observed_at": "2026-11-09T15:24:32.112768+00:00",
+      "database_oid": 5,
+      "effective_role": "postgres",
+      "future_objects": {
+        "production_reset_state": false,
+        "production_reset_requests": false,
+        "business_identifier_imports": false,
+        "issued_business_identifiers": false,
+        "business_identifier_counters": false,
+        "reset_registration_submissions": false,
+        "business_identifier_activations": false,
+        "business_identifier_allocations": false
+      },
+      "server_version": "17.6",
+      "server_started_at": "2026-11-04T04:55:23.827296+00:00",
+      "ipsm_namespace_counts": {
+        "families": 0,
+        "payments": 0,
+        "receipts": 0,
+        "students": 0,
+        "audit_any_ipsm_text": 0,
+        "audit_prefix_matches": 0
+      },
+      "prisma_history_exists": false,
+      "payroll_fk_column_exists": false,
+      "active_other_client_transactions": 0
+    }
+  ],
+  "backup_comparison": {
+    "observed_at": "2026-11-09T15:26:16.307Z",
+    "backup_sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+    "checked_tables": 63,
+    "unchanged_tables": 63,
+    "changed_tables": [],
+    "schema_matches_backup": true,
+    "source_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "current_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "read_only": true,
+    "no_raw_records_persisted": true
+  },
+  "canonical_pending": {
+    "checked_at": "2026-11-09T15:27:38.597Z",
+    "exact_history_arrays_match": true,
+    "cli_version": "2.78.1",
+    "commands": [
+      {
+        "command": "migration list",
+        "exit": 0,
+        "reported_versions": [
+          "20260731171613",
+          "20260801163840",
+          "20260801165129",
+          "20261107000000",
+          "20261107010000",
+          "20261108000000"
+        ],
+        "pending_files": [],
+        "read_only_options_requested": true
+      },
+      {
+        "command": "db push --dry-run",
+        "exit": 0,
+        "reported_versions": [
+          "20261107000000",
+          "20261107010000",
+          "20261108000000"
+        ],
+        "pending_files": [
+          "20261107000000_teacher_guard_parity.sql",
+          "20261107010000_reset_integrity.sql",
+          "20261108000000_ipsm_identifiers.sql"
+        ],
+        "read_only_options_requested": true
+      }
+    ]
+  },
+  "future_migration_checksums": [
+    {
+      "filename": "20261107000000_teacher_guard_parity.sql",
+      "sha256": "1ae58a128b2a66f0d230cc871fc650153e540aeae1ed2c84dbd3fcceb3979ae6"
+    },
+    {
+      "filename": "20261107010000_reset_integrity.sql",
+      "sha256": "14c62b83fbb17bfbfa611b9ffd56deb5ecb1877c7564d28f0054f794e9260bc2"
+    },
+    {
+      "filename": "20261108000000_ipsm_identifiers.sql",
+      "sha256": "cc301a2de5947fa90b8309d025737b9bbf548faa809dfbcbb37ae68211c9f549"
+    }
+  ],
+  "vercel": {
+    "project_id": "prj_LMoZdJAsGS2EJleZ2Zfis5VYgHnJ",
+    "current_production_deployment": "dpl_8NGAuxKkapVkWrxcnM3MWMzEaSRP",
+    "current_production_code": "a6abe1e5d1a83e5e6cb24053aa5f6bd3f32c6051",
+    "legacy_production_hosts": [
+      "ipsm-project-3aflrwoyc-khalil-samahas-projects.vercel.app",
+      "ipsm-project-ovs16vjle-khalil-samahas-projects.vercel.app",
+      "ipsm-project-1u0ip7fqo-khalil-samahas-projects.vercel.app",
+      "ipsm-project-ibt89xjs7-khalil-samahas-projects.vercel.app"
+    ],
+    "current_cron_paths": [
+      "/api/cron/close-stale-shifts",
+      "/api/cron/close-stale-shifts-late",
+      "/api/cron/finalize-attendance"
+    ],
+    "firewall_enabled": false,
+    "custom_bypass_rules": 0,
+    "unpublished_firewall_changes": 0,
+    "production_activation_key_present": false,
+    "preview_environment_entries": 0,
+    "auto_assign_domains": true
+  },
+  "prepared_activation": {
+    "id": "8f1a4200-9439-4b46-8006-3683e9ad011d",
+    "non_use_manifest_sha256": "30a051cbe375d39fa8c2dc4d1950fdddb51f124523c2c549cf0875528305cac2",
+    "recovery_manifest_sha256": "7848d1c9fe8e587bf9cbb58d0ad76fd66660891264ac3e7aee4ac05622cf9935",
+    "hashes_are_provisional_until_release_approval_and_final_writer_drain": true,
+    "database_oid_at_preflight": 5,
+    "server_started_at_at_preflight": "2026-11-04T04:55:23.827296+00:00",
+    "database_attestation_created": false,
+    "vercel_variable_created": false
+  },
+  "outstanding_decisions": [
+    "Coordinated PR90 then PR92 merge and Production deployment/activation approval",
+    "Financial-owner or authorized delegate acceptance of three unchanged historical payroll audit exceptions",
+    "Scoped existing-platform recovery acceptance and external-writer freeze during maintenance"
+  ],
+  "production_mutations": false
+}

@@ -1,5 +1,12 @@
 # PR90 — final minimal Production release admission
 
+> **Superseded delivery objective:** the owner now requires all fourteen groups
+> and working normal issuance in one coordinated release. The namespace business
+> declaration is received and corroborated by fresh read-only Production evidence.
+> Use the [final delivery package](PRODUCTION_RESET_FINAL_DELIVERY.md); do not select
+> the earlier maintenance-only end state. Recovery remains closed. Final financial,
+> scope and merge/deployment/activation approval is still pending.
+
 **Prepared, not executed. Production NO-GO pending the decisions below.** The
 exported-database recovery gate is **CLOSED** at `65d1bcb`; do not repeat restoration.
 PR92 is code-accepted at `d66e7c0` and remains stacked/unmerged. No implementation
