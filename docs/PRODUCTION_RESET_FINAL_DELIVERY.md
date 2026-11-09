@@ -1,9 +1,53 @@
-# Final coordinated delivery — awaiting one release approval
+# Final coordinated delivery — approved; paused before migrations
 
 **Objective: all fourteen groups live, with normal registration and numbered
-payments operational.** This supersedes the maintenance-only option in the earlier
-admission package. No Production mutation, merge, deployment or activation has
-occurred in this preparation. PR92 implementation remains unchanged.
+payments operational.** The owner approved the complete coordinated sequence,
+financial-history acknowledgement and scoped recovery limitations on 2026-11-09.
+No new business approval is required for that sequence.
+
+## Current execution state — 2026-11-09
+
+**NO-GO to continue migrations until a controlled direct connection is reachable.**
+[Sanitized execution evidence](evidence/production-reset-release-execution-20261109.json)
+records the completed controls and the stopped attempt:
+
+- The project maintenance firewall and old-deployment host deny are active. The
+  owner confirmed the current old deployment returns 403 after Vercel login.
+- Ordinary `postgres` connections to database `postgres` inherit read-only mode;
+  both existing profiles verify it, with no other active postgres writers.
+  Managed Auth/Storage roles were not changed. This default is not protection
+  against an owner deliberately overriding it; the external-writer freeze remains.
+- Automatic domain assignment is held off. No Production secret was changed.
+- Exactly the three approved migrations remain pending. At 16:46Z, the original
+  three history rows and counts remain, and all eight future tables are absent.
+  No migration SQL, activation, merge, application deployment or reset occurred.
+- The release connection prerequisite rejected `read_only=on` before invoking
+  `supabase db push`. Both profiles use Supavisor, including the profile named
+  DIRECT. Its startup option did not produce the requested write-capable session.
+  The actual direct endpoint resolves only to IPv6 and this execution environment
+  reports **Network is unreachable**. Supavisor's documented
+  [startup-option limitation](https://github.com/supabase/supavisor/issues/1272)
+  corroborates the observed behavior. Requested options alone are not verification.
+
+**Next operation:** establish IPv6 reachability to the exact IPSM direct endpoint
+from an existing authorized execution environment. Verify the direct release
+session's target, role, read/write mode and timeouts while ordinary profiles remain
+read-only. Refresh the final state/checksum checks, then resume the reviewed CLI
+2.78.1 sequence below. Do not change SQL fingerprints, repair history, remove the
+writer hold, or introduce an unreviewed migration mechanism to bypass this blocker.
+The original role/database override was absent; eventual authorized reopening must
+restore that original state, not leave normal operations read-only. Restore domain
+auto-assignment only after the compatible final release has been verified.
+
+The owner's financial acceptance preserves the three historical payroll audit
+exceptions and does not certify or reconstruct their absent transactions. The
+owner also accepts the scoped existing-platform recovery limitations. No separate
+signature or independent external-history evidence is asserted. Activation hashes
+must still be refreshed against final maintenance evidence before use.
+
+The sections below retain the **earlier preparation snapshot and reviewed order**;
+statements about controls not yet installed describe that snapshot, not current
+state. Recovery remains verified; no restoration or engineering suite was repeated.
 
 ## Completed final preparation
 
@@ -65,7 +109,7 @@ cron execution or reset actions. This blocks HTTP application and cron entry;
 direct database clients/imports additionally require the owner/operator freeze.
 If effective blocking cannot be established, stop before any migration.
 
-## Coordinated release order after approval
+## Approved coordinated release order
 
 1. Record the financial-owner/delegate's decision and scoped recovery acceptance.
    Owner/operator stops manual/import/external writers. Install and verify the
@@ -105,19 +149,11 @@ closed; do not reuse a pre-activation in-place recovery shortcut. Use the existi
 post-activation recovery contract, including a fresh identity/recertification when
 required. No fallback may reactivate a writable legacy application.
 
-## One outstanding approval, with explicit acknowledgements
+## Remaining release gate
 
-The owner's namespace declaration is received and corroborated. The owner has
-**not yet supplied** the financial-history acceptance or final merge/deployment/
-activation authorization. Request one decision covering:
-
-- Short maintenance window and stopping all external/manual/import writers.
-- Acceptance, as financial owner or authorized delegate, of the **three unchanged
-  absent-record payroll audit events**, preserving them without invented postings.
-- The documented existing-platform recovery scope and reviewed treatment of
-  changes after the verified backup; no full-platform recovery claim.
-- The exact three migrations, PR90 then PR92 merges, Production attestation/env
-  activation, final combined deployment, and reopening only after successful checks.
-
-Approval does not waive any technical stop condition. Until received: **NO-GO for
-execution; ready for coordinated approval**, not another maintenance-only release.
+The required owner decisions have been received. The current technical blocker is
+reachable, verified direct connectivity for the release connection while the writer
+hold remains active. Once resolved, continue from migration preflight; do not repeat
+completed recovery or feature testing. Authenticated operator validation remains
+later in the approved sequence; the owner has offered their SUPER_ADMIN session.
+No validation URL is ready while this migration prerequisite remains blocked.
