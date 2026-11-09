@@ -1,7 +1,7 @@
 # Identifier health and administrator-controlled recovery
 
 Production is live at `c5de2a062db5f38e15f09aeb51cc1b5d9af2075d`, with all fourteen
-reset groups. [Completed release evidence](PRODUCTION_RESET_FINAL_DELIVERY.md)
+reset groups. [Completed release evidence](https://github.com/khalilsamaha/IPSM-Project/blob/b73fd1666d6f2c9e87e3a5781325ff247dec346c/docs/PRODUCTION_RESET_FINAL_DELIVERY.md)
 records the applied migrations, owner approvals, verified recovery scope and initial
 activation. This runbook **does not authorize or perform a new activation**. No new
 backup is requested. It maintains the [existing recovery contract](PRODUCTION_RESET_IDENTIFIER_IMPLEMENTATION.md).

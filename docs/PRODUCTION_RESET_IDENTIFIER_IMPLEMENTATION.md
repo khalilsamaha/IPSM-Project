@@ -3,7 +3,7 @@
 The approved unversioned FAM/STU/RCPT-IPSM-YYYY-serial format is live at
 `c5de2a062db5f38e15f09aeb51cc1b5d9af2075d`. All three reviewed migrations applied
 on 2026-11-09, and the owner-approved activation and matching Production-only
-Vercel setting were verified. [Completed release evidence](PRODUCTION_RESET_FINAL_DELIVERY.md)
+Vercel setting were verified. [Completed release evidence](https://github.com/khalilsamaha/IPSM-Project/blob/b73fd1666d6f2c9e87e3a5781325ff247dec346c/docs/PRODUCTION_RESET_FINAL_DELIVERY.md)
 records scope and validation; no historical evidence is rewritten here.
 
 Use the [operational recovery runbook and read-only health command](IDENTIFIER_RECOVERY_RUNBOOK.md)
