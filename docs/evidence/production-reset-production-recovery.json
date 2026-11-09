@@ -1,0 +1,312 @@
+{
+  "verified_at": "2026-11-09T14:05:19.746581+00:00",
+  "project_attribution": {
+    "project_ref": "rakzehtbpzseetldbohm",
+    "basis": "Administrator-supplied Production artifact and checksum; no Production connection opened during recovery verification",
+    "export_filename_timestamp": "2026-11-09T13-28-09-751Z",
+    "exact_transaction_snapshot_timestamp": "Not independently established by filename"
+  },
+  "archive": {
+    "sha256": "c81a2e0c02b3cc89631d24fbde536e117c59757273f4d4e3866645a3fda47cfa",
+    "bytes": 415106,
+    "format": "PostgreSQL custom archive 1.16-0",
+    "regular_file": true,
+    "symlink": false,
+    "owner": "redeye",
+    "group": "redeye",
+    "file_mode": "0600",
+    "parent_mode": "0700",
+    "toc_entries": 701,
+    "list_exit_code": 0,
+    "full_decode_exit_code": 0,
+    "unchanged_after_restore": true,
+    "private_artifact_committed": false
+  },
+  "target": {
+    "postgres_version": "17.6",
+    "image": "public.ecr.aws/supabase/postgres:17.6.1.095",
+    "image_id": "sha256:972aabc75779f6e535f87e1669f36edbab02cdf8bf3f47d13579963c119adefb",
+    "container": "ipsm-pr90-production-recovery-20261109",
+    "database": "ipsm_production_recovery",
+    "fresh_dedicated_volume": true,
+    "network_mode": "none",
+    "published_ports": 0,
+    "docker_log_driver": "none",
+    "auth_api_services_started": false,
+    "cron_and_pg_net_workers_loaded": false,
+    "restored_identities_used_for_login": false,
+    "stopped_after_verification": true,
+    "private_volume_retained": true
+  },
+  "restore": {
+    "exit_code": 0,
+    "stderr_bytes": 0,
+    "single_transaction": true,
+    "exit_on_error": true,
+    "ownership_and_acl_restoration": true,
+    "trigger_disabling": false,
+    "archive_filtering_or_editing": false,
+    "restore_role": "supabase_admin (local platform bootstrap only)",
+    "initial_round_trip_acl_difference": "PUBLIC USAGE on public schema missing after empty target schema was dropped to allow archive CREATE SCHEMA.",
+    "reviewed_local_adjustment": "GRANT USAGE ON SCHEMA public TO PUBLIC;",
+    "adjustment_basis": "PostgreSQL 17 pg_dump getNamespaces assumes initdb public-schema ACL owner=UC, PUBLIC=U; exact sole schema diff removed by reconstituting that baseline.",
+    "adjustment_scope": "isolated recovery target only; no CREATE/table grants, no role or membership changes",
+    "errors_suppressed": false
+  },
+  "coverage": {
+    "schemas": {
+      "auth": 27,
+      "public": 25,
+      "storage": 10,
+      "supabase_migrations": 1
+    },
+    "table_data_entries": 63,
+    "all_table_counts_and_sorted_copy_hashes_match": true,
+    "sequence_state_entries": 1,
+    "all_sequence_values_and_is_called_match": true,
+    "canonical_schema_match": true,
+    "canonical_schema_sha256": "b9e83517d63d32e722ff24cb06e05c4206774f2a5cb2c1279171fabc03d2023c",
+    "canonicalization": "Compare explicitly selected four-schema pg_dump output, normalizing line endings and excluding blank lines, dump version headers and generated psql restrict/unrestrict tokens. SQL statements, ownership and ACLs retained.",
+    "catalog": {
+      "tables": 63,
+      "schemas": [
+        "auth",
+        "public",
+        "storage",
+        "supabase_migrations"
+      ],
+      "policies": 0,
+      "triggers": 14,
+      "functions": 32,
+      "extensions": [
+        {
+          "name": "plpgsql",
+          "version": "1.0"
+        }
+      ],
+      "rls_tables": 51,
+      "foreign_keys": 75,
+      "invalid_indexes": 0,
+      "postgres_version": "17.6",
+      "disabled_triggers": 0,
+      "migration_history": [
+        {
+          "version": "20260731171613",
+          "statements_md5": "d41d8cd98f00b204e9800998ecf8427e",
+          "statement_count": 0
+        },
+        {
+          "version": "20260801163840",
+          "statements_md5": "d34257683e5172ad7b1ede576a4b2591",
+          "statement_count": 1
+        },
+        {
+          "version": "20260801165129",
+          "statements_md5": "6c4135265819300dd72a0fbc476f80c2",
+          "statement_count": 1
+        }
+      ],
+      "teacher_functions": [
+        {
+          "name": "validate_enrollment_teacher_availability",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "body_md5": "2e995c04ca6865d8160d798ee9e5099f",
+          "security_definer": false
+        },
+        {
+          "name": "validate_schedule_teacher_availability",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "body_md5": "8bf0ff83d02322ec49fb6500f794a74e",
+          "security_definer": false
+        },
+        {
+          "name": "validate_teacher_availability_scope",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "body_md5": "ce495851f4dce1da05f507f4af587a61",
+          "security_definer": false
+        }
+      ],
+      "public_foreign_keys": 45,
+      "unvalidated_constraints": 0
+    },
+    "all_constraints": 229,
+    "public_constraints": 91,
+    "table_owner_counts": {
+      "postgres": 26,
+      "supabase_auth_admin": 27,
+      "supabase_storage_admin": 10
+    },
+    "application_profiles_missing_auth": 0,
+    "teacher_effective_execute_checks": [
+      {
+        "role": "anon",
+        "execute": false,
+        "function": "validate_enrollment_teacher_availability"
+      },
+      {
+        "role": "anon",
+        "execute": false,
+        "function": "validate_schedule_teacher_availability"
+      },
+      {
+        "role": "anon",
+        "execute": false,
+        "function": "validate_teacher_availability_scope"
+      },
+      {
+        "role": "authenticated",
+        "execute": false,
+        "function": "validate_enrollment_teacher_availability"
+      },
+      {
+        "role": "authenticated",
+        "execute": false,
+        "function": "validate_schedule_teacher_availability"
+      },
+      {
+        "role": "authenticated",
+        "execute": false,
+        "function": "validate_teacher_availability_scope"
+      },
+      {
+        "role": "postgres",
+        "execute": true,
+        "function": "validate_enrollment_teacher_availability"
+      },
+      {
+        "role": "postgres",
+        "execute": true,
+        "function": "validate_schedule_teacher_availability"
+      },
+      {
+        "role": "postgres",
+        "execute": true,
+        "function": "validate_teacher_availability_scope"
+      },
+      {
+        "role": "service_role",
+        "execute": true,
+        "function": "validate_enrollment_teacher_availability"
+      },
+      {
+        "role": "service_role",
+        "execute": true,
+        "function": "validate_schedule_teacher_availability"
+      },
+      {
+        "role": "service_role",
+        "execute": true,
+        "function": "validate_teacher_availability_scope"
+      }
+    ],
+    "local_role_model": [
+      {
+        "role": "anon",
+        "bypassrls": false,
+        "superuser": false
+      },
+      {
+        "role": "authenticated",
+        "bypassrls": false,
+        "superuser": false
+      },
+      {
+        "role": "postgres",
+        "bypassrls": true,
+        "superuser": false
+      },
+      {
+        "role": "service_role",
+        "bypassrls": true,
+        "superuser": false
+      },
+      {
+        "role": "supabase_admin",
+        "bypassrls": true,
+        "superuser": true
+      },
+      {
+        "role": "supabase_auth_admin",
+        "bypassrls": false,
+        "superuser": false
+      },
+      {
+        "role": "supabase_storage_admin",
+        "bypassrls": false,
+        "superuser": false
+      }
+    ]
+  },
+  "protected_counts": {
+    "public.users": 3,
+    "public.audit_logs": 505,
+    "auth.users": 3,
+    "auth.identities": 3,
+    "auth.sessions": 7,
+    "auth.schema_migrations": 82,
+    "storage.buckets": 1,
+    "storage.objects": 0,
+    "storage.migrations": 80,
+    "supabase_migrations.schema_migrations": 3
+  },
+  "historical_payroll": {
+    "audit_events_preserved": 3,
+    "both_payroll_and_expense_absent_events": 3,
+    "invalid_expense_reference_events": 2,
+    "current_payrolls": 0,
+    "current_payroll_expenses": 0,
+    "financial_acknowledgement": "Still pending; Query14 correctly retains historical BLOCKER classification; no repair performed"
+  },
+  "identifier_recovery": {
+    "current_family_student_payment_receipt_rows": 0,
+    "legacy_2026_audit_high_water": {
+      "RCPT": 14,
+      "STU": 5,
+      "FAM": null
+    },
+    "new_reset_identifier_infrastructure_absent": true,
+    "basis": "Expected unapplied migrations; absence is not loss during restore",
+    "full_historical_non_use_or_reservations_certified": false,
+    "activation_performed": false,
+    "post_backup_issuance_coverage_certified": false
+  },
+  "administrator_context_evidence": {
+    "runtime_profile": {
+      "effective_role": "postgres",
+      "login_role": "postgres"
+    },
+    "migration_profile": {
+      "effective_role": "postgres",
+      "login_role": "postgres"
+    },
+    "basis": "Owner reports independent Kali Prisma verification of Production profiles; not a new agent/live Vercel query",
+    "current_history_counts_md5_reported_matching": true,
+    "backup_history_independently_matched": true
+  },
+  "limitations": [
+    "No cluster role definitions/passwords/membership or database-level connection/settings backup; standard local Supabase roles supplied externally. Object ownership/ACL restoration is verified, not complete Production role-graph equivalence.",
+    "No extension installation objects, extension-managed schemas outside the four exports, WAL/PITR or complete physical cluster recovery. Restored database has plpgsql 1.0 only.",
+    "Storage metadata restored (one bucket, zero object rows); external object bytes are not included and external emptiness is not certified.",
+    "JWT/signing/API secrets, provider/SMTP configuration, platform settings, edge functions, webhooks and external integrations are not backed up by this artifact. No Auth/API functional login or external-service recovery attempted.",
+    "Snapshot is not a certificate for subsequent writes, missing historical identifiers, unknown July31 bootstrap provenance or identifier activation."
+  ],
+  "decisions": {
+    "exported_four_schema_database_recoverability": "PASS; close this scoped gate",
+    "full_platform_recovery_coverage": "NOT CERTIFIED; retain release coverage gate until excluded dependencies have a recoverable source or an explicitly approved recovery scope",
+    "production_release": "NO-GO; recovery verification does not authorize the next migration/deployment operation",
+    "production_mutated": false,
+    "migrations_applied": false,
+    "reset_executed": false,
+    "merged_or_deployed": false,
+    "identifiers_activated": false
+  }
+}

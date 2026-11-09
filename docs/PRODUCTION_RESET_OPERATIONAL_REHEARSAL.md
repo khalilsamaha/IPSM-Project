@@ -1,5 +1,10 @@
 # PR90 — authorized operational rehearsal, 2026-11-08
 
+> This is the historical **synthetic** rehearsal. The separate
+> [2026-11-09 actual Production archive recovery](PRODUCTION_RESET_PRODUCTION_RECOVERY.md)
+> now verifies the exported four-schema scope. It does not turn this synthetic
+> physical-cluster result into a Production full-platform backup certificate.
+
 **Production NO-GO; draft PR90 remains open.** The owner's expanded authorization
 accepts the existing-database-only provenance boundary and conditionally permits
 three production deltas after all safeguards pass. It does not certify those

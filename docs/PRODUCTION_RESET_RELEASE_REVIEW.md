@@ -1,5 +1,16 @@
 # PR90 — security remediation and release decision
 
+> **Actual Production recovery update — 2026-11-09 14:05Z:** the supplied archive
+> passes isolated PG17.6 restoration: 63/63 tables, sequence state, schema/ACLs,
+> Auth, protected audits and the three historical migration rows. One documented
+> local-only public-schema USAGE adjustment restored the pg_dump-assumed baseline.
+> The original is unchanged and the recovery container is stopped. Administrator
+> evidence now reports both Production connection profiles as postgres/postgres.
+> [Recovery report and coverage limits](PRODUCTION_RESET_PRODUCTION_RECOVERY.md)
+> supersede earlier claims below that only synthetic recovery/profile evidence is
+> available. Full platform/global-role coverage and identifier certification are
+> **not** established; Production remains NO-GO. No further release action was run.
+
 > **2026-11-09 decision: Production NO-GO.** PR #92 is code-accepted at
 > `d66e7c0a92571dd2648568a603ac19c2856caef6` and remains unmerged. Hosted staging
 > is waived; use Production read-only and an isolated local recovery target.

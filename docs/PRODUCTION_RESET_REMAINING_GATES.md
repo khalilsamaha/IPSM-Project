@@ -2,8 +2,9 @@
 
 ## Current release checklist — 2026-11-09
 
-This section supersedes older hosted-staging requirements below and in historical
-reports. **Production NO-GO.** Hosted staging is explicitly waived; the recovery
+This section incorporates the actual Production archive recovery verified at
+2026-11-09T14:05:19Z and supersedes older access/backup and hosted-staging status
+below and in historical reports. **Production NO-GO.** Hosted staging is explicitly waived; the recovery
 target is isolated local PostgreSQL/Supabase, with Production used read-only.
 
 - [x] **PR #92 code accepted** at `d66e7c0a92571dd2648568a603ac19c2856caef6`:
@@ -13,17 +14,26 @@ target is isolated local PostgreSQL/Supabase, with Production used read-only.
   reviewed hashes. Canonical six-file workspace verified offline again.
 - [x] Production variable-name metadata shows no `IPSM_IDENTIFIER_ACTIVATION_ID`;
   Preview lists none of the five Production DB/Auth keys. No values retrieved.
-  This does not prove the runtime SQL role or database attestation state.
-- [ ] Verify the actual deployed Prisma and chosen migration connections, roles,
-  memberships/ownership and target identity. Connector access is still denied;
-  neither connection is available in this session. SQL Editor identity is insufficient.
-- [ ] Obtain an actual recoverable Production artifact and restore it locally with
-  application/Auth/history/permissions/constraints/identifier integrity comparisons.
-  The scoped backup listing returned `backups=[]`, empty physical metadata and
-  `pitr_enabled=false` (`walg_enabled=true` is not a recovery-point certificate).
-  Existing synthetic restores do not satisfy this gate.
-- [ ] Refresh exact target migration transcripts and compare pending order/content.
-  Live read-only verification was denied; the historical evidence is not current state.
+  This metadata does not prove the runtime SQL role or database attestation state;
+  subsequent administrator connection evidence is recorded separately below.
+- [x] Administrator independently verified the Production runtime and intended
+  migration profiles through Kali Prisma: effective/login roles both `postgres`.
+  This closes the reported profile-identity check, not a new agent/Vercel probe
+  or complete cluster role/membership backup verification.
+- [x] **Actual four-schema Production archive restored locally.** SHA-256, full
+  readability, 63/63 table contents, sequence state, schema/ACLs, Auth, audit and
+  migration history pass. One explicit local-only public-schema USAGE baseline
+  adjustment was required. Original artifact unchanged; target stopped. See the
+  [actual recovery report](PRODUCTION_RESET_PRODUCTION_RECOVERY.md).
+- [x] Backup history contains exactly the established three versions and matching
+  0/1/1 statement counts/MD5s; administrator reports current live profiles/history
+  independently matched. No future delta is installed in the backup. Recheck
+  target drift and exact pending SQL immediately before any later authorized apply.
+- [ ] **Full recovery coverage remains unproven:** this archive excludes global
+  roles/memberships/settings, extension-managed schemas and external platform
+  configuration/assets. Document recoverable custody of those dependencies or
+  explicitly approve a scoped in-place recovery retaining the existing platform.
+  Do not relabel this four-schema PASS as a full physical/platform restore.
 - [ ] Confirm the maintenance/writer hold and application compatibility sequence.
   The third delta rejects ordinary legacy allocation. Do not apply it while the old
   application continues creating families, students or numbered payments/receipts.
@@ -34,14 +44,12 @@ target is isolated local PostgreSQL/Supabase, with Production used read-only.
 - [ ] Obtain the financial owner's acknowledgement of the three preserved historical
   payroll audit events; do not invent transactions or erase evidence.
 
-**Exact next release operation:** an authorized administrator uses the existing
-Production Prisma connection and intended migration connection to run the bounded
-read-only identity query in the release runbook, records source/deployment context,
-then refreshes the existing Query16 transcripts. Share only role/context and
-hash/count results. Do not send credentials. Once exact access is established,
-export a recoverable Production backup into private custody and restore it into
-an isolated local target with outbound jobs/webhooks blocked. No migration apply
-is the next operation while these safeguards are unverified.
+**Recovery verification stops here.** The remaining recovery decision is the
+coverage/custody of excluded platform dependencies or approval of the explicitly
+scoped in-place recovery plan. Historical identifier certification, financial
+acknowledgement and maintenance compatibility remain separate gates. Do not
+repeat the completed archive restoration or earlier broad diagnostics. No
+migration, deployment, activation, reset or merge follows from this report.
 
 Expected pending sequence (must match the actual target before any future apply):
 
@@ -49,14 +57,16 @@ Expected pending sequence (must match the actual target before any future apply)
 2. `20261107010000_reset_integrity`
 3. `20261108000000_ipsm_identifiers`
 
-Fresh checks and SQL hashes: [sanitized evidence](evidence/production-reset-final-release-check.json).
+Earlier metadata and SQL hashes: [prior evidence](evidence/production-reset-final-release-check.json).
+Actual archive restoration: [new recovery evidence](evidence/production-reset-production-recovery.json).
 Backup coverage must explicitly include managed Auth/custom schema objects and
 external Storage handling; a database dump does not contain Storage object bytes.
 See [Supabase backup coverage](https://supabase.com/docs/guides/platform/backups)
 and [CLI backup/restore coverage](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore).
 Do not disable integrity checks or alter Production permissions to make a restore pass.
 
-> External-gate refresh: exact-IPSM SQL access remains denied; CLI returns no branch
+> Historical external-gate refresh (superseded for profile identity and actual
+> archive restoration by the current checklist): exact-IPSM SQL access remained denied; CLI returns no branch
 > records and no verified backup. Preview metadata remains empty. No completed local
 > tests or cleanup were repeated. Use the [administrator handoff](PRODUCTION_RESET_EXTERNAL_HANDOFF.md)
 > and [unsigned certification records](PRODUCTION_RESET_EXTERNAL_SIGNOFFS.md).
@@ -100,10 +110,10 @@ only if relevant schema/permissions change before a separately authorized releas
 
 | Type / owner | Exact outstanding action | Consequence of deferral |
 | --- | --- | --- |
-| Connection evidence — DBA/deployment owner | Verify current_user/session_user in the actual Vercel Prisma and intended migration connection contexts; confirm owner/membership compatibility. Names/context only. | Owner-only protections remain; do not assume SQL Editor postgres or service_role is the app identity. |
+| Connection evidence — closed for reported profiles | Administrator reports both Production profiles independently verified through Kali Prisma as effective/login postgres. | Not independent agent verification of deployed Vercel context or a backup of the full role graph. Keep owner-only protections. |
 | Historical non-use / recovery certification — business owner + DBA | Certify the approved IPSM grammar was never previously issued across manual/external/import channels. Review private reservation/recovery manifests and sign their coverage. | Implementation is complete, but no activation exists by default. Do not enable issuance without proof or repeat the completed format decision. |
 | Existing-database history — DBA/release owner | Recorded arrays and isolated canonical CLI mechanics are reconciled. Scope accepted by the owner. Verify fresh target history/checksums and exactly three pending deltas. | Original July31 recording/bootstrap purpose remains unknown. If full original lineage is mandatory, supply trusted original artifacts; never repair or invent history. |
-| Recovery evidence — DBA/release owner | Hosted staging is waived. Obtain a private Production recovery artifact and demonstrate restoration into an isolated local target. | Synthetic local recovery passed, but no actual Production recovery point/artifact has been verified. Keep Production read-only until recovery is proven. |
+| Recovery coverage — DBA/release owner | Actual four-schema Production archive restore passes. Document excluded platform/role dependencies or approve scoped in-place recovery with those dependencies retained. | Full platform recovery remains uncertified; no further synthetic rehearsal substitutes for missing coverage. |
 | Financial acknowledgement — financial owner | Acknowledge three retained historical payroll audit orphans and the inability to reconstruct their context from available evidence. | Preserve all three; no invented postings, links or deletion. |
 | Release authorization — release/security/DBA owners | Review the final three-delta package, actual role model, isolated local recovery of Production and maintenance compatibility, including restart-triggered issuance holds. Conditional migration authority is already supplied; satisfy every safeguard. Production application deployment remains separately controlled. | Local PG17 mechanics do not prove platform recovery, unknown history or production capacity. Keep draft and production NO-GO. |
 
