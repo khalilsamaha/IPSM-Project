@@ -1,3 +1,36 @@
+# PR94 expense-category migration — manual SQL Editor application reported and core checks passed
+
+## Manual Supabase SQL Editor execution — user-provided verification (2026-11-12)
+
+The owner executed a manual transaction in the Supabase SQL Editor, using the reviewed SQL for migration `20261112000000_expense_categories` and an explicit manual insert into `supabase_migrations.schema_migrations`. This replaced the previously blocked direct-IPv6 CLI execution route. **No CLI dry run or CLI-tracked application occurred.** The canonical migration source remains the mirrored GitHub SQL at SHA-256:
+
+`99b8d371e150e7b007aba7db272b45b253815914c4a67454c298bc3dee84f0e2`
+
+The following post-application query results were **provided by the owner** from the SQL Editor. The execution session itself was not observed by this repository tool, so these are user-reported database observations, not independently re-run database verification.
+
+| Post-application check | User-provided result |
+| --- | --- |
+| `current_database()`, `current_user` | `postgres`, `postgres` |
+| `public.expense_categories` table | Exists |
+| `supabase_migrations.schema_migrations` target entries | Exactly one for `20261112000000` |
+| RLS | Enabled |
+| Default categories | Eight total, eight active, eight unique: Cellphone, Electricity, Maintenance, Office Supplies, Ogero / Internet, Other, Rent, Water |
+| Row-level policies on new table | Zero |
+| Effective table privileges | Zero for `anon`, `authenticated`, `service_role` across SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER/MAINTAIN |
+| Unique index | `CREATE UNIQUE INDEX expense_categories_name_key ON public.expense_categories USING btree (lower(name))` |
+| Corrected name CHECK | PostgreSQL reported the POSIX + Unicode boundary-whitespace rejection and normalized reserved-name comparison matching the reviewed R1 correction |
+| Migration ledger name | `expense_categories` |
+| Migration ledger statement metadata | `statements IS NULL = true` (manual bookkeeping, not a CLI-recorded statement list) |
+| Current existing expenses | 0 |
+
+**Limitations / remaining integrity work:** The owner-supplied SQL results do not independently establish the Supabase project reference / server identity, the *pre*-application ledger and expense baseline, or the absence of other changes. The previous R1 connectivity failure is an historical event, not the current manual SQL Editor outcome. Do not claim a CLI migration or a full before/after data diff. No app code was deployed as part of the manual SQL operation. Preserve the ledger as-is; do not replay this migration or use `migration repair` blindly. Before the next database migration, reconcile the manually inserted ledger entry with the canonical workspace and check the exact Production project identity.
+
+## Preview-only release request
+
+Owner authorizes pushing PR #94's **feature branch** to request a Vercel **Preview** deployment for review, not Production. Keep the PR in Draft, do not merge, and do not change Production Vercel settings or promote/alias a preview to Production. The only planned preview-enable change is the branch-specific `vercel.json` `git.deploymentEnabled` setting. Verify the actual preview deployment status and its source SHA; if the connected Vercel project is inaccessible, report that the preview cannot be independently confirmed.
+
+---
+
 # PR94 expense-category migration — R1 correction; Production still blocked
 
 ## Current R1 outcome (2026-11-12)
