@@ -4,6 +4,8 @@ import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 const publicRoutes = new Set(["/login", "/forgot-password"]);
 
 export async function middleware(request: NextRequest) {
+  // Public, original branding must load on login and through Next image optimization.
+  if (request.nextUrl.pathname === "/assets/branding/ipsm-logo-original.jpg") return NextResponse.next();
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

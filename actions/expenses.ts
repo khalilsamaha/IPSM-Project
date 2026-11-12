@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import { assertOrdinaryExpense, ExpenseCategoryError, requireExpenseActor, requireOtherNote, resolveExpenseCategory } from "@/lib/expense-categories";
 import { parseExpenseForm } from "@/lib/expenses";
 import { canPermanentlyDeleteExpense } from "@/lib/deletion-policy";
 import { logServerError } from "@/lib/server-log";
@@ -15,8 +16,8 @@ import { assertMutableShiftTransaction } from "@/lib/shifts/calculations";
 async function requireExpenseWrite() {
   const session = await requireSession();
   if (!hasPermission(session.role, "records:write")) throw new Error("Not authorized");
-  const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
-  return { session, createdById: user?.id };
+  const user = await requireExpenseActor(prisma, session.userId);
+  return { session, createdById: user.id };
 }
 
 async function auditExpense(action: string, entityId: string, metadata?: unknown) {
@@ -39,6 +40,7 @@ function expensesUrl(messageKey: "success" | "error", message: string) {
 
 function expenseActionErrorRedirect(action: string, error: unknown, context?: Record<string, unknown>) {
   logServerError(`expense.${action}`, error, context);
+  if (error instanceof ExpenseCategoryError) return expensesUrl("error", error.message);
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (message.includes("closed shift")) return expensesUrl("error", expenseMessages.closedShift);
   if (message.includes("not authorized") || message.includes("permission") || message.includes("forbidden")) return expensesUrl("error", expenseMessages.permission);
@@ -49,6 +51,7 @@ function expenseActionErrorRedirect(action: string, error: unknown, context?: Re
 async function findMutableExpenseOrThrow(expenseId: string) {
   const expense = await prisma.expense.findUnique({ where: { id: expenseId }, include: { shift: true } });
   if (!expense) throw new Error("Expense not found.");
+  assertOrdinaryExpense(expense);
   assertMutableShiftTransaction(expense);
   return expense;
 }
@@ -56,24 +59,40 @@ async function findMutableExpenseOrThrow(expenseId: string) {
 export async function saveExpense(formData: FormData) {
   let redirectUrl = "/expenses";
   let rowId: string | null = null;
-  let parsedData: ReturnType<typeof parseExpenseForm> | null = null;
   try {
-    const { createdById } = await requireExpenseWrite();
-    parsedData = parseExpenseForm(Object.fromEntries(formData));
-    const { id, ...data } = parsedData;
-    if (!createdById) throw new Error("Not authorized");
-    if (id) await findMutableExpenseOrThrow(id);
+    const { session, createdById } = await requireExpenseWrite();
+    const idValue = formData.get("id");
+    const id = idValue ? idSchema.parse(idValue) : undefined;
+    // Keep the existing stale-shift auto-closure outside the posting transaction.
     const shift = id ? null : await requireCurrentOpenShift(prisma, createdById);
-    const row = id
-      ? await prisma.expense.update({ where: { id }, data })
-      : await prisma.expense.create({ data: { ...data, createdById, shiftId: shift!.id } });
+    const row = await prisma.$transaction(async tx => {
+      const user = await requireExpenseActor(tx, session.userId);
+      if (id) await tx.$queryRaw`SELECT id FROM public.expenses WHERE id=${id}::uuid FOR UPDATE`;
+      const existing = id ? await tx.expense.findUnique({ where: { id }, include: { shift: true } }) : null;
+      if (id && !existing) throw new Error("Expense not found.");
+      const shiftId = existing?.shiftId ?? shift?.id;
+      if (shiftId) {
+        const shifts = await tx.$queryRaw<Array<{ status: string }>>`SELECT status::text FROM public.cashier_shifts WHERE id=${shiftId}::uuid FOR SHARE`;
+        if (shifts.length !== 1 || !["OPEN", "REOPENED"].includes(shifts[0].status)) throw new Error("This expense belongs to a closed shift.");
+      }
+      if (existing) { assertOrdinaryExpense(existing); assertMutableShiftTransaction(existing); }
+      const category = await resolveExpenseCategory(tx, String(formData.get("categorySelection") ?? ""), existing);
+      const parsedData = parseExpenseForm({ ...Object.fromEntries(formData), category });
+      const { id: ignoredId, ...data } = parsedData;
+      requireOtherNote(category, data.description);
+      const saved = id
+        ? await tx.expense.update({ where: { id }, data })
+        : await tx.expense.create({ data: { ...data, createdById: user.id, shiftId: shift!.id } });
+      await tx.auditLog.create({ data: { action: id ? "update" : "create", entity: "Expense", entityId: saved.id,
+        actorId: session.userId, createdById: user.id, metadata: { ...data, expenseDate: data.expenseDate.toISOString(), incurredAt: data.incurredAt.toISOString(), previousCategory: existing?.category ?? null } } });
+      return saved;
+    }, { isolationLevel: "Serializable" });
     rowId = row.id;
-    await auditExpense(id ? "update" : "create", row.id, { ...data, createdById });
     revalidatePath("/expenses");
     revalidatePath(`/expenses/${row.id}/edit`);
     redirectUrl = id ? expensesUrl("success", "Expense updated successfully.") : "/expenses";
   } catch (error) {
-    redirectUrl = expenseActionErrorRedirect("save", error, { expenseId: parsedData?.id ?? rowId });
+    redirectUrl = expenseActionErrorRedirect("save", error, { expenseId: rowId });
   }
   redirect(redirectUrl);
 }
@@ -118,13 +137,14 @@ export async function permanentlyDeleteExpense(formData: FormData) {
   try {
     const session = await requireSession();
     if (!hasPermission(session.role, "records:write")) throw new Error("Not authorized");
-    const user = await prisma.userProfile.findUnique({ where: { authId: session.userId }, select: { id: true } });
+    const user = await requireExpenseActor(prisma, session.userId);
     expenseId = idSchema.parse(formData.get("id"));
     const confirmation = String(formData.get("confirmation") ?? "");
     if (confirmation !== "DELETE") throw new Error("Type DELETE to confirm.");
     await prisma.$transaction(async (tx) => {
       const expense = await tx.expense.findUnique({ where: { id: expenseId! }, include: { createdBy: true, shift: true } });
       if (!expense) throw new Error("Expense not found.");
+      assertOrdinaryExpense(expense);
       assertMutableShiftTransaction(expense);
       const decision = canPermanentlyDeleteExpense(expense);
       const details = {

@@ -633,6 +633,18 @@ model Receipt {
   @@map("receipts")
 }
 
+// Selection catalogue; expenses retain their original category label for reporting.
+model ExpenseCategory {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // Case-insensitive uniqueness is enforced by the SQL expression index.
+  @@map("expense_categories")
+}
+
 model Expense {
   payrollId     String?       @unique @map("payroll_id") @db.Uuid
   payroll       TeacherPayroll? @relation(fields: [payrollId], references: [id], onDelete: Restrict)

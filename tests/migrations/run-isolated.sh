@@ -120,6 +120,9 @@ echo "Read-only administrator preflight passed before and after the proposed mig
 # Read-only recovery monitor: real schema, negative corruption fixtures, no backup.
 ./node_modules/.bin/vitest run tests/identifier-health.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
 
+# Additive administration catalogue; synthetic records and role/ACL checks only.
+./node_modules/.bin/vitest run tests/expense-categories.postgres.test.ts --pool=threads --poolOptions.threads.singleThread
+
 # Optional real-CLI release certification. No mock or download fallback: the
 # explicit run fails unless the reviewed CLI 2.78.1 is installed. Ordinary CI
 # always tests offline workspace/version/checksum guards in the unit suite.

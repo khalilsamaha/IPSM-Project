@@ -1,5 +1,6 @@
+import { OfficialLogo } from "@/components/official-logo";
 import Link from "next/link";
-import { Search, Sparkles, PlusCircle } from "lucide-react";
+import { Search, PlusCircle } from "lucide-react";
 import { SidebarNav } from "@/components/records/sidebar-nav";
 import { signOut } from "@/actions/auth";
 import type { AppSession } from "@/lib/auth/session";
@@ -8,7 +9,7 @@ import type { AppSession } from "@/lib/auth/session";
 export function AppShell({ session, children }: { session: AppSession; children: React.ReactNode }) {
   return <div className="min-h-screen bg-background text-foreground overflow-x-hidden lg:h-screen lg:overflow-hidden lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
     <aside className="flex min-h-screen min-w-0 flex-col overflow-hidden border-b border-white/10 bg-slate-950 text-white lg:sticky lg:top-0 lg:h-screen lg:min-h-0 lg:shrink-0 lg:border-b-0 lg:border-r">
-      <div className="shrink-0 p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg"><Sparkles className="size-5" /></span><div><p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">Music School</p><h1 className="text-xl font-bold">IPSM Admin</h1></div></div><p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">Simple tools for daily front-desk operations.</p></div>
+      <div className="shrink-0 p-6"><Link href="/dashboard" aria-label="IPSM dashboard" className="block max-w-[220px] overflow-hidden rounded-xl bg-white"><OfficialLogo priority /></Link><h1 className="mt-3 text-lg font-bold">IPSM Administration</h1><p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">Simple tools for daily front-desk operations.</p></div>
       <SidebarNav role={session.role} />
       <div className="mt-auto shrink-0 border-t border-white/10 bg-slate-950 p-4"><form action={signOut}><button className="w-full rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50" type="submit">Sign out</button></form></div>
     </aside>
