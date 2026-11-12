@@ -48,8 +48,7 @@ After catalogue use begins, rolling back code does not justify dropping history.
 
 ## Branding and receipts
 
-The original supplied JPG remains byte-for-byte unchanged and is used on login/sidebar. The browser favicon uses a separately derived, tightly cropped 64×64 PNG of the original turquoise fingerprint, preserving the source artwork without reproducing the tiny text at favicon size; Apple icon branding still references the original JPEG.
-no recreated artwork or generated derivative is committed. The checksum is protected
+The official supplied IPSM JPG remains byte-for-byte unchanged. The login, sidebar, browser favicon, shortcut icon and Apple icon all use the entire original logo (fingerprint, IPSM wordmark and full institute name), without cropping or replacing any of its elements. The separate fingerprint-only favicon candidate was rejected and removed; no recreated artwork or generated favicon is committed. The checksum is protected
 by a regression test. See [receipt boundary and future template handoff](RECEIPT_TEMPLATE_HANDOFF.md).
 
 ## Delivery boundary
