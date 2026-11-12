@@ -1,10 +1,16 @@
 # Administration enhancements — development only
 
-Production migration-only attempt (2026-11-12): **blocked before database writes**
-by direct-connection reachability. The catalogue migration remains unapplied by this
-work; current remote ledger state was not verified. R1 corrects and locally tests the
-name CHECK (including Unicode whitespace); direct IPv6 routing is still blocked and
-the revised artifact requires separate execution approval. See the [execution report](EXPENSE_CATEGORIES_PRODUCTION_MIGRATION.md).
+The initial Production migration attempt was blocked by direct IPv6 connectivity.
+R1 subsequently corrected and locally validated the name CHECK. On 2026-11-12,
+the owner manually executed the corrected expense-category SQL in the intended Supabase
+SQL Editor and reported successful core postchecks: eight active unique defaults,
+RLS enabled, no client policies or unintended privileges, the reviewed CHECK and
+unique index, and one manually registered migration-history version. This was **not**
+a Supabase CLI push; the history entry has NULL statement metadata. A complete
+pre/post Production data comparison and independent project-identity verification
+were not obtained. Do not replay or blindly repair the version. See the
+[execution report](EXPENSE_CATEGORIES_PRODUCTION_MIGRATION.md) for the evidence
+and original failure history.
 
 ## Payments
 
@@ -20,9 +26,11 @@ unchanged. Authoritative save rechecks current balances and shift requirements.
 
 The single additive delta `20261112000000_expense_categories` is mirrored in
 `prisma/migrations` and `supabase/migrations`. Supabase remains the canonical
-future migration mechanism; do not run both copies. Apply only after separate
-release approval, before deploying the category-dependent application. No historical
-migration or data is rewritten, and no migration is applied to Production here.
+future migration mechanism; do not run both copies. The reviewed SQL was manually
+applied to Production by the owner through the Supabase SQL Editor, and migration
+history was manually registered once. Do not reapply the migration. No historical
+expense records or migration files were intentionally rewritten. Before any later
+migration, reconcile the ledger with the canonical workspace.
 
 One catalogue table, a case-insensitive unique-name index and a name CHECK are
 added. Defaults: Rent, Electricity, Cellphone, Ogero / Internet, Water, Maintenance,
@@ -59,9 +67,11 @@ by a regression test. See [receipt boundary and future template handoff](RECEIPT
 
 ## Delivery boundary
 
-Feature branch `agent/administration-enhancements` disables its own Vercel Git
-deployments in `vercel.json`. This does not alter Production settings. The draft PR
-is for review only: no merge, deployment, Production migration or activation change.
+Feature branch `agent/administration-enhancements` permits its own Vercel Git
+Preview deployments through `vercel.json`; this does not change the Production
+deployment target. The owner reviewed and approved the Preview UI. PR #94 remains
+open and Draft pending separate merge approval. No Production application deployment,
+Production Reset, or identifier activation change is authorized by this document.
 Tests use owned disposable PostgreSQL and local synthetic Supabase Auth/data.
 
 ## Local validation (2026-11-12)
