@@ -77,6 +77,9 @@ loaded without a session and retained its exact SHA-256. Chromium screenshots at
 no horizontal overflow and no relevant console/framework errors. Browser plugin
 was unavailable; the existing local Playwright installation was used instead.
 Screenshots remain local review artifacts, not committed business records.
+A focused keyboard regression check verified that Enter in inline category creation
+creates/selects only the category and leaves a valid surrounding expense unsaved,
+with its entered values intact.
 
 The production-mode build passes. Local installed tooling emits an existing ESLint
 patch compatibility warning; dependencies and lockfile are unchanged. Hosted CI

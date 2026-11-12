@@ -14,6 +14,16 @@ export function ExpenseCategorySelector({ categories, canManage, historicalCateg
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
+  function createCategory() {
+    if (pending || !name.trim()) return;
+    startTransition(async () => {
+      setError("");
+      try { const result = await changeExpenseCategory({ action: "create", name });
+        if (result.error) setError(result.error);
+        else if (result.category) { setAdded(previous => [...previous, result.category!]); setSelection(result.category.id); setOpen(false); setName(""); }
+      } catch { setError("Unable to create category. Try again."); }
+    });
+  }
   const options = [...categories, ...added.filter(row => !categories.some(existing => existing.id === row.id))].sort((a,b) => a.name.localeCompare(b.name));
   const selectedName = selection === historicalCategorySelection ? historicalCategory : options.find(row => row.id === selection)?.name;
   return <div className="space-y-2">
@@ -21,14 +31,8 @@ export function ExpenseCategorySelector({ categories, canManage, historicalCateg
       {canManage ? <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="new-expense-category" className="rounded-lg border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-800">+ New category</button> : null}
     </div>
     {open && canManage ? <div id="new-expense-category" className="space-y-2 rounded-xl border bg-blue-50 p-3">
-      <label className="grid gap-1 text-sm">New category name<input autoFocus value={name} onChange={event => setName(event.target.value)} maxLength={80} className="input" /></label>
-      <div className="flex gap-2"><button type="button" disabled={pending || !name.trim()} className="btn-secondary" onClick={() => startTransition(async () => {
-        setError("");
-        try { const result = await changeExpenseCategory({ action: "create", name });
-          if (result.error) setError(result.error);
-          else if (result.category) { setAdded(previous => [...previous, result.category!]); setSelection(result.category.id); setOpen(false); setName(""); }
-        } catch { setError("Unable to create category. Try again."); }
-      })}>{pending ? "Creating…" : "Create category"}</button><button type="button" onClick={() => { setOpen(false); setError(""); }}>Cancel</button></div>
+      <label className="grid gap-1 text-sm">New category name<input autoFocus value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); createCategory(); } }} maxLength={80} className="input" /></label>
+      <div className="flex gap-2"><button type="button" disabled={pending || !name.trim()} className="btn-secondary" onClick={createCategory}>{pending ? "Creating…" : "Create category"}</button><button type="button" onClick={() => { setOpen(false); setError(""); }}>Cancel</button></div>
       {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
     </div> : null}
     <select id="expense-category" className="input" name="categorySelection" required value={selection} onChange={event => setSelection(event.target.value)}>
