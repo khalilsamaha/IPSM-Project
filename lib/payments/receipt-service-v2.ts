@@ -12,7 +12,11 @@ export type ReceiptGenerationFailureCode =
   | "STAMP_INVALID_PNG"
   | "STAMP_UNSUPPORTED_ENCODING"
   | "STAMP_DECODE_FAILED"
-  | "PDF_RENDER_FAILED";
+  | "PDF_RENDER_FAILED"
+  | "LOGO_FILE_MISSING"
+  | "LOGO_FILE_UNREADABLE"
+  | "LOGO_INVALID_JPEG"
+  | "TEXT_UNSUPPORTED";
 
 export class ReceiptGenerationError extends Error {
   constructor(
@@ -541,7 +545,7 @@ function drawReceiptCopy(
   }
 }
 
-function readOfficialStamp(providedPng?: Buffer) {
+export function readOfficialStamp(providedPng?: Buffer) {
   const assetPath = path.join(process.cwd(), OFFICIAL_STAMP_PATH);
   let png: Buffer;
   try {

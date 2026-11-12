@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { assertOrdinaryExpense, requireOtherNote } from "@/lib/expense-categories";
 import { renderReceipt } from "@/lib/payments/receipt-renderer";
-import { buildReceiptPdfV3 } from "@/lib/payments/receipt-service-v3";
+import { buildReceiptPdfV4 } from "@/lib/payments/receipt-service-v4";
 
 describe("administration compatibility", () => {
   it("retains the supplied logo bytes and separate receipt stamp", () => {
@@ -13,7 +13,7 @@ describe("administration compatibility", () => {
     expect(brandingMetadata).toContain('shortcut: "/assets/branding/ipsm-logo-original.jpg"');
     expect(brandingMetadata).toContain('apple: "/assets/branding/ipsm-logo-original.jpg"');
     expect(brandingMetadata).not.toContain("ipsm-fingerprint-icon.png");
-    expect(renderReceipt).toBe(buildReceiptPdfV3);
+    expect(renderReceipt).toBe(buildReceiptPdfV4);
     expect(readFileSync("lib/payments/receipt-service.ts", "utf8")).toContain("STAMP_FILE_MISSING");
   });
   it("protects linked and legacy payroll expense postings", () => {

@@ -1,0 +1,81 @@
+{
+  "base_main": "df5a350",
+  "synthetic_data_only": true,
+  "logo_sha256": "ce96d609dc682392b5b98dfa1057c351ad40ada7d7534352ec7f4c3708b337f4",
+  "original_logo_unchanged": true,
+  "visual_review": "All 18 V4 pages rendered with Poppler and inspected; complete logo, separate stamp, aligned money, complete rows, continuation headings and final totals; no clipping or overlap observed. V3 comparisons retained.",
+  "parser": "Independent Poppler pdfinfo/pdftotext; exact A5 dimensions and word bounds/non-overlap checked on every page.",
+  "local_artifact_directory": "/tmp/ipsm-receipt-v4-review",
+  "samples": [
+    {
+      "file": "v4-1.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "df579a583051e97b5e8388fa9c801ced8bdbaeeac1b4f398ef6f569bede95c88"
+    },
+    {
+      "file": "v4-10.pdf",
+      "pages": 2,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "97c61ea31d02538aeba9f2d0f938048388b2be6c2336f85ae254da836cdc9a16"
+    },
+    {
+      "file": "v4-24.pdf",
+      "pages": 6,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "65ee7cadb3372d2e33a7c86783eff5f2ec2899640798beb68715776d06763b5f"
+    },
+    {
+      "file": "v4-3.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "49dff9293585fce71514848b72208de833fc249d8059aa94cf22fd6b649c20a3"
+    },
+    {
+      "file": "v4-6.pdf",
+      "pages": 2,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "4ba961966b24419cfeb915fc86538eb416e77e99827081f6e8085d7fbf2cbb23"
+    },
+    {
+      "file": "v4-long-activity.pdf",
+      "pages": 4,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "b6320b7bd885356807fb2dab387242e62620d53c0c262ee64911964ba161da9f"
+    },
+    {
+      "file": "v4-reprint.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "ba09e359810b74c522095dedb105e225e9208cbf75e1852a180b4f57277655f7"
+    },
+    {
+      "file": "v4-voided.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "2e83fe858f9e09e147aa01ecd4808201c8fe5a098f12af93a57144ebf0edd78f"
+    }
+  ],
+  "checks": {
+    "prisma_generation": "PASS",
+    "typescript": "PASS",
+    "unit_tests": 511,
+    "new_renderer_api_tests": 28,
+    "postgresql17_test_executions": 343,
+    "production_build": "PASS (existing ESLint patch warning)",
+    "nextjs_asset_trace": "Both logo and stamp present"
+  },
+  "limitations": [
+    "Helvetica/WinAnsi supports accented Latin; unsupported scripts fail with TEXT_UNSUPPORTED instead of replacing content.",
+    "Owner print/functional approval pending; synthetic review is not a live payment test."
+  ],
+  "production_mutations": false
+}
