@@ -1,0 +1,97 @@
+{
+  "recorded_at": "2026-11-12T09:04:03.968870+00:00",
+  "result": "BLOCKED_NO_DATABASE_WRITE",
+  "repository": "khalilsamaha/IPSM-Project",
+  "pr": 94,
+  "branch": "agent/administration-enhancements",
+  "verified_starting_head": "94a3122fb6fc13a9c60158d8aa9c3fe6525e2824",
+  "pr_state": "OPEN_DRAFT",
+  "starting_head_ci": {
+    "status": "PASS",
+    "run": "https://github.com/khalilsamaha/IPSM-Project/actions/runs/43186039608"
+  },
+  "authority": "Owner authorized only tracked 20261112000000_expense_categories migration, checks and evidence; no application rollout or activation changes.",
+  "branding": {
+    "status": "PASS",
+    "sha256": "ce96d609dc682392b5b98dfa1057c351ad40ada7d7534352ec7f4c3708b337f4",
+    "metadata": [
+      "icon",
+      "shortcut",
+      "apple"
+    ],
+    "asset": "/assets/branding/ipsm-logo-original.jpg",
+    "fingerprint_only_asset_absent": true,
+    "file_based_next_icon_override_absent": true,
+    "login_and_sidebar_original_preserved": true
+  },
+  "migration": {
+    "name": "20261112000000_expense_categories",
+    "version": "20261112000000",
+    "sha256": "69bc7afdc9ecc543fb8cbbccbd444d721f5f4406255abf44ce1ccddbf4eccd87",
+    "mirrors_equal": true,
+    "scope_review": "Only new catalogue table/index/name CHECK/eight defaults/RLS/object ACL revocation. No historical data/FK/global default ACL changes.",
+    "sql_validation_review": "REVIEW_REQUIRED: btrim(name) removes ordinary spaces, not all whitespace. Tab/newline-only values and tab-wrapped Teacher Payroll can satisfy the reviewed CHECK. The planned read-only server expression probe did not execute because connection failed. No SQL was changed."
+  },
+  "production_identity": {
+    "status": "NOT_VERIFIED",
+    "intended_project": "rakzehtbpzseetldbohm",
+    "intended_connection": "Approved direct PostgreSQL profile; port 5432, database postgres, TLS required; no pooler fallback",
+    "attempt": {
+      "status": "BLOCKED",
+      "read_only_attempt": true,
+      "exit": 2,
+      "network_unreachable": true,
+      "timeout": false,
+      "dns_failure": false,
+      "authentication_failed": false,
+      "tls_failure": false,
+      "details_withheld": true
+    },
+    "server_values": null
+  },
+  "cli": {
+    "installed_version": "2.78.1",
+    "supported_flags_inspected": [
+      "db push --dry-run",
+      "--db-url",
+      "--workdir",
+      "--yes"
+    ],
+    "existing_canonical_workspace": "Located; six existing historical/released files. Not certified against current Production history; no pending migration workspace published or applied."
+  },
+  "execution": {
+    "production_baseline": "NOT_EXECUTED_CONNECTION_FAILED",
+    "dry_run": "NOT_EXECUTED",
+    "migration_apply": "NOT_EXECUTED",
+    "rollback_only_constraint_tests": "NOT_EXECUTED",
+    "post_migration_schema_categories_security": "SKIPPED_NO_MIGRATION",
+    "before_after_data_history_comparison": "NOT_VERIFIED",
+    "database_writes_attempted": false,
+    "production_migrations_applied": [],
+    "automatic_retry_or_history_repair": false
+  },
+  "application_continuity": {
+    "checked_at": "2026-11-12T09:02:20.567846+00:00",
+    "url": "https://ipsm-project-gamma.vercel.app/login",
+    "scope": "Unauthenticated GET only; no registration, payment or reset submission",
+    "status": 200,
+    "ipsm_present": true,
+    "sign_in_present": true,
+    "form_present": true,
+    "result": "PASS"
+  },
+  "boundaries": {
+    "merge": false,
+    "deployment": false,
+    "activation_change": false,
+    "production_reset": false,
+    "production_grants_or_config_changes": false,
+    "new_backup_or_database": false,
+    "logo_change": false
+  },
+  "next_actions": [
+    "Restore direct IPv6 PostgreSQL reachability from the executing environment, then repeat exact-target read-only identity/history/integrity baseline checks.",
+    "Review the whitespace CHECK gap before resuming; any SQL correction requires new regression evidence, mirrored checksum review and authorization for the revised artifact.",
+    "Only after all gates pass, certify exactly one pending migration in the canonical workspace, dry run and apply once through Supabase CLI."
+  ]
+}

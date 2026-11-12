@@ -1,0 +1,131 @@
+{
+  "recorded_at": "2026-11-12T09:48:07.949447+00:00",
+  "phase": "R1_LOCAL_CORRECTION_ONLY",
+  "result": "LOCAL_PASS_PRODUCTION_NO_GO",
+  "repository": "khalilsamaha/IPSM-Project",
+  "pr": 94,
+  "branch": "agent/administration-enhancements",
+  "verified_starting_head": "e201cd0ad50331f406f1fae11a27a70469622045",
+  "remote_head_matched": true,
+  "pr_state": "OPEN_DRAFT",
+  "starting_head_ci": {
+    "status": "PASS",
+    "run": "https://github.com/khalilsamaha/IPSM-Project/actions/runs/43188267247"
+  },
+  "previous_attempt_evidence": "expense-categories-production-migration-20261112.json",
+  "previous_attempt_evidence_unchanged": true,
+  "branding": {
+    "status": "PASS",
+    "original_sha256": "ce96d609dc682392b5b98dfa1057c351ad40ada7d7534352ec7f4c3708b337f4",
+    "full_logo_metadata_and_login_sidebar_preserved": true,
+    "fingerprint_only_and_file_based_icon_overrides_absent": true
+  },
+  "network": {
+    "execution_host_os": "Kali GNU/Linux Rolling",
+    "diagnostics_outside_restricted_sandbox": true,
+    "target_project": "rakzehtbpzseetldbohm",
+    "direct_hostname": "db.rakzehtbpzseetldbohm.supabase.co",
+    "port": 5432,
+    "dns_A": "NO_ADDRESS",
+    "dns_AAAA": "RESOLVED",
+    "ipv6_default_route_count": 0,
+    "exact_target_route_lookup": "Network is unreachable",
+    "ipv6_tcp": "FAILED",
+    "errno": 101,
+    "root_cause": "No usable outbound IPv6 route on executing Kali host. Failure before TCP establishment, TLS or authentication.",
+    "firewall_authentication_tls": "NOT_TESTABLE_NO_ROUTE; no claim of server-side refusal",
+    "approved_profile": "Validated privately: intended project/direct host/5432/postgres, TLS required and read-only defaults; no credential disclosure",
+    "alternative_environment": "No already-authorized working alternative identified; no connection profile substitution",
+    "recovery_route": "Administrator restores usable IPv6 routing on existing Kali host, then reruns direct TCP and read-only exact-target identity/history checks. No networking changed by R1."
+  },
+  "production": {
+    "identity": "NOT_VERIFIED",
+    "history_and_table_absence": "NOT_VERIFIED",
+    "sql_queries": "NOT_EXECUTED_TCP_ROUTE_UNAVAILABLE",
+    "dry_run": "NOT_EXECUTED",
+    "migration_application": "NOT_EXECUTED",
+    "postchecks": "SKIPPED_NO_MIGRATION",
+    "database_writes_attempted": false,
+    "application_in_other_environments": "NOT_ASSUMED"
+  },
+  "migration": {
+    "version": "20261112000000",
+    "name": "expense_categories",
+    "previous_sha256": "69bc7afdc9ecc543fb8cbbccbd444d721f5f4406255abf44ce1ccddbf4eccd87",
+    "revised_sha256": "99b8d371e150e7b007aba7db272b45b253815914c4a67454c298bc3dee84f0e2",
+    "mirrors_identical": true,
+    "only_check_body_changed": true,
+    "other_migration_files_changed": false,
+    "correction": "Boundary regex rejects POSIX + explicit ECMAScript Unicode whitespace; same class collapses whitespace in case-insensitive Teacher Payroll comparison only; length remains 1..80.",
+    "unchanged": [
+      "case-insensitive unique index",
+      "eight active defaults",
+      "RLS and object-scoped ACL revocation",
+      "transaction boundaries",
+      "no historical expense updates or foreign keys",
+      "no global ACL changes"
+    ]
+  },
+  "validation": {
+    "postgres_version": "17.6 (Debian 17.6-1)",
+    "database_locale": "C",
+    "fixture": "Repository-owned disposable local PostgreSQL with validated safety marker; synthetic data only",
+    "focused_postgres_tests": {
+      "status": "PASS",
+      "passed": 50,
+      "whitespace_code_points": 25,
+      "whitespace_rejection_attempts": 150,
+      "negative_errors_verified": [
+        "23514 expense_categories_name_check",
+        "23505 expense_categories_name_key",
+        "42P07 repeat table creation"
+      ]
+    },
+    "prisma_generate": "PASS 5.22.0",
+    "typescript": "PASS",
+    "unit_tests": {
+      "status": "PASS",
+      "passed": 483,
+      "skipped_database_cases": 310,
+      "note": "Database suites run separately; optional real Supabase CLI suite not requested/run."
+    },
+    "migration_security_suite": {
+      "status": "PASS",
+      "vitest_test_executions": 343,
+      "suite_counts": [
+        40,
+        40,
+        18,
+        32,
+        33,
+        70,
+        9,
+        31,
+        20,
+        50
+      ],
+      "note": "Includes repeated 40-case Dashboard pre/post coverage and the 50 category cases, plus shell/SQL assertions. Includes ACL MAINTAIN denial, broad default and inherited grants, security/redaction and restore fixtures."
+    },
+    "production_build": {
+      "status": "PASS_EXIT_0",
+      "existing_warning": "ESLint calling-module patch warning remains; build and separate typecheck succeeded. No dependency changes."
+    },
+    "initial_test_failure_resolved": "SHOW lc_ctype is unsupported on PG17; test corrected to pg_database.datctype. No assertion relaxed.",
+    "diff_check": "PASS"
+  },
+  "boundaries": {
+    "production_mutation": false,
+    "production_reset": false,
+    "migration_history_repair": false,
+    "merge": false,
+    "deployment": false,
+    "activation_or_network_change": false,
+    "new_paid_resources": false,
+    "production_backup": false
+  },
+  "next_phase_requirements": [
+    "Restore approved direct IPv6 connectivity and conclusively verify current Production identity/roles/history/table absence.",
+    "Review revised checksum and obtain explicit authorization for Production execution; R1 ends without applying it.",
+    "In separately authorized phase, certify canonical history alignment, exactly one pending migration dry run, tracked single application and all critical postchecks."
+  ]
+}

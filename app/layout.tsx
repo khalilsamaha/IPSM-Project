@@ -3,7 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "IPSM Music School",
-  description: "Music school management system MVP",
+  description: "IPSM Music School administration",
+  icons: {
+    icon: { url: "/assets/branding/ipsm-logo-original.jpg", type: "image/jpeg" },
+    shortcut: "/assets/branding/ipsm-logo-original.jpg",
+    apple: "/assets/branding/ipsm-logo-original.jpg",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

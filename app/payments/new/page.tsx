@@ -1,3 +1,4 @@
+import { PaymentAllocationFields } from "@/components/payments-allocation-fields";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { createPayment } from "@/actions/payments";
@@ -27,12 +28,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
       <input type="hidden" name="requestId" value={randomUUID()}/>
       <section className="mb-4 grid gap-3 sm:grid-cols-3">{[["Active registered amount", summary.totalAmountCents], ["Paid on active enrollments", summary.paidCents], ["Payable outstanding", payableOutstandingCents]].map(([label, value]) => <div className="rounded border p-3" key={label}><p className="text-xs text-muted-foreground">{label}</p><p className="font-bold">{formatCurrency(value as number)}</p></div>)}</section>
       {payableOutstandingCents > 0 ? <>
-        <label className="block font-medium">Amount received<input name="amount" min="0.01" max={(payableOutstandingCents / 100).toFixed(2)} step=".01" type="number" className="input mt-1" required /></label>
-        <select name="paymentMethod" defaultValue={paymentMethod} className="input"><option value="cash">Cash</option><option value="whish">Whish</option></select>
-        <input name="notes" defaultValue={notes} className="input mt-2" placeholder="Optional notes"/>
-        <fieldset className="mt-4"><legend className="font-medium">Allocation method</legend><label className="mr-5"><input type="radio" name="allocationMode" value="automatic" defaultChecked /> Automatic distribution</label><label><input type="radio" name="allocationMode" value="manual" /> Manual distribution</label></fieldset>
-        <details className="mt-4"><summary className="cursor-pointer font-medium">Use manual distribution</summary><p className="mt-2 text-sm text-muted-foreground">In manual mode, allocations must exactly equal the amount received.</p><div className="overflow-x-auto"><table className="mt-4 w-full text-sm"><thead><tr><th>Student</th><th>Activity</th><th>Remaining</th><th>Pay now</th></tr></thead><tbody>{payableEnrollments.map((enrollment) => <tr key={enrollment.id} className="border-t"><td>{enrollment.student.firstName} {enrollment.student.lastName}</td><td>{enrollment.courseName}</td><td>{formatCurrency(enrollment.remainingCents)}</td><td><input max={(enrollment.remainingCents / 100).toFixed(2)} min="0" step=".01" type="number" name={`allocation:${enrollment.id}`} className="input w-28"/></td></tr>)}</tbody></table></div></details>
-        <button className="btn-primary mt-4">Create payment</button>
+        <PaymentAllocationFields familyId={familyId} paymentMethod={paymentMethod} notes={notes} enrollments={payableEnrollments.map(row => ({
+          id: row.id, familyId, remainingCents: row.remainingCents, startDate: row.enrollmentStartDate.toISOString(), createdAt: row.createdAt.toISOString(),
+          studentName: `${row.student.firstName} ${row.student.lastName}`, courseName: row.courseName,
+          levelName: row.level?.name ?? "All levels", seasonName: row.season.name,
+        }))} />
       </> : <p className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">This family has no payable balance on an active enrollment.</p>}
     </form> : null}
     <Link href="/payments">Payment list</Link>

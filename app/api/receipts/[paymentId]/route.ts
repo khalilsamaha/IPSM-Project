@@ -1,9 +1,9 @@
+import { renderReceipt } from "@/lib/payments/receipt-renderer";
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { ensurePaymentReceiptWithRetry } from "@/lib/payments/receipt-repair";
 import {
-  buildReceiptPdfV3,
   ReceiptGenerationError,
   type ReceiptLayout,
 } from "@/lib/payments/receipt-service-v3";
@@ -113,7 +113,7 @@ export async function GET(
         },
       })),
     });
-    const pdf = buildReceiptPdfV3(
+    const pdf = renderReceipt(
       { ...payment, familyBalances },
       layout,
       mode,
