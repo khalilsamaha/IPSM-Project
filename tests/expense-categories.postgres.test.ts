@@ -6,16 +6,31 @@ import { createStudentWithCode } from "@/lib/students";
 import { createPaymentWithAllocations } from "@/lib/payments/payment-service";
 import { randomUUID } from "node:crypto";
 import { createDisposableProductionResetTestClient } from "@/lib/production-reset-test-client";
-import { manageExpenseCategory, requireExpenseActor, resolveExpenseCategory } from "@/lib/expense-categories";
+import { isPayrollExpense, manageExpenseCategory, requireExpenseActor, resolveExpenseCategory } from "@/lib/expense-categories";
 
 const db = process.env.RESET_TEST_DATABASE_URL ? await createDisposableProductionResetTestClient() : null;
 const actors = { SUPER_ADMIN: randomUUID(), ADMIN: randomUUID(), RECEPTION: randomUUID(), inactive: randomUUID(), archived: randomUUID() };
 const migration = readFileSync("supabase/migrations/20261112000000_expense_categories.sql", "utf8");
 function run(sql: string, success = true) {
   if (!db) throw new Error("Disposable fixture is required");
-  const result = spawnSync("psql", [process.env.RESET_TEST_DATABASE_URL!, "-XqAt", "-v", "ON_ERROR_STOP=1"], { input: sql, encoding: "utf8" });
+  const result = spawnSync("psql", [process.env.RESET_TEST_DATABASE_URL!, "-XqAt", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose"], { input: sql, encoding: "utf8" });
   if (success) expect(result.status, result.stderr).toBe(0);
   return result;
+}
+// ECMAScript WhiteSpace + LineTerminator, including Unicode not matched by
+// PostgreSQL's POSIX space class in the disposable fixture's C locale.
+const whitespace = [0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x20, 0xa0, 0x1680,
+  ...Array.from({ length: 11 }, (_, i) => 0x2000 + i), 0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff];
+function insertNameThenRollback(name: string) {
+  // Encode synthetic values instead of interpolating SQL literals; successful
+  // inserts roll back, and ON_ERROR_STOP closes/aborts failed transactions.
+  return run(`BEGIN; INSERT INTO public.expense_categories(name) VALUES(convert_from(decode('${Buffer.from(name).toString("hex")}','hex'),'UTF8')); ROLLBACK;`, false);
+}
+function expectNameCheckFailure(name: string) {
+  const result = insertNameThenRollback(name);
+  expect(result.status).not.toBe(0);
+  expect(result.stderr).toContain("23514");
+  expect(result.stderr).toContain("expense_categories_name_check");
 }
 describe.skipIf(!db)("persisted expense categories on isolated PostgreSQL", () => {
   beforeAll(async () => {
@@ -24,12 +39,44 @@ describe.skipIf(!db)("persisted expense categories on isolated PostgreSQL", () =
     for (const path of ["tests/migrations/reset-baseline.sql", "tests/migrations/reset-bootstrap.sql", "prisma/migrations/20260801190000_enrollment_teacher_availability/migration.sql", "supabase/migrations/20261107000000_teacher_guard_parity.sql", "supabase/migrations/20261107010000_reset_integrity.sql", "supabase/migrations/20261108000000_ipsm_identifiers.sql"]) run(readFileSync(path, "utf8"));
     // Match the production creator's broad defaults, including inherited access.
     run("DO $$ BEGIN CREATE ROLE service_role BYPASSRLS; EXCEPTION WHEN duplicate_object THEN NULL; END $$; DO $$ BEGIN CREATE ROLE category_client_parent; EXCEPTION WHEN duplicate_object THEN NULL; END $$; GRANT category_client_parent TO anon, authenticated, service_role; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO PUBLIC, anon, authenticated, service_role, category_client_parent;");
+    const historical = await db!.expense.create({ data: { category: "Pre-migration legacy label", description: "Synthetic preserved expense", amountCents: 1729 } });
     run(migration);
+    expect(await db!.expense.findUniqueOrThrow({ where: { id: historical.id } })).toEqual(historical);
     for (const [role, authId] of Object.entries(actors)) await db!.userProfile.create({ data: { authId, name: `Synthetic ${role}`, email: `${role.toLowerCase()}@category.test`, role: role === "inactive" || role === "archived" ? "ADMIN" : role as "ADMIN" | "SUPER_ADMIN" | "RECEPTION", status: role === "inactive" ? "INACTIVE" : "ACTIVE", archivedAt: role === "archived" ? new Date() : null } });
   }, 60000);
   afterAll(async () => { await db?.$disconnect(); });
   it("seeds exactly the requested defaults and no payroll category", async () => {
-    expect((await db!.expenseCategory.findMany()).map(row => row.name).sort()).toEqual(["Rent", "Electricity", "Cellphone", "Ogero / Internet", "Water", "Maintenance", "Office Supplies", "Other"].sort());
+    const defaults = await db!.expenseCategory.findMany();
+    expect(defaults.every(row => row.archivedAt === null)).toBe(true);
+    expect(defaults.map(row => row.name).sort()).toEqual(["Rent", "Electricity", "Cellphone", "Ogero / Internet", "Water", "Maintenance", "Office Supplies", "Other"].sort());
+  });
+  it.each(whitespace.map(point => [point.toString(16), String.fromCodePoint(point)] as const))(
+    "rejects boundary/blank/reserved-name whitespace U+%s in actual PostgreSQL", (_label, space) => {
+      expect(space.trim()).toBe("");
+      expect(isPayrollExpense({ category: `TeAcHeR${space}${space}PaYrOlL` })).toBe(true);
+      for (const name of [space, `${space} \t\n${space}`, `${space}Valid`, `Valid${space}`,
+        `TeAcHeR${space}${space}PaYrOlL`, `${space}Teacher Payroll${space}`]) expectNameCheckFailure(name);
+    });
+  it("rejects empty/overlength names and plain or mixed-whitespace reserved payroll names", () => {
+    for (const name of ["", "x".repeat(81), "Teacher Payroll", "TEACHER PAYROLL", "teacher   payroll", "Teacher \t\n Payroll", " Teacher Payroll "])
+      expectNameCheckFailure(name);
+  });
+  it.each(["X", "x".repeat(80), "é".repeat(80), "Studio / Internet", "Piano transport", "TeacherPayroll", "Zero\u200bwidth"])(
+    "accepts legitimate names and inclusive length boundaries: %s", name => {
+      const result = insertNameThenRollback(name);
+      expect(result.status, result.stderr).toBe(0);
+    });
+  it("preserves POSIX/JavaScript whitespace coverage independently of locale", () => {
+    expect(run("SELECT datctype FROM pg_database WHERE datname=current_database();").stdout.trim()).toBe("C");
+    expect(run("SELECT chr(9) ~ '[[:space:]]', chr(10) ~ '[[:space:]]', chr(160) ~ '[[:space:]]', chr(65279) ~ '[[:space:]]';").stdout.trim()).toBe("t|t|f|f");
+    // ZERO WIDTH SPACE is neither JS trim whitespace nor C-locale POSIX space.
+    expect("\u200b".trim()).toBe("\u200b");
+  });
+  it("enforces case-insensitive uniqueness directly in PostgreSQL", () => {
+    const result = insertNameThenRollback("oGeRo / iNtErNeT");
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("23505");
+    expect(result.stderr).toContain("expense_categories_name_key");
   });
   it.each(["SUPER_ADMIN", "ADMIN"] as const)("lets active %s create, rename, archive and restore with audits", async role => {
     const row = await manageExpenseCategory(db!, actors[role], { action: "create", name: `  Supplies ${role}  ` });
@@ -112,8 +159,11 @@ describe.skipIf(!db)("persisted expense categories on isolated PostgreSQL", () =
     } finally { if (original === undefined) delete process.env.IPSM_IDENTIFIER_ACTIVATION_ID; else process.env.IPSM_IDENTIFIER_ACTIVATION_ID = original; }
   });
   it("rejects repeat application without altering catalogue data", async () => {
-    const before = await db!.expenseCategory.count();
-    expect(run(migration, false).status).not.toBe(0);
-    expect(await db!.expenseCategory.count()).toBe(before);
+    const before = await db!.expenseCategory.findMany({ orderBy: { id: "asc" } });
+    const result = run(migration, false);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("42P07");
+    expect(result.stderr).toContain('relation "expense_categories" already exists');
+    expect(await db!.expenseCategory.findMany({ orderBy: { id: "asc" } })).toEqual(before);
   });
 });

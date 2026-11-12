@@ -2,7 +2,9 @@
 
 Production migration-only attempt (2026-11-12): **blocked before database writes**
 by direct-connection reachability. The catalogue migration remains unapplied by this
-work; current remote ledger state was not verified. See the [execution report](EXPENSE_CATEGORIES_PRODUCTION_MIGRATION.md).
+work; current remote ledger state was not verified. R1 corrects and locally tests the
+name CHECK (including Unicode whitespace); direct IPv6 routing is still blocked and
+the revised artifact requires separate execution approval. See the [execution report](EXPENSE_CATEGORIES_PRODUCTION_MIGRATION.md).
 
 ## Payments
 

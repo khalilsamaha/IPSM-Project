@@ -8,8 +8,11 @@ CREATE TABLE public.expense_categories (
   created_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT expense_categories_name_check CHECK (
-    name = btrim(name) AND length(name) BETWEEN 1 AND 80
-    AND lower(regexp_replace(name, '\s+', ' ', 'g')) <> 'teacher payroll'
+    -- POSIX whitespace plus ECMAScript trim()/\s Unicode characters. The
+    -- explicit additions keep JS whitespace protected even in the C locale.
+    length(name) BETWEEN 1 AND 80
+    AND name !~ U&'^[[:space:]\00A0\1680\2000-\200A\2028\2029\202F\205F\3000\FEFF]|[[:space:]\00A0\1680\2000-\200A\2028\2029\202F\205F\3000\FEFF]$'
+    AND lower(regexp_replace(name, U&'[[:space:]\00A0\1680\2000-\200A\2028\2029\202F\205F\3000\FEFF]+', ' ', 'g')) <> 'teacher payroll'
   )
 );
 CREATE UNIQUE INDEX expense_categories_name_key ON public.expense_categories (lower(name));
