@@ -1,5 +1,9 @@
 # Administration enhancements — development only
 
+Production migration-only attempt (2026-11-12): **blocked before database writes**
+by direct-connection reachability. The catalogue migration remains unapplied by this
+work; current remote ledger state was not verified. See the [execution report](EXPENSE_CATEGORIES_PRODUCTION_MIGRATION.md).
+
 ## Payments
 
 `/payments/new` reveals all eligible family enrollments when Manual is selected,
