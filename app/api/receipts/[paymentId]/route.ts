@@ -6,7 +6,7 @@ import { ensurePaymentReceiptWithRetry } from "@/lib/payments/receipt-repair";
 import {
   ReceiptGenerationError,
   type ReceiptLayout,
-} from "@/lib/payments/receipt-service-v3";
+} from "@/lib/payments/receipt-service-v4";
 import { buildReceiptFamilyBalanceRows } from "@/lib/payments/receipt-family-balances";
 import { logServerError } from "@/lib/server-log";
 
@@ -21,10 +21,9 @@ export async function GET(
   const session = await requireSession();
   const { paymentId } = await params;
   const url = new URL(request.url);
-  const requestedLayout = url.searchParams.get("layout");
   const requestedMode = url.searchParams.get("mode");
-  const layout: ReceiptLayout =
-    requestedLayout === "a4-two-copies" ? "a4-two-copies" : "a5";
+  // Legacy A4 download links remain valid, but actual output and audit are A5.
+  const layout: ReceiptLayout = "a5";
 
   const existing = await prisma.payment.findUnique({
     where: { id: paymentId },
@@ -113,7 +112,7 @@ export async function GET(
         },
       })),
     });
-    const pdf = renderReceipt(
+    const pdf = await renderReceipt(
       { ...payment, familyBalances },
       layout,
       mode,

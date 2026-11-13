@@ -115,12 +115,6 @@ export default async function PaymentDetailPage({
           </a>
           <a
             className="rounded border px-4 py-2"
-            href={`/api/receipts/${payment.id}?layout=a4-two-copies`}
-          >
-            Print two copies
-          </a>
-          <a
-            className="rounded border px-4 py-2"
             href={`/api/receipts/${payment.id}?layout=a5&mode=reprint`}
           >
             Reprint receipt
