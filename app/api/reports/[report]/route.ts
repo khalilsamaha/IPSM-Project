@@ -15,7 +15,7 @@ import {
   getTeacherScheduleAvailabilityReport,
   type ReportFilters,
 } from "@/lib/reports/data";
-import { getShiftClosureReport } from "@/lib/reports/shift-closures";
+import { getAllShiftClosureRows } from "@/lib/reports/shift-closures";
 
 const headers: Record<string, string[]> = {
   revenue: ["date", "family", "payment_method", "receipt_number", "seasons", "courses", "total_cents"],
@@ -136,8 +136,8 @@ export async function GET(
     const data = await getPayrollReport(filters);
     rows = data.rows.map((row) => [row.teacher, formatDate(row.periodStart), formatDate(row.periodEnd), row.lessonHours, row.adjustmentCents, row.grossAmountCents, row.status]);
   } else {
-    const data = await getShiftClosureReport(rawFilters);
-    rows = data.rows.map((row) => [
+    const allRows = await getAllShiftClosureRows(rawFilters);
+    rows = allRows.map((row) => [
       formatDate(row.businessDate),
       row.userName,
       row.status,

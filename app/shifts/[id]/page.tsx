@@ -16,6 +16,7 @@ import {
 } from "@/lib/shifts/calculations";
 import { PrintReportButton } from "@/components/print-report-button";
 import { formatPaymentMethod } from "@/lib/payment-methods";
+import { describeShiftPaymentAllocations } from "@/lib/shifts/payment-details";
 
 export default async function ShiftDetail({
   params,
@@ -34,7 +35,10 @@ export default async function ShiftDetail({
       closedBy: true,
       reopenedBy: true,
       payments: {
-        include: { family: true },
+        include: {
+          family: true,
+          items: { include: { enrollment: { include: { student: true, season: true, course: true, level: true } } } },
+        },
         orderBy: { createdAt: "asc" },
       },
       expenses: { orderBy: { createdAt: "asc" } },
@@ -181,17 +185,24 @@ export default async function ShiftDetail({
 
       <h3 className="mb-2 mt-6 font-bold">Student / family payments received</h3>
       <DataTable>
-        <thead><tr><th>Receipt</th><th>Payer</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
+        <thead><tr><th>Receipt</th><th>Payer</th><th>Student / activity details</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
         <tbody>
-          {shift.payments.map((payment) => (
-            <tr key={payment.id}>
+          {shift.payments.map((payment) => {
+            const details = describeShiftPaymentAllocations(payment.items);
+            return <tr key={payment.id}>
               <td>{payment.receiptNumber ?? "—"}</td>
               <td>{payment.family.name}</td>
+              <td className="min-w-48">
+                <p className="font-semibold">{details.students || "—"}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Activities: {details.activities || "—"}</p>
+                <p className="text-xs text-muted-foreground">Seasons: {details.seasons || "—"}</p>
+                {payment.notes ? <p className="mt-1 whitespace-pre-wrap text-xs">Notes: {payment.notes}</p> : null}
+              </td>
               <td>{formatPaymentMethod(payment.paymentMethod)}</td>
               <td>{formatCurrency(payment.totalAmountCents)}</td>
               <td>{payment.voidedAt ? "Voided" : "Posted"}</td>
-            </tr>
-          ))}
+            </tr>;
+          })}
         </tbody>
       </DataTable>
 

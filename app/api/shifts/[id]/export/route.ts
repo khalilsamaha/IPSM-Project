@@ -7,36 +7,12 @@ import {
   isTeacherPayrollExpense,
 } from "@/lib/shifts/calculations";
 
+import { describeShiftPaymentAllocations } from "@/lib/shifts/payment-details";
+import { renderShiftClosingPdf } from "@/lib/shifts/export-pdf";
+
 export const runtime = "nodejs";
 
 const csv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
-const safe = (value: unknown) => String(value ?? "—")
-  .replace(/[\\()]/g, "\\$&")
-  .replace(/[^\x20-\x7e]/g, "-");
-
-function simplePdf(lines: string[]) {
-  const content = lines
-    .slice(0, 70)
-    .map((line, index) => `BT /F1 8 Tf 30 ${810 - index * 11} Td (${safe(line)}) Tj ET`)
-    .join("\n");
-  const objects = [
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
-    "2 0 obj << /Type /Pages /Kids [4 0 R] /Count 1 >> endobj",
-    "3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-    "4 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >> endobj",
-    `5 0 obj << /Length ${Buffer.byteLength(content)} >> stream\n${content}\nendstream endobj`,
-  ];
-  let output = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const object of objects) {
-    offsets.push(Buffer.byteLength(output));
-    output += `${object}\n`;
-  }
-  const xref = Buffer.byteLength(output);
-  output += `xref\n0 6\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n `).join("\n")}\ntrailer << /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return Buffer.from(output);
-}
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -53,7 +29,10 @@ export async function GET(
       user: true,
       closedBy: true,
       payments: {
-        include: { family: true },
+        include: {
+          family: true,
+          items: { include: { enrollment: { include: { student: true, season: true, course: true, level: true } } } },
+        },
         orderBy: { createdAt: "asc" },
       },
       expenses: { orderBy: { createdAt: "asc" } },
@@ -94,6 +73,7 @@ export async function GET(
   const otherExpenses = shift.expenses.filter(
     (expense) => !isTeacherPayrollExpense(expense),
   );
+  const paymentDetails = shift.payments.map(payment => describeShiftPaymentAllocations(payment.items));
   const snapshot = shift.closingSnapshot && typeof shift.closingSnapshot === "object"
     ? shift.closingSnapshot as Record<string, unknown>
     : {};
@@ -128,13 +108,18 @@ export async function GET(
       ...summary.map((row) => row.map(csv).join(",")),
       "",
       "Payments",
-      "Receipt,Payer,Method,Amount cents,Status",
-      ...shift.payments.map((payment) => [
+      "Receipt,Payer,Method,Amount cents,Status,Students,Activities,Seasons,Payment notes,Allocation details",
+      ...shift.payments.map((payment, index) => [
         payment.receiptNumber,
         payment.family.name,
         payment.paymentMethod,
         payment.totalAmountCents,
         payment.voidedAt ? "voided" : "posted",
+        paymentDetails[index].students,
+        paymentDetails[index].activities,
+        paymentDetails[index].seasons,
+        payment.notes ?? "",
+        paymentDetails[index].allocations,
       ].map(csv).join(",")),
       "",
       "Teacher payroll",
@@ -173,19 +158,31 @@ export async function GET(
     });
   }
 
-  const lines = [
-    "IPSM Shift Closing Report",
-    ...summary.map(([key, value]) => `${key}: ${value ?? "-"}`),
-    "Payments",
-    ...shift.payments.map((payment) => `${payment.receiptNumber ?? "-"} | ${payment.family.name} | ${payment.paymentMethod} | ${payment.totalAmountCents} | ${payment.voidedAt ? "voided" : "posted"}`),
-    "Teacher payroll",
-    ...payroll.map((expense) => `${expense.description} | ${expense.paymentMethod} | ${expense.amountCents}`),
-    "Other expenses",
-    ...otherExpenses.map((expense) => `${expense.category} | ${expense.description} | ${expense.paymentMethod} | ${expense.amountCents} | ${expense.archivedAt ? "archived" : "active"}`),
-    "Closing and reopening history",
-    ...audits.map((audit) => `${audit.createdAt.toISOString()} | ${audit.action}`),
+  const sections = [
+    { title: "Shift and financial summary", lines: summary.map(([key, value]) => `${key}: ${value ?? "-"}`) },
+    { title: "Student / family payments", lines: shift.payments.map((payment, index) => {
+      const details = paymentDetails[index];
+      return [
+        `Receipt: ${payment.receiptNumber ?? "-"}`,
+        `Payer: ${payment.family.name}`,
+        `Method: ${payment.paymentMethod}`,
+        `Amount cents: ${payment.totalAmountCents}`,
+        `Status: ${payment.voidedAt ? "voided" : "posted"}`,
+        `Students: ${details.students || "-"}`,
+        `Activities: ${details.activities || "-"}`,
+        `Seasons: ${details.seasons || "-"}`,
+        `Payment notes: ${payment.notes || "-"}`,
+        `Allocation details: ${details.allocations || "-"}`,
+      ].join(" | ");
+    }) },
+    { title: "Teacher payroll", lines: payroll.map(expense =>
+      `${expense.expenseDate.toISOString().slice(0, 10)} | ${expense.description} | ${expense.paymentMethod} | amount cents: ${expense.amountCents}`) },
+    { title: "Other expenses", lines: otherExpenses.map(expense =>
+      `${expense.expenseDate.toISOString().slice(0, 10)} | ${expense.category} | ${expense.description} | ${expense.paymentMethod} | amount cents: ${expense.amountCents} | ${expense.archivedAt ? "archived" : "active"}`) },
+    { title: "Closing and reopening history", lines: audits.map(audit =>
+      `${audit.createdAt.toISOString()} | ${audit.action} | ${JSON.stringify(audit.metadata)}`) },
   ];
-  return new NextResponse(simplePdf(lines), {
+  return new NextResponse(await renderShiftClosingPdf(id, sections), {
     headers: {
       "content-type": "application/pdf",
       "content-disposition": `attachment; filename="shift-${id}.pdf"`,

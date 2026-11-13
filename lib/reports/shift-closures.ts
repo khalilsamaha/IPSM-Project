@@ -65,40 +65,20 @@ export async function getShiftClosureLookups() {
   });
 }
 
-export async function getShiftClosureReport(
-  filters: ShiftClosureFilters,
-  pagination: { skip?: number; take?: number } = {},
-) {
-  const where = shiftWhere(filters);
-  const [totalRows, shifts] = await Promise.all([
-    prisma.cashierShift.count({ where }),
-    prisma.cashierShift.findMany({
-      where,
-      include: {
-        user: { select: { name: true } },
-        payments: {
-          select: {
-            paymentMethod: true,
-            totalAmountCents: true,
-            voidedAt: true,
-          },
-        },
-        expenses: {
-          select: {
-            paymentMethod: true,
-            amountCents: true,
-            category: true,
-            archivedAt: true,
-          },
-        },
-      },
-      orderBy: [{ businessDate: "desc" }, { openedAt: "desc" }],
-      skip: pagination.skip ?? 0,
-      take: pagination.take ?? 25,
-    }),
-  ]);
+/** Shared mapping ensures UI, filtered totals and exports use identical shift rules. */
+const shiftInclude = {
+  user: { select: { name: true } },
+  payments: { select: { paymentMethod: true, totalAmountCents: true, voidedAt: true } },
+  expenses: { select: { paymentMethod: true, amountCents: true, category: true, archivedAt: true } },
+} satisfies Prisma.CashierShiftInclude;
 
-  const rows: ShiftClosureReportRow[] = shifts.map((shift) => {
+async function loadShiftBatch(where: Prisma.CashierShiftWhereInput, skip: number, take: number) {
+  const shifts = await prisma.cashierShift.findMany({
+    where, include: shiftInclude,
+    orderBy: [{ businessDate: "desc" }, { openedAt: "desc" }, { id: "desc" }],
+    skip, take,
+  });
+  return shifts.map((shift): ShiftClosureReportRow => {
     const totals = calculateShiftTotals({
       openingCashCents: shift.openingCashCents,
       payments: shift.payments,
@@ -128,16 +108,42 @@ export async function getShiftClosureReport(
       operatingExpenseCount: totals.operatingExpenseCount,
     };
   });
+}
 
+/** Reads the complete filtered result in bounded batches; no default 25-row limit.
+ * Does not create new financial totals or change shift closing data.
+ */
+export async function getAllShiftClosureRows(filters: ShiftClosureFilters) {
+  const where = shiftWhere(filters);
+  const rows: ShiftClosureReportRow[] = [];
+  const BATCH = 250;
+  for (;;) {
+    const batch = await loadShiftBatch(where, rows.length, BATCH);
+    rows.push(...batch);
+    if (batch.length < BATCH) break;
+  }
+  return rows;
+}
+
+export function summarizeShiftClosures(rows: readonly ShiftClosureReportRow[]) {
   return {
-    rows,
-    totalRows,
-    summary: {
-      cashPaymentsCents: rows.reduce((sum, row) => sum + row.cashPaymentsCents, 0),
-      whishPaymentsCents: rows.reduce((sum, row) => sum + row.whishPaymentsCents, 0),
-      payrollCents: rows.reduce((sum, row) => sum + row.payrollCents, 0),
-      operatingExpenseCents: rows.reduce((sum, row) => sum + row.operatingExpenseCents, 0),
-      differencesCents: rows.reduce((sum, row) => sum + (row.differenceCents ?? 0), 0),
-    },
+    cashPaymentsCents: rows.reduce((sum, row) => sum + row.cashPaymentsCents, 0),
+    whishPaymentsCents: rows.reduce((sum, row) => sum + row.whishPaymentsCents, 0),
+    payrollCents: rows.reduce((sum, row) => sum + row.payrollCents, 0),
+    operatingExpenseCents: rows.reduce((sum, row) => sum + row.operatingExpenseCents, 0),
+    differencesCents: rows.reduce((sum, row) => sum + (row.differenceCents ?? 0), 0),
   };
+}
+
+export async function getShiftClosureReport(
+  filters: ShiftClosureFilters,
+  pagination: { skip?: number; take?: number } = {},
+) {
+  const where = shiftWhere(filters);
+  const [totalRows, rows, allRows] = await Promise.all([
+    prisma.cashierShift.count({ where }),
+    loadShiftBatch(where, pagination.skip ?? 0, pagination.take ?? 25),
+    getAllShiftClosureRows(filters),
+  ]);
+  return { rows, totalRows, summary: summarizeShiftClosures(allRows) };
 }
