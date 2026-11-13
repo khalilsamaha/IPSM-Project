@@ -96,3 +96,13 @@ for legacy A4 links. Local validation and hosted CI results are recorded in the 
 Owner visual and functional approval is required before merge or Production deployment.
 This branch may receive only the normal Vercel Preview deployment; no live receipt
 requests, fabricated payments, Production mutations or database migrations are needed.
+
+## Owner-requested alignment refinement (2026-11-13)
+
+The identity block moves 12 points right and aligns its last baseline near the logo's
+lower edge, retaining the logo size and normal header height. Two 4-point gaps separate
+family/contact, payment context and the bold summary. No other rendering/business
+behavior changes. Refreshed samples are in `/tmp/ipsm-receipt-v4-refined`; all eight
+sample page counts and extracted monetary sequences match the original V4 examples.
+See [refinement evidence](evidence/receipt-v4-layout-refinement.json). Original review
+artifacts and evidence are retained.

@@ -103,12 +103,14 @@ export async function buildReceiptPdfV4(
       page.pushOperators(pushGraphicsState(), rectangle(MARGIN, top - logoHeight, logoWidth, logoHeight), clip(), endPath());
       page.drawImage(logo, { x: MARGIN - crop.x * scale, y: top - (1070 - crop.top) * scale, width: 1070 * scale, height: 1070 * scale });
       page.pushOperators(popGraphicsState());
-      const x = MARGIN + 132;
-      let headerY = top - 13;
-      for (const line of ["OFFICIAL PAYMENT RECEIPT", `Receipt: ${payment.receiptNumber ?? "Pending"}`, `Date: ${formatFormalDate(payment.paymentDate)}`, `Status: ${status}`]) {
-        for (const part of wrap(line, bold, 8.5, right - x)) { text(part, x, headerY, bold); headerY -= 13; }
-      }
-      y = Math.min(top - logoHeight, headerY) - 12;
+      const x = MARGIN + 144;
+      const headerLines = ["OFFICIAL PAYMENT RECEIPT", `Receipt: ${payment.receiptNumber ?? "Pending"}`, `Date: ${formatFormalDate(payment.paymentDate)}`, `Status: ${status}`]
+        .flatMap(line => wrap(line, bold, 8.5, right - x));
+      // Align the last baseline to the logo's lower edge; extra wrapped lines
+      // grow upwards first, preserving the existing header height when they fit.
+      const headerY = Math.min(top - 13, top - logoHeight + 3 + (headerLines.length - 1) * 13);
+      headerLines.forEach((part, index) => text(part, x, headerY - index * 13, bold));
+      y = Math.min(top - logoHeight, headerY - (headerLines.length - 1) * 13 - 3) - 12;
       rule(y); y -= 15;
     };
     newPage();
@@ -127,8 +129,10 @@ export async function buildReceiptPdfV4(
     flow(`Received from: ${payer}`, bold);
     flow(`Family: ${family.name} | Code: ${family.familyCode ?? "-"}`);
     flow(`Contact: ${unique([family.phone, family.email, family.fatherPhone, family.motherPhone, family.fatherEmail, family.motherEmail]) || "Not available"}`);
+    y -= 4; // Separate family/contact details from payment context.
     flow(`Method: ${formatPaymentMethod(payment.paymentMethod)} | Received by: ${payment.createdBy?.name ?? payment.createdBy?.email ?? "IPSM Staff"}`);
     flow(`Paid activity / season: ${unique(payment.items.map(item => `${item.enrollment.course?.name ?? item.enrollment.courseName}${item.enrollment.level?.name ? ` / ${item.enrollment.level.name}` : ""} / ${item.enrollment.season.name}`)) || "-"}`);
+    y -= 4; // Give the financial summary a little breathing room.
     flow(`TOTAL PAID: ${money(payment.totalAmountCents)} | Family remaining: ${money(totals.remainingCents)}`, bold);
     y -= 5;
 

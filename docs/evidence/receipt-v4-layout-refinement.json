@@ -1,0 +1,95 @@
+{
+  "recorded_at": "2026-11-13T03:53:35.515036+00:00",
+  "baseline_commit": "abd915e437485805c2655fc892eacce909d82640",
+  "scope": "Minor header alignment and details spacing only",
+  "layout": {
+    "header_right_shift_pt": 12,
+    "normal_four_line_block_down_shift_pt": 30.535,
+    "normal_header_height_unchanged": true,
+    "logo_size_and_bytes_unchanged": true,
+    "details_group_gaps_pt": [
+      4,
+      4
+    ]
+  },
+  "verification": {
+    "typescript": "PASS",
+    "unit_tests_passed": 511,
+    "production_mode_build": "PASS; existing ESLint patch warning retained",
+    "poppler_a5_bounds_and_overlap": "PASS on all 18 sample pages",
+    "all_eight_sample_page_counts_unchanged": true,
+    "all_eight_sample_text_token_counts_unchanged": true,
+    "all_eight_sample_monetary_sequences_unchanged": true,
+    "visual_inspection": "Required 1-student, 3-student, 24-student, oversized-activity and VOID examples inspected, including every page of the latter multi-page examples. Lower/right header alignment and subtle summary grouping verified; no clipping/overlap.",
+    "unrelated_tests_modified": false
+  },
+  "unchanged": [
+    "A5-only output and legacy link normalization",
+    "pagination algorithm",
+    "logo asset and stamp behavior",
+    "financial logic and persistence",
+    "receipt numbering, authentication and audits",
+    "API and error semantics, including unsupported scripts"
+  ],
+  "local_artifact_directory": "/tmp/ipsm-receipt-v4-refined",
+  "previous_artifacts_retained": "/tmp/ipsm-receipt-v4-review",
+  "samples": [
+    {
+      "file": "v4-1.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "18a459a66358709a68ac53bdf153ff3dad8ac1ba4dbaf3141042ceaac259f416"
+    },
+    {
+      "file": "v4-10.pdf",
+      "pages": 2,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "9aebec76d0a05aac9f3a4f6535bbfd756b6bf663268d4254ad70aea7514f044e"
+    },
+    {
+      "file": "v4-24.pdf",
+      "pages": 6,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "99d383415f60c7705c83c971b281c6366ae8d07f9df9115a8edb78cf42a71270"
+    },
+    {
+      "file": "v4-3.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "1b0084e784441be3c1f3378d1ebcc33e29a5c70f3aa7417af247c6afa0fecff6"
+    },
+    {
+      "file": "v4-6.pdf",
+      "pages": 2,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "d923ca6f513563671b009645f36d5bee01ac0d902488470e1f8b13ee3fabcd21"
+    },
+    {
+      "file": "v4-long-activity.pdf",
+      "pages": 4,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "925f59a6900c5251f286215d15f18c2b038ff1159428dab1a0bb487a7f6f2d76"
+    },
+    {
+      "file": "v4-reprint.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "e20dfd511150dcc19c1cc93e319e373c2d2bdefb3739ff8d694f513702611797"
+    },
+    {
+      "file": "v4-voided.pdf",
+      "pages": 1,
+      "a5_all_pages": true,
+      "text_bounds_and_overlap": "PASS",
+      "sha256": "fd6a1213e4ee8ef9ac6ee85bfef8cc01b4d7f1010f521db4bf8bf43fad3861b0"
+    }
+  ],
+  "production_changes": false
+}
