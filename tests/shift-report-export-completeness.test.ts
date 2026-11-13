@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
 import { PDFDocument } from "pdf-lib";
 import { renderShiftClosingPdf, wrapShiftExportText } from "@/lib/shifts/export-pdf";
 import { describeShiftPaymentAllocations } from "@/lib/shifts/payment-details";
@@ -84,9 +85,8 @@ describe("complete, read-only shift reporting", () => {
   });
 
   it("exports every shift rather than the first 25 and avoids the old PDF cutoff", () => {
-    const read = require("node:fs").readFileSync as (path: string, encoding: string) => string;
-    const csv = read("app/api/reports/[report]/route.ts", "utf8");
-    const shiftExport = read("app/api/shifts/[id]/export/route.ts", "utf8");
+    const csv = readFileSync("app/api/reports/[report]/route.ts", "utf8");
+    const shiftExport = readFileSync("app/api/shifts/[id]/export/route.ts", "utf8");
     expect(csv).toContain("getAllShiftClosureRows(rawFilters)");
     expect(shiftExport).toContain("renderShiftClosingPdf");
     expect(shiftExport).not.toContain(".slice(0, 70)");
